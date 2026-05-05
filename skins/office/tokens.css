@@ -1,0 +1,27 @@
+/* Office skin — CSS custom properties.
+ * Phosphor amber-on-near-black palette. Minimal v0 skin.
+ * Cell dimensions are placeholders; the engine measures actual glyph metrics at
+ * runtime and overwrites these via JS before first render.
+ */
+:root {
+  /* Palette */
+  --skin-bg: #0a0500;
+  --skin-fg: #ffb000;
+  --skin-accent: #ffcf40;
+  --skin-alert: #ff5252;
+  --skin-dim: #3a2400;
+
+  /* Typography */
+  --skin-font-family: "JetBrains Mono", monospace;
+  --skin-font-size: 14px;
+  --skin-line-height: 1;
+
+  /* Cell grid — engine overwrites at runtime after font measurement */
+  --skin-cell-w: 9px;
+  --skin-cell-h: 18px;
+
+  /* CRT effects */
+  --skin-scanline-opacity: 0.12;
+  --skin-bloom-radius: 3px;
+  --skin-bloom-color: rgba(255, 176, 0, 0.3);
+}

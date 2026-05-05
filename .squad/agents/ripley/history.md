@@ -24,4 +24,12 @@
 
 ## Learnings
 
-(empty — to be populated by my work)
+### 2026-05-05T22:30Z — Spike 5: CI matrix + screenshot baseline scaffold
+
+**CI matrix shape:** Three OSes (ubuntu-latest, windows-latest, macos-latest) × Node 22.5.0. Single node version for v0; multi-version grows in v1 per plan.md "CI strategy". macOS Playwright is intentionally skipped in the first pass — macOS runners are slowest and billed at 10× the minute rate; win + linux catch the overwhelming majority of Playwright regressions. macOS Playwright is added once those two are green (v1 milestone).
+
+**Baseline storage convention:** Golden PNGs committed under `packages/web/test/e2e/__screenshots__/`. Per-OS baselines are separate committed files because font hinting and subpixel AA differ enough across runner OSes to produce false diffs. The `snapshotPathTemplate` in `playwright.config.ts` encodes project name and snapshot suffix to namespace per DPI and OS. CI never auto-updates — `--update-snapshots` is absent from the CI command by design.
+
+**`continue-on-error` for pack-install-smoke:** At Spike 5, Parker's CLI scaffold does not yet implement `pnpm pack-all` or `--headless-smoke`. Rather than block the entire CI matrix on a not-yet-wired step, the `pack-install-smoke` job carries `continue-on-error: true` with a clearly marked `# TEMP` comment. Ripley owns flipping this off as part of the v0 "publish dry run" milestone task — it is a hard gate before any npm publish attempt. Using `continue-on-error` at job scope (not step scope) means the job shows amber (not blocking red) in the GitHub Actions UI, which is the correct signal: "wired but not yet runnable, watch this."
+
+**Windows glob caveat:** `bash`-style glob expansion fails in PowerShell. The Windows tarball-install step uses `pwsh` + `Get-ChildItem` to resolve the `.tgz` path explicitly. Linux/macOS steps use native `bash` glob. This is a reusable pattern for any future workflow step that needs to install a packed artifact on Windows.

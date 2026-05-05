@@ -1,0 +1,66 @@
+{
+  "manifestVersion": 1,
+  "name": "aquarium",
+  "version": "0.1.0",
+  "engineVersion": ">=0.1.0 <0.2.0",
+  "license": "MIT",
+  "author": {
+    "name": "Squadquarium Team",
+    "url": "https://github.com/B-rody/squadquarium"
+  },
+  "font": {
+    "family": "JetBrains Mono",
+    "fallback": "monospace",
+    "asset": "fonts/JetBrainsMono.woff2"
+  },
+  "palette": {
+    "bg": "#001f1c",
+    "fg": "#00bfa5",
+    "accent": "#80cbc4",
+    "alert": "#ff5252",
+    "dim": "#004d40"
+  },
+  "glyphAllowlist": [
+    " ",
+    "!",
+    "(",
+    ")",
+    "*",
+    ",",
+    "-",
+    ".",
+    "/",
+    "<",
+    "=",
+    ">",
+    "S",
+    "[",
+    "\\",
+    "]",
+    "^",
+    "_",
+    "o",
+    "|",
+    "~",
+    "°",
+    "·",
+    "╔",
+    "═",
+    "╗",
+    "║",
+    "╚",
+    "╝",
+    "◆",
+    "○",
+    "▲",
+    "▼",
+    "▢"
+  ],
+  "capabilities": ["bands", "drift", "scanlines", "bloom"],
+  "fallbacks": {
+    "working": "idle",
+    "blocked": "idle",
+    "celebrate": "working"
+  },
+  "x-skin-notes": "Phosphor cyan-on-deep-teal. Sprite grid: 2 rows × 7 cols. v0 roles: lead (anglerfish), frontend (seahorse), backend (octopus), scribe (squid)."
+}

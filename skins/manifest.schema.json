@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://squadquarium.dev/schemas/manifest.v1.schema.json",
+  "title": "Squadquarium Skin Manifest v1",
+  "description": "Schema for skins/{name}/manifest.json. All root-level keys must be one of the declared properties or an x-* extension key. manifestVersion: 1 is the only valid schema version for this schema; future breaking changes increment the const and live in a new schema file.",
+  "type": "object",
+  "required": [
+    "manifestVersion",
+    "name",
+    "version",
+    "engineVersion",
+    "license",
+    "author",
+    "font",
+    "palette",
+    "glyphAllowlist"
+  ],
+  "properties": {
+    "manifestVersion": {
+      "const": 1,
+      "description": "Schema version discriminant. Must be exactly the integer 1 for this schema. The engine reads this field first and routes to the matching schema parser."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Kebab-case skin identifier. Must be globally unique across community skins. Example: 'aquarium', 'office', 'deep-space'."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "SemVer 2.0.0 version of the skin itself (not the engine). Increment the patch on glyph/color tweaks, minor on new states, major on grid-size changes that break the sprite contract."
+    },
+    "engineVersion": {
+      "type": "string",
+      "description": "npm-compatible SemVer range that this skin requires from the Squadquarium engine. The engine refuses to load the skin if its own version does not satisfy this range. Example: '>=0.1.0 <0.2.0'."
+    },
+    "license": {
+      "type": "string",
+      "description": "SPDX license identifier for the skin's creative assets. Required for community-pack policy enforcement (engine itself does not enforce at runtime). Common values: MIT, Apache-2.0, BSD-3-Clause, ISC, CC-BY-4.0, CC0-1.0, GPL-3.0-only. See https://spdx.org/licenses/ for the full registry."
+    },
+    "author": {
+      "type": "object",
+      "description": "Skin author identity. Used in the skin-picker UI and attribution tooltips.",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the author or organization."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional URL: author homepage, GitHub profile, or project repository."
+        }
+      },
+      "additionalProperties": false
+    },
+    "font": {
+      "type": "object",
+      "description": "Font specification for this skin. Glyph mosaics depend on consistent cell metrics; the engine enforces font loading before rendering. Ligatures are always disabled (font-feature-settings: 'liga' 0) regardless of this field.",
+      "required": ["family", "fallback"],
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "Primary CSS font-family name. Must be a monospace font. Stock skins use 'JetBrains Mono'. Community skins may name any font, but must supply a bundled asset."
+        },
+        "fallback": {
+          "type": "string",
+          "description": "CSS generic fallback. Must be 'monospace' for glyph-grid integrity. The engine appends this to the computed font stack."
+        },
+        "asset": {
+          "type": "string",
+          "description": "Optional relative path (from manifest.json) to a bundled woff2 font asset. When present, the engine loads this file via @font-face before first render and errors if the fetch fails. When absent, font.family must be a system-installed monospace font — the engine surfaces an error if it cannot measure the font at startup."
+        }
+      },
+      "additionalProperties": false
+    },
+    "palette": {
+      "type": "object",
+      "description": "Named color palette. The five base tokens (bg, fg, accent, alert, dim) are required and map to CSS custom properties in tokens.css. Additional named colors are permitted and may be referenced as token strings in sprites.json and habitat.json.",
+      "required": ["bg", "fg", "accent", "alert", "dim"],
+      "properties": {
+        "bg": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Canvas background color."
+        },
+        "fg": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Primary foreground / glyph color."
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Accent / highlight color. Used for active and working states."
+        },
+        "alert": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Alert / error color. Used for blocked states, warnings, and fail indicators."
+        },
+        "dim": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Dimmed / inactive color. Used for set-dressing, idle ambient glyphs, and de-emphasized elements."
+        }
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "description": "Additional named palette color. Key is the token name; value is a 6-digit hex color."
+      }
+    },
+    "glyphAllowlist": {
+      "type": "array",
+      "description": "The complete set of Unicode characters this skin is permitted to render. Must contain a space character (' '). Strongly recommended to include '▢' (U+25A2) as the fallback-glyph placeholder. Any glyph not in this list will render as '▢' with a dev-console warning at runtime. All glyphs must exist in the font specified by font.family; glyphs absent from JetBrains Mono will fail the render-diff CI test.",
+      "minItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2,
+        "description": "A single Unicode character. BMP characters (U+0000–U+FFFF) are strongly preferred for cross-platform consistency; supplementary-plane characters count as length 2 in some parsers and should be avoided."
+      },
+      "contains": {
+        "const": " ",
+        "description": "The space character must be in the allowlist."
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Opt-in engine capabilities this skin uses. The engine ignores unknown string values for forward compatibility — do not treat unknown capabilities as errors. Omit to use baseline rendering ('bands' only).",
+      "default": ["bands"],
+      "items": {
+        "type": "string",
+        "enum": ["bands", "drift", "scanlines", "bloom", "barrel"],
+        "description": "bands: multi-tier banded layout (required for role-band mapping). drift: ambient glyph drift between bands. scanlines: CSS scanline overlay. bloom: phosphor glow effect on fg glyphs. barrel: optional barrel-distortion CRT curvature."
+      }
+    },
+    "fallbacks": {
+      "type": "object",
+      "description": "Maps a sprite state name to a fallback state name. When a role is missing a state in sprites.json, the engine renders the fallback state instead. If neither state is defined, the engine falls back to 'idle'. Recommended defaults: { 'working': 'idle', 'blocked': 'idle', 'celebrate': 'working' }.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "patternProperties": {
+    "^x-": {
+      "description": "Extension namespace. Any root-level key beginning with 'x-' is permitted and carries any value. The engine ignores all x-* keys; they are reserved for skin authors, tooling, and future community conventions."
+    }
+  },
+  "additionalProperties": false
+}

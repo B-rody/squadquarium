@@ -1,0 +1,52 @@
+{
+  "manifestVersion": 1,
+  "name": "office",
+  "version": "0.1.0",
+  "engineVersion": ">=0.1.0 <0.2.0",
+  "license": "MIT",
+  "author": {
+    "name": "Squadquarium Team",
+    "url": "https://github.com/B-rody/squadquarium"
+  },
+  "font": {
+    "family": "JetBrains Mono",
+    "fallback": "monospace",
+    "asset": "fonts/JetBrainsMono.woff2"
+  },
+  "palette": {
+    "bg": "#0a0500",
+    "fg": "#ffb000",
+    "accent": "#ffcf40",
+    "alert": "#ff5252",
+    "dim": "#3a2400"
+  },
+  "glyphAllowlist": [
+    " ",
+    "*",
+    "/",
+    "\\",
+    "[",
+    "]",
+    "_",
+    "=",
+    "¤",
+    "·",
+    "╔",
+    "═",
+    "╗",
+    "║",
+    "─",
+    "│",
+    "▓",
+    "▲",
+    "▼",
+    "▢"
+  ],
+  "capabilities": ["bands", "drift", "scanlines"],
+  "fallbacks": {
+    "working": "idle",
+    "blocked": "idle",
+    "celebrate": "working"
+  },
+  "x-skin-notes": "Phosphor amber-on-near-black. Intentionally minimal v0 skin to prove schema. Same sprite grid as aquarium (2 rows × 7 cols) so loader does not reflow."
+}

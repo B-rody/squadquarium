@@ -1,0 +1,16 @@
+{
+  "habitat": "Office",
+  "log": "Logs · live",
+  "lead": "Lead",
+  "frontend": "Frontend",
+  "backend": "Backend",
+  "scribe": "Scribe",
+  "elevator": "Lift",
+  "lobby": "Lobby",
+  "hatchery": "Hiring Booth",
+  "scriptorium": "Skills Lab",
+  "idle": "idle",
+  "working": "working",
+  "blocked": "blocked",
+  "celebrate": "celebrate"
+}

@@ -1,0 +1,15 @@
+# Third-party and generated
+node_modules
+**/dist
+pnpm-lock.yaml
+
+# Squad internal files — not formatted by Squadquarium tooling
+.squad
+.copilot
+.github
+.git
+
+# Large docs not owned by this repo's formatter
+plan.md
+CONTRIBUTING.md
+scripts

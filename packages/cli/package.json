@@ -1,0 +1,26 @@
+{
+  "name": "@squadquarium/cli",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "bin": {
+    "squadquarium": "./bin/squadquarium.js",
+    "sqq": "./bin/squadquarium.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@squadquarium/core": "workspace:*",
+    "commander": "^13.0.0",
+    "open": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "~5.6.0",
+    "vitest": "^3.0.0"
+  }
+}

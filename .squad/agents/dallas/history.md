@@ -19,4 +19,14 @@
 
 ## Learnings
 
-(empty — to be populated by my work)
+### 2026-05-05: Spike 3 — dist/remote-ui/ is a static PWA, not an event bridge
+
+**Finding:** Squad CLI's `dist/remote-ui/` is a static web bundle (Squad RC — a browser-based remote control UI). It is **not** a structured event channel for external subscribers. The underlying event broker is `RemoteBridge` from the SDK, which is for *remote control* (client→server commands), not for *activity monitoring* (server→client events). EventBus already provides the latter.
+
+**Implication:** No new event source to wire. Squadquarium stays on PTY+bus+fs+log as planned. The spike's outcome is the negative-result path (plan.md item 10): "if not, we confirm PTY+bus+fs+log is the full menu and stop scheming."
+
+**Architectural consequence:** RemoteBridge (for external clients) vs. EventBus (for internal activity) are orthogonal. If Squadquarium needs remote-control capabilities in v2+, that would be a separate RemoteBridge instance we start *inside* Squadquarium, not a subscription to Squad's RC infrastructure.
+
+**Quality gate sanity check:** Testing infrastructure is solid. Vitest + Playwright + cross-platform CI + headless-smoke + reviewer lockout all documented and ready. No gaps detected for v0 Testing & Quality contract.
+
+**Plan.md amendments:** None. Item 10 is satisfied; item 4 & 5 verified as correct priority.

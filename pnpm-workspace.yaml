@@ -1,0 +1,8 @@
+packages:
+  - "packages/*"
+  - "skins/*"
+allowBuilds:
+  "@bradygaster/squad-cli": true
+  esbuild: true
+  node-pty: true
+  protobufjs: true

@@ -1,0 +1,90 @@
+{
+  "_comment": "Office habitat band layout. Same band IDs as aquarium so the loader does not reflow when switching skins. Band height matches aquarium (4 rows each).",
+  "bands": [
+    {
+      "id": "top",
+      "role": "lead",
+      "height": 4,
+      "_comment": "Roof / penthouse — corner office, whiteboard, city view.",
+      "dressing": [
+        { "cell": { "row": 0, "col": 0 }, "glyph": "╔", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 1 }, "glyph": "═", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 2 }, "glyph": "═", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 3 }, "glyph": "╗", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 0 }, "glyph": "║", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 3 }, "glyph": "║", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 50 }, "glyph": "▓", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 51 }, "glyph": "▓", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 52 }, "glyph": "▓", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 65 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 66 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 67 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 30 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    },
+    {
+      "id": "mid-upper",
+      "role": "frontend",
+      "height": 4,
+      "_comment": "Studio floor — drafting tables, mannequin, mood-board wall.",
+      "dressing": [
+        { "cell": { "row": 0, "col": 10 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 11 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 12 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 10 }, "glyph": "│", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 12 }, "glyph": "│", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 35 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 36 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 37 }, "glyph": "─", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 35 }, "glyph": "│", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 37 }, "glyph": "│", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 5 }, "glyph": "·", "color": "dim", "drift": true },
+        { "cell": { "row": 3, "col": 60 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    },
+    {
+      "id": "mid-lower",
+      "role": "backend",
+      "height": 4,
+      "_comment": "Engine room — server racks ▓▓▓, blinking LEDs, pipes.",
+      "dressing": [
+        { "cell": { "row": 0, "col": 55 }, "glyph": "▓", "color": "fg", "drift": false },
+        { "cell": { "row": 1, "col": 55 }, "glyph": "▓", "color": "accent", "drift": false },
+        { "cell": { "row": 2, "col": 55 }, "glyph": "▓", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 55 }, "glyph": "▓", "color": "fg", "drift": false },
+        { "cell": { "row": 0, "col": 56 }, "glyph": "▓", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 56 }, "glyph": "▓", "color": "fg", "drift": false },
+        { "cell": { "row": 2, "col": 56 }, "glyph": "▓", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 56 }, "glyph": "▓", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 20 }, "glyph": "▲", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 21 }, "glyph": "▼", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 22 }, "glyph": "▲", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 23 }, "glyph": "▼", "color": "accent", "drift": false },
+        { "cell": { "row": 2, "col": 20 }, "glyph": "│", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 22 }, "glyph": "│", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 5 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    },
+    {
+      "id": "bottom",
+      "role": "scribe",
+      "height": 4,
+      "_comment": "Library wing — bookshelves [=], podium, archive cabinets.",
+      "dressing": [
+        { "cell": { "row": 0, "col": 4 }, "glyph": "[", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 5 }, "glyph": "=", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 6 }, "glyph": "]", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 7 }, "glyph": "[", "color": "fg", "drift": false },
+        { "cell": { "row": 0, "col": 8 }, "glyph": "=", "color": "fg", "drift": false },
+        { "cell": { "row": 0, "col": 9 }, "glyph": "]", "color": "fg", "drift": false },
+        { "cell": { "row": 0, "col": 10 }, "glyph": "[", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 11 }, "glyph": "=", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 12 }, "glyph": "]", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 30 }, "glyph": "[", "color": "accent", "drift": false },
+        { "cell": { "row": 0, "col": 31 }, "glyph": "=", "color": "accent", "drift": false },
+        { "cell": { "row": 0, "col": 32 }, "glyph": "]", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 60 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    }
+  ]
+}

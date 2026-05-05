@@ -1,0 +1,28 @@
+/* Aquarium skin — CSS custom properties.
+ * Palette and sizing tokens. Pull these into component styles via var(--skin-*).
+ * Cell dimensions are placeholders; the engine measures actual glyph metrics at
+ * runtime (JetBrains Mono at the configured font-size) and overwrites these via
+ * JS before first render. Authors: do not hard-code cell-w/h in layout math.
+ */
+:root {
+  /* Palette */
+  --skin-bg: #001f1c;
+  --skin-fg: #00bfa5;
+  --skin-accent: #80cbc4;
+  --skin-alert: #ff5252;
+  --skin-dim: #004d40;
+
+  /* Typography */
+  --skin-font-family: "JetBrains Mono", monospace;
+  --skin-font-size: 14px;
+  --skin-line-height: 1; /* must stay 1.0 — engine assumes line-height = cell-h */
+
+  /* Cell grid — engine overwrites at runtime after font measurement */
+  --skin-cell-w: 9px; /* placeholder; actual value depends on font-size */
+  --skin-cell-h: 18px; /* placeholder; actual value depends on font-size */
+
+  /* CRT effects */
+  --skin-scanline-opacity: 0.08;
+  --skin-bloom-radius: 4px;
+  --skin-bloom-color: rgba(0, 191, 165, 0.35);
+}

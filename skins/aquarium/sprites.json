@@ -1,0 +1,825 @@
+{
+  "_comment": "Aquarium sprite definitions. Grid: 2 rows × 7 cols. Palette tokens: fg, bg, accent, alert, dim. blink=true flickers at the renderer's blink interval (~1 Hz). All glyphs must be in manifest.glyphAllowlist.",
+  "roles": {
+    "lead": {
+      "_comment": "Anglerfish. (°)>=< with flickering * lure.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "_comment": "Lure on",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "alert", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "fg", "bg": "bg" },
+                  { "glyph": "°", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": ">", "fg": "fg", "bg": "bg" },
+                  { "glyph": "=", "fg": "fg", "bg": "bg" },
+                  { "glyph": "<", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Lure off",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "fg", "bg": "bg" },
+                  { "glyph": "°", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": ">", "fg": "fg", "bg": "bg" },
+                  { "glyph": "=", "fg": "fg", "bg": "bg" },
+                  { "glyph": "<", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "_comment": "Lure shifts left — fish surges forward",
+              "cells": [
+                [
+                  { "glyph": "*", "fg": "alert", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "°", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": ">", "fg": "accent", "bg": "bg" },
+                  { "glyph": "=", "fg": "accent", "bg": "bg" },
+                  { "glyph": "<", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Body wiggles — tail flicks",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "alert", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "°", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "=", "fg": "accent", "bg": "bg" },
+                  { "glyph": "<", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "_comment": "Tail droops — fish drifts, dim palette",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "dim", "bg": "bg" },
+                  { "glyph": "°", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": "-", "fg": "dim", "bg": "bg" },
+                  { "glyph": "-", "fg": "dim", "bg": "bg" },
+                  { "glyph": "<", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Hold — same frame, no motion",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "dim", "bg": "bg" },
+                  { "glyph": "°", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": "-", "fg": "dim", "bg": "bg" },
+                  { "glyph": "-", "fg": "dim", "bg": "bg" },
+                  { "glyph": "<", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "_comment": "Lure frenzied — double flash",
+              "cells": [
+                [
+                  { "glyph": "!", "fg": "alert", "bg": "bg" },
+                  { "glyph": "*", "fg": "accent", "bg": "bg", "blink": true },
+                  { "glyph": "!", "fg": "alert", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "°", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": ">", "fg": "accent", "bg": "bg" },
+                  { "glyph": "=", "fg": "accent", "bg": "bg" },
+                  { "glyph": "<", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Lure shifts — body wiggles",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "!", "fg": "alert", "bg": "bg" },
+                  { "glyph": "*", "fg": "accent", "bg": "bg", "blink": true },
+                  { "glyph": "!", "fg": "alert", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "°", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "=", "fg": "accent", "bg": "bg" },
+                  { "glyph": "<", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "frontend": {
+      "_comment": "Seahorse. Compact 2-row silhouette: crown+head top, body+tail curl bottom.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "_comment": "Tail right",
+              "cells": [
+                [
+                  { "glyph": ",", "fg": "dim", "bg": "bg" },
+                  { "glyph": "S", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Tail flick left",
+              "cells": [
+                [
+                  { "glyph": ",", "fg": "dim", "bg": "bg" },
+                  { "glyph": "S", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "-", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "_comment": "Dorsal fin up — accent palette",
+              "cells": [
+                [
+                  { "glyph": ",", "fg": "fg", "bg": "bg" },
+                  { "glyph": "S", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Dorsal fin down",
+              "cells": [
+                [
+                  { "glyph": ",", "fg": "fg", "bg": "bg" },
+                  { "glyph": "S", "fg": "accent", "bg": "bg" },
+                  { "glyph": "-", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "_comment": "Limp tail — dim palette",
+              "cells": [
+                [
+                  { "glyph": ",", "fg": "dim", "bg": "bg" },
+                  { "glyph": "S", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": ".", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Hold — same frame",
+              "cells": [
+                [
+                  { "glyph": ",", "fg": "dim", "bg": "bg" },
+                  { "glyph": "S", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": ".", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "_comment": "Shimmy left",
+              "cells": [
+                [
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": ",", "fg": "fg", "bg": "bg" },
+                  { "glyph": "S", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Shimmy right",
+              "cells": [
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": ",", "fg": "fg", "bg": "bg" },
+                  { "glyph": "S", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "-", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "backend": {
+      "_comment": "Octopus. (o.o) head with /|\\ tentacle row.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "_comment": "Tentacles spread",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "fg", "bg": "bg" },
+                  { "glyph": "o", "fg": "fg", "bg": "bg" },
+                  { "glyph": ".", "fg": "dim", "bg": "bg" },
+                  { "glyph": "o", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "/", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "\\", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Tentacles contracted",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "fg", "bg": "bg" },
+                  { "glyph": "o", "fg": "fg", "bg": "bg" },
+                  { "glyph": ".", "fg": "dim", "bg": "bg" },
+                  { "glyph": "o", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "/", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "\\", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "_comment": "Excited eyes — all tentacles active",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": "!", "fg": "fg", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "/", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "\\", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Pulsing — tentacles rest frame",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": ".", "fg": "fg", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "/", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "\\", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "_comment": "Eyes closed — tentacles limp",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "dim", "bg": "bg" },
+                  { "glyph": ".", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Hold",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "dim", "bg": "bg" },
+                  { "glyph": ".", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "_comment": "Stars in eyes — tentacles swapped",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": "*", "fg": "alert", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Tentacles swap side",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": "!", "fg": "alert", "bg": "bg" },
+                  { "glyph": "o", "fg": "accent", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "|", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "scribe": {
+      "_comment": "Squid. (·^·) body with ~~~ trailing tentacles.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "_comment": "Tentacles right",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": "^", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Tentacles drift right",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": "^", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "_comment": "Quill raised — accent palette",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "^", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Quill down — tentacles drift",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "^", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "_comment": "Ink-squirt posture — downcast mantle",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "dim", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "dim", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Hold",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "dim", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "dim", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": ")", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "_comment": "All tentacles deployed — full spread",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "^", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Exclamation — extra tentacle pulse",
+              "cells": [
+                [
+                  { "glyph": "(", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "^", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": ")", "fg": "accent", "bg": "bg" },
+                  { "glyph": "!", "fg": "alert", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "accent", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "fg", "bg": "bg" },
+                  { "glyph": "~", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

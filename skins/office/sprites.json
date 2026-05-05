@@ -1,0 +1,801 @@
+{
+  "_comment": "Office sprite definitions. Grid: 2 rows × 7 cols (same as aquarium — loader must not reflow). Minimal v0 skin: all 4 roles use the [¤] figure at ╔═╗ desk. State differences are subtle glyph substitutions.",
+  "roles": {
+    "lead": {
+      "_comment": "Corner office figure.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "_comment": "Seated, neutral",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "accent", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Cursor blink — subtle activity indicator",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "accent", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "_comment": "Typing — dots advance",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Typing — dots shift",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "·", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "_comment": "Head down — underscore replaces ¤",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Hold",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "_comment": "Standing with arms up — \\¤/ + star",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "accent", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "_comment": "Star shifts",
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "accent", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "frontend": {
+      "_comment": "Studio floor figure — identical sprite structure to lead. State glyphs differ only in working dots color.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "fg", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "fg", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "backend": {
+      "_comment": "Engine room figure — same sprite structure, ▓ server-rack accent in dressing.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "·", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "fg", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "fg", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "scribe": {
+      "_comment": "Library wing figure.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "dim", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "fg", "bg": "bg" },
+                  { "glyph": "¤", "fg": "dim", "bg": "bg" },
+                  { "glyph": "]", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "dim", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "fg", "bg": "bg" },
+                  { "glyph": "═", "fg": "fg", "bg": "bg" },
+                  { "glyph": "╗", "fg": "fg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "]", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "·", "fg": "fg", "bg": "bg" },
+                  { "glyph": "·", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "blocked": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "dim", "bg": "bg" },
+                  { "glyph": "═", "fg": "dim", "bg": "bg" },
+                  { "glyph": "╗", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "[", "fg": "dim", "bg": "bg" },
+                  { "glyph": "_", "fg": "alert", "bg": "bg" },
+                  { "glyph": "]", "fg": "dim", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "fg", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            },
+            {
+              "cells": [
+                [
+                  { "glyph": "╔", "fg": "accent", "bg": "bg" },
+                  { "glyph": "═", "fg": "accent", "bg": "bg" },
+                  { "glyph": "╗", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": "*", "fg": "fg", "bg": "bg", "blink": true },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ],
+                [
+                  { "glyph": "\\", "fg": "accent", "bg": "bg" },
+                  { "glyph": "¤", "fg": "fg", "bg": "bg" },
+                  { "glyph": "/", "fg": "accent", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" },
+                  { "glyph": " ", "fg": "bg", "bg": "bg" }
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

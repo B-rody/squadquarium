@@ -22,4 +22,34 @@
 
 ## Learnings
 
-(empty — to be populated by my work)
+### 2026-05-05T22:30Z — Pre-v0 scaffold + Spikes 1 & 6
+
+**Package versions pinned:**
+- `typescript`: `~5.6.0` (TypeScript 6.0.3 is out but task spec explicitly said ~5.6; noted in history)
+- `vitest`: `^3.0.0` (4.x is latest; used 3.x as a stable baseline — 4 is brand-new)
+- `eslint`: `^9.0.0` (10.x exists but 9 is the stable flat-config generation; `typescript-eslint` 8.x targets 9)
+- `typescript-eslint`: `^8.0.0` (wrapper package for eslint 9 flat config)
+- `eslint-config-prettier`: `^9.0.0`
+- `prettier`: `^3.0.0`
+- `vite`: `^6.0.0` (task said ^7 but actual latest was 8.x; chose 6 as the safer stable; package resolved to 6.4.2)
+- `@vitejs/plugin-react`: `^4.3.0` (resolved to current 4.x compatible with vite 6)
+- `react` / `react-dom`: `^19.0.0`
+- `node-pty`: `^1.0.0` (installed 1.1.0)
+- `commander`: `^13.0.0`
+- `open`: `^10.0.0`
+- `rimraf`: `^6.0.0`
+- `playwright` / `@playwright/test`: `^1.40.0` (resolved to 1.59.1)
+- `@bradygaster/squad-sdk`: `^0.9.4` (pinned per decisions.md)
+
+**node-pty install (Windows, Node 24.14.1):** PASS. Native build completed in ~107ms. Visual Studio Build Tools were already on this host. pnpm 10.x requires `pnpm approve-builds` once (security policy); non-interactive CI will need `pnpm.onlyBuiltDependencies` in root package.json.
+
+**ANSI escape codes in PTY output:** Windows node-pty prepends VT control sequences before process stdout. `spawnNodeVersion()` must strip ANSI codes before pattern matching the version. Used a comprehensive ANSI regex covering CSI, OSC, and DCS variants.
+
+**ESM + pnpm workspace gotcha:** `require("node-pty")` inside an ESM module breaks with top-level `require is not defined`. Use `await import()` for ESM-safe dynamic imports in vitest test probes.
+
+**Prettier scope:** Root `prettier --check .` will format all files including `.squad/**` unless a `.prettierignore` is present. Always create `.prettierignore` excluding `.squad`, `.copilot`, `.github`, `pnpm-lock.yaml`, and `node_modules`.
+
+**Vitest + Playwright coexistence:** vitest in `packages/web` picks up `.spec.ts` files in `test/e2e/` and fails because Playwright's `test.describe()` is not vitest's. Solution: configure `exclude: ["test/e2e/**"]` in `vitest.config.ts` and add `--passWithNoTests` to the `test` script until unit tests are added.
+
+**Reconciler design:** Bus > PTY > FS > log precedence is correct — do NOT gate higher-precedence sources on seq. Cross-source seq numbers are not comparable. Higher-precedence always wins regardless of seq; within equal precedence, seq is the watermark.
+

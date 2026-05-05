@@ -1,0 +1,81 @@
+{
+  "_comment": "Aquarium habitat band layout. Positions are cell-grid integers relative to each band's top-left corner. The engine clips dressing items that fall outside the viewport. drift=true marks glyphs eligible for ambient drift animation.",
+  "bands": [
+    {
+      "id": "top",
+      "role": "lead",
+      "height": 4,
+      "_comment": "Lighthouse perch — kelp throne. Bubbles drift upward as ambient coordination signal.",
+      "dressing": [
+        { "cell": { "row": 0, "col": 68 }, "glyph": "╔", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 69 }, "glyph": "═", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 70 }, "glyph": "╗", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 68 }, "glyph": "║", "color": "dim", "drift": false },
+        { "cell": { "row": 1, "col": 70 }, "glyph": "║", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 68 }, "glyph": "╚", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 69 }, "glyph": "═", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 70 }, "glyph": "╝", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 5 }, "glyph": "·", "color": "accent", "drift": true },
+        { "cell": { "row": 2, "col": 15 }, "glyph": "·", "color": "fg", "drift": true },
+        { "cell": { "row": 1, "col": 28 }, "glyph": "·", "color": "dim", "drift": true },
+        { "cell": { "row": 3, "col": 42 }, "glyph": "·", "color": "accent", "drift": true },
+        { "cell": { "row": 0, "col": 55 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    },
+    {
+      "id": "mid-upper",
+      "role": "frontend",
+      "height": 4,
+      "_comment": "Coral garden — mood shells, pearl mannequin.",
+      "dressing": [
+        { "cell": { "row": 2, "col": 8 }, "glyph": "◆", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 12 }, "glyph": "○", "color": "fg", "drift": false },
+        { "cell": { "row": 1, "col": 22 }, "glyph": "◆", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 35 }, "glyph": "○", "color": "accent", "drift": false },
+        { "cell": { "row": 2, "col": 48 }, "glyph": "◆", "color": "fg", "drift": false },
+        { "cell": { "row": 0, "col": 60 }, "glyph": "○", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 3 }, "glyph": "~", "color": "dim", "drift": true },
+        { "cell": { "row": 1, "col": 55 }, "glyph": "~", "color": "dim", "drift": true }
+      ]
+    },
+    {
+      "id": "mid-lower",
+      "role": "backend",
+      "height": 4,
+      "_comment": "Hydrothermal vents (▲▼▲▼) — brass valves, pipe runs.",
+      "dressing": [
+        { "cell": { "row": 3, "col": 18 }, "glyph": "▲", "color": "alert", "drift": false },
+        { "cell": { "row": 3, "col": 19 }, "glyph": "▼", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 20 }, "glyph": "▲", "color": "alert", "drift": false },
+        { "cell": { "row": 3, "col": 21 }, "glyph": "▼", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 18 }, "glyph": "|", "color": "dim", "drift": false },
+        { "cell": { "row": 2, "col": 20 }, "glyph": "|", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 44 }, "glyph": "▲", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 45 }, "glyph": "▼", "color": "dim", "drift": false },
+        { "cell": { "row": 3, "col": 46 }, "glyph": "▲", "color": "accent", "drift": false },
+        { "cell": { "row": 3, "col": 47 }, "glyph": "▼", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 5 }, "glyph": "·", "color": "dim", "drift": true },
+        { "cell": { "row": 0, "col": 30 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    },
+    {
+      "id": "bottom",
+      "role": "scribe",
+      "height": 4,
+      "_comment": "Sunken library — coral bookshelves, nautilus quill, scroll-in-bottle.",
+      "dressing": [
+        { "cell": { "row": 0, "col": 4 }, "glyph": "[", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 5 }, "glyph": "=", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 6 }, "glyph": "]", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 7 }, "glyph": "[", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 8 }, "glyph": "=", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 9 }, "glyph": "]", "color": "dim", "drift": false },
+        { "cell": { "row": 0, "col": 25 }, "glyph": "[", "color": "accent", "drift": false },
+        { "cell": { "row": 0, "col": 26 }, "glyph": "=", "color": "accent", "drift": false },
+        { "cell": { "row": 0, "col": 27 }, "glyph": "]", "color": "accent", "drift": false },
+        { "cell": { "row": 1, "col": 50 }, "glyph": "~", "color": "dim", "drift": true },
+        { "cell": { "row": 2, "col": 62 }, "glyph": "·", "color": "dim", "drift": true }
+      ]
+    }
+  ]
+}
