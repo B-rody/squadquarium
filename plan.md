@@ -912,10 +912,18 @@ personal\squadquarium\` (currently: `plan.md` only).
       feature both depend on a real git history from day one.
 - [x] **`squad init`** in this repo. The default init seeds Scribe
       + Ralph; the v0 plan roster (Lead + Frontend + Backend +
-      Scribe) is filled in by hand-creating the missing agent
-      directories under `.squad/agents/` (since `squad hire` is
-      "implementation pending" in 0.9.4). Ralph stays — he's a v1+
-      ambient watchdog and harmless to seed early.
+      Tester + Scribe) is populated by the Coordinator during the
+      first `copilot --yolo` → `/agent squad` session (since
+      `squad hire` is "implementation pending" in 0.9.4 and the
+      Coordinator's `squad.agent.md` master prompt is what's
+      designed to drive onboarding from the SDK's seven role
+      templates — `lead`, `developer`, `tester`, `scribe`, `ralph`,
+      `designer`, `architect`). Tester is non-negotiable for v0
+      because hands-off autonomous build hinges on an independent
+      "is this actually working?" owner: vitest gates, Playwright
+      screenshot baselines, glyph-grid invariants, cross-platform
+      PTY smoke. Ralph stays dormant — he's a v1+ ambient watchdog
+      and harmless to leave seeded.
 
 (No Rust, no Tauri, no platform installers, no certs. v0 ships as a
 single npm package; users `npm install -g squadquarium` and run it.
