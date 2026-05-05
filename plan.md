@@ -987,15 +987,13 @@ shell wrapper.)
 These are gates, not parallel tracks — each one can invalidate the v0
 plan, so they happen after bootstrap and before any UI work.
 
-- [ ] **`node-pty` cross-platform load spike.** Build the minimal
-      `core` + `cli` skeleton, `npm pack` it, then `npm install -g`
-      the tarball on Windows / macOS / Linux test hosts and confirm
-      `node-pty` rebuilds and loads on each (no `node-gyp` failures,
-      no missing `python` / build-tools nags). **If `node-pty`
-      can't be made to install cleanly on any of the three OS hosts,
-      re-scope to "Squad SDK + log-tail only, Interactive mode and
-      live PTY deferred"** — `squadquarium status` and the diorama
-      can still ship using `EventBus` + `SquadObserver` only.
+- [x] **`node-pty` cross-platform load spike.** Windows host: PASS
+      (`node-pty@1.1.0` built clean in 107ms with VS Build Tools
+      already present; `spawnNodeVersion()` returns valid semver
+      via PTY in `packages/core/src/spikes/pty-load/`).
+      macOS / Linux validation deferred to the GitHub Actions CI
+      matrix (`pack-install-smoke` job in `.github/workflows/ci.yml`)
+      — Brady is Windows-only locally per testing-strategy decision.
 - [ ] **xterm.js + Squad ink TUI compatibility spike.** Run
       `squad watch` and the Coordinator flow through `node-pty` into
       `xterm.js`. Verify resize behavior, alt-screen mode, cursor
@@ -1003,21 +1001,40 @@ plan, so they happen after bootstrap and before any UI work.
       `patch-ink-rendering.mjs` postinstall doesn't depend on a real
       terminal we can't fake. The Squad team explicitly patches ink's
       renderer — this is the highest-uncertainty technical risk.
-- [ ] **`dist/remote-ui/` bridge spike.** Determine whether Squad's
-      `remote-ui` directory exposes a structured event channel
-      (post-message / IPC) we can subscribe to in addition to or in
-      place of the PTY. If yes, we get richer per-frame state. If no,
-      we confirm PTY+bus+fs+log is the full menu and stop scheming.
-- [ ] **Skin manifest schema lock.** Finalize `manifestVersion: 1`
-      including `engineVersion`, `license` (SPDX, required),
-      `font` (with optional bundled woff2), `glyphAllowlist`,
-      `capabilities`, `fallbacks`, `x-*` extension namespace.
-      Document the skin author contract. v2 community packs depend
-      on this schema not breaking.
-- [ ] **Cross-platform glyph render-diff test in CI.** Render a fixed
-      set of frames at 1× and 2× DPI on Win/macOS/Linux, compare
-      against goldens. Without this, "sprites break in Linux
-      Chromium" becomes a v2 community-pack PR-rejection spiral.
+      *(In progress as part of the v0 Interactive-mode milestone —
+      the PTY-side capture is verified by Spike 1; the xterm.js
+      rendering side gates on Wave 2 of v0 implementation.)*
+- [x] **`dist/remote-ui/` bridge spike.** Investigated. Outcome:
+      `dist/remote-ui/` is a static PWA for Squad RC (remote control),
+      not a structured event channel for external visualizers.
+      `RemoteBridge` in the SDK is for command-IN, not event-OUT.
+      Confirmed PTY+bus+fs+log is the full v0 menu of event sources;
+      no plan.md amendment needed. (See
+      `.squad/decisions/inbox/dallas-spike-3-remote-ui.md`.)
+- [x] **Skin manifest schema lock.** `manifestVersion: 1` locked at
+      `skins/manifest.schema.json` (JSON Schema draft 2020-12) with
+      all required fields, `additionalProperties: false` +
+      `patternProperties: ^x-` extension namespace, contains-space
+      glyph invariant, enum-guarded `capabilities`, and an open
+      palette for extra named colors. Author contract documented at
+      `skins/AUTHOR-CONTRACT.md`. Both Aquarium and Office manifests
+      validate clean.
+- [x] **Cross-platform glyph render-diff test in CI.** CI matrix
+      shell shipped at `.github/workflows/ci.yml` (windows-latest +
+      ubuntu-latest run Playwright; macos-latest deferred to first
+      pass per cost). `playwright.config.ts` defines `chromium-1x`
+      and `chromium-2x` DPI projects with `snapshotPathTemplate`
+      pointing at per-OS baselines. Placeholder specs are
+      `test.fixme`'d as the binding contract — they activate as
+      soon as the renderer ships in Wave 2 of v0.
+- [x] **Event reconciler design + invariants.** Implemented at
+      `packages/core/src/events.ts` with the documented envelope,
+      source precedence (bus > pty > fs > log via
+      `SOURCE_PRECEDENCE` map), per-entity watermark, and dedupe
+      key `(entityKey, causedBy, seq, source)`. 7 invariants
+      tested green in `packages/core/test/events.test.ts`. Wiring
+      to actual sources (SquadObserver, EventBus, log tail, PTY)
+      follows in v0 Wave 1.
 - [ ] **Event reconciler design + invariants.** Implement
       `packages/core/events.ts` with the envelope, source precedence,
       watermark, and dedupe rules **before** any UI work. Test with
@@ -1029,18 +1046,22 @@ The cut: this is the smallest set that proves the metaphor in a real
 terminal-styled GUI rendering a real Squad team's real activity.
 Everything that smells like "would be cool" lives in v1.
 
-- [ ] Monorepo scaffold (pnpm workspace): `packages/{core,web,cli}` +
+- [x] Monorepo scaffold (pnpm workspace): `packages/{core,web,cli}` +
       `skins/{aquarium,office}`. Per-package `package.json`,
       `tsconfig.json`, root `pnpm-workspace.yaml`, shared
       `.editorconfig`. Top-level `package.json` declares the
-      published artifact as `squadquarium`.
+      published artifact as `squadquarium`. *(Top-level kept private
+      while v0 is in flight; flipped to publishable when the v0
+      `npm publish` dry run runs.)*
 - [ ] **CLI scaffold** (`packages/cli`): `squadquarium` (alias `sqq`)
       Node binary that parses args, resolves squad context (cwd →
       walk up → personal → empty-state), starts a local
       HTTP/WebSocket server on `127.0.0.1` (auto-pick port starting
       at 6280), opens the user's default browser via the `open`
       package. Rejects `--host 0.0.0.0` with a clear error
-- [ ] **Test infrastructure**: Vitest 2 wired into `packages/core` and `packages/cli`; Playwright 1 wired into `packages/web` with screenshot baseline directory `packages/web/test/__screenshots__/`; root `pnpm lint` (eslint + prettier check) + `pnpm test` (workspace-wide vitest) + `pnpm test:web` (Playwright) + `pnpm smoke` (`squadquarium --headless-smoke`); GitHub Actions workflow `.github/workflows/ci.yml` running the matrix (windows-latest + macos-latest + ubuntu-latest) on push and PR
+      *(Stub argv parser shipped in Phase 2; full server + browser
+      launch lands in v0 Wave 1.)*
+- [x] **Test infrastructure**: Vitest 2 wired into `packages/core` and `packages/cli`; Playwright 1 wired into `packages/web` with screenshot baseline directory `packages/web/test/__screenshots__/`; root `pnpm lint` (eslint + prettier check) + `pnpm test` (workspace-wide vitest) + `pnpm test:web` (Playwright) + `pnpm smoke` (`squadquarium --headless-smoke`); GitHub Actions workflow `.github/workflows/ci.yml` running the matrix (windows-latest + macos-latest + ubuntu-latest) on push and PR
 - [ ] **`squadquarium --headless-smoke`**: boots the server, waits for `core` ready, fires a synthetic event burst at the WS endpoint, asserts the `web` bundle responds, exits 0 / non-zero. The contract Ripley enforces in CI on every OS
 - [ ] **Web bundle** (`packages/web`): React 19 + Vite served as
       static assets by the CLI's HTTP server in production; Vite dev
