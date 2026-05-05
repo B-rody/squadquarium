@@ -4,28 +4,22 @@ How to decide who handles what.
 
 ## Routing Table
 
-| Work Type                           | Route To  | Examples |
-|-------------------------------------|-----------|----------|
-| Plan amendments / scope decisions   | Lead      | Edit `plan.md`, cut a v0 feature, add a spike, sequence work |
-| Browser / renderer / skins          | Frontend  | `packages/web/*`, skin manifest schema, ANSI display rendering, animation FSMs |
-| Node CLI / process orchestration    | Backend   | `packages/core/*`, `node-pty`, WebSocket server, Squad event ingestion, ANSI parsing, CLI flags |
-| Pre-v0 spikes (cross-platform PTY)  | Backend   | `node-pty` macOS/Linux/Windows ConPTY load test |
-| Pre-v0 spikes (skin manifest schema)| Frontend  | Schema v1 spike, validator, reference Aquarium + Office skins |
-| Pre-v0 spikes (packaging+startup)   | Backend   | `npm install -g`, single-binary launch, browser-open path |
-| Code review                         | Lead      | Reviews PRs against `plan.md` intent first, code quality second |
-| Scope & priorities                  | Lead      | What ships in v0 vs v1+, trade-offs, when to invalidate the plan |
-| Session logging / decisions merge   | Scribe    | Automatic — never needs routing |
-| Persistent memory across sessions   | Ralph     | Dormant in v0; activates in v1+ when the watch daemon ships |
+| Work Type | Route To | Examples |
+|-----------|----------|----------|
+| {domain 1} | {Name} | {example tasks} |
+| {domain 2} | {Name} | {example tasks} |
+| {domain 3} | {Name} | {example tasks} |
+| Code review | {Name} | Review PRs, check quality, suggest improvements |
+| Testing | {Name} | Write tests, find edge cases, verify fixes |
+| Scope & priorities | {Name} | What to build next, trade-offs, decisions |
+| Session logging | Scribe | Automatic — never needs routing |
 
 ## Issue Routing
 
-| Label              | Action                                                            | Who    |
-|--------------------|-------------------------------------------------------------------|--------|
-| `squad`            | Triage: analyze issue, assign `squad:{member}` label              | Lead   |
-| `squad:lead`       | Lead picks up the issue                                           | Lead   |
-| `squad:frontend`   | Frontend picks up the issue                                       | Frontend |
-| `squad:backend`    | Backend picks up the issue                                        | Backend |
-| `squad:scribe`     | Scribe picks up the issue (docs / history work)                   | Scribe |
+| Label | Action | Who |
+|-------|--------|-----|
+| `squad` | Triage: analyze issue, assign `squad:{member}` label | Lead |
+| `squad:{name}` | Pick up issue and complete the work | Named member |
 
 ### How Issue Assignment Works
 
@@ -38,10 +32,10 @@ How to decide who handles what.
 
 1. **Eager by default** — spawn all agents who could usefully start work, including anticipatory downstream work.
 2. **Scribe always runs** after substantial work, always as `mode: "background"`. Never blocks.
-3. **Quick facts → coordinator answers directly.** Don't spawn an agent for "what port does the dev server run on?"
+3. **Quick facts → coordinator answers directly.** Don't spawn an agent for "what port does the server run on?"
 4. **When two agents could handle it**, pick the one whose domain is the primary concern.
 5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
-6. **Anticipate downstream work.** If Backend exposes a new event shape, spawn Frontend in parallel to update the renderer.
-7. **Plan invalidation is a Lead task.** If a spike result contradicts `plan.md`, route to Lead before any feature code lands.
-8. **Issue-labeled work** — when a `squad:{member}` label is applied to an issue, route to that member. The Lead handles all `squad` (base label) triage.
+6. **Anticipate downstream work.** If a feature is being built, spawn the tester to write test cases from requirements simultaneously.
+7. **Issue-labeled work** — when a `squad:{member}` label is applied to an issue, route to that member. The Lead handles all `squad` (base label) triage.
+
 
