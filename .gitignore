@@ -1,0 +1,40 @@
+# Squad: ignore runtime state (logs, inbox, sessions)
+.squad/orchestration-log/
+.squad/log/
+.squad/decisions/inbox/
+.squad/sessions/
+.squad/.scratch/
+# Squad: SubSquad activation file (local to this machine)
+.squad-workstream
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.npmrc.local
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+.turbo/
+.cache/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Squadquarium runtime (when v0 ships)
+.squadquarium/
+
