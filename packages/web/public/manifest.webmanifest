@@ -1,0 +1,10 @@
+{
+  "name": "Squadquarium",
+  "short_name": "Squadquarium",
+  "description": "Terminal-styled ambient diorama for your Squad AI team",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001f1c",
+  "theme_color": "#00bfa5",
+  "icons": []
+}

@@ -1,38 +1,81 @@
-import { Command } from "commander";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
+import open from "open";
 import path from "node:path";
+import { SquadStateAdapter } from "@squadquarium/core";
+import { parseArgs } from "./argv.js";
+import { resolveContext } from "./context.js";
+import { formatDoctor, runDoctor } from "./doctor.js";
+import { runHeadlessSmoke } from "./headless-smoke.js";
+import { startServer, type ServerInstance } from "./server.js";
+import { printStatus } from "./status.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
+void main();
 
-// Resolve version from package.json without relying on import assertions (ESM compat)
-const pkgPath = path.resolve(__dirname, "..", "package.json");
-const pkg = require(pkgPath) as { version: string };
+async function main(): Promise<void> {
+  let server: ServerInstance | null = null;
+  let adapter: SquadStateAdapter | null = null;
 
-const program = new Command();
+  try {
+    const args = parseArgs();
+    const cwd = path.resolve(args.path);
+    const skinsDir = path.resolve(process.cwd(), "skins");
 
-program
-  .name("squadquarium")
-  .description("Ambient terminal diorama for squad agent status")
-  .version(pkg.version, "-V, --version")
-  .argument("[path]", "path to the squad project directory", process.cwd())
-  .option("--personal", "show only your own sessions")
-  .option("--headless-smoke", "boot, verify, then exit 0 (CI smoke use)")
-  .action((projectPath: string, opts: { personal?: boolean; headlessSmo: boolean }) => {
-    if (opts.headlessSmo || process.argv.includes("--headless-smoke")) {
-      // Smoke mode: verify the CLI can parse args and exit clean.
-      // Server boot is a v0 milestone — not yet wired.
-      console.log("squadquarium smoke: ok");
-      process.exit(0);
+    if (args.subcommand === "doctor") {
+      const result = await runDoctor();
+      console.log(formatDoctor(result));
+      process.exitCode = result.ok ? 0 : 1;
+      return;
     }
 
-    // Full boot is wired in a later v0 milestone.
-    console.log(`squadquarium: resolving squad project at ${path.resolve(projectPath)}`);
-    if (opts.personal) {
-      console.log("squadquarium: --personal mode active");
+    if (args.subcommand === "status") {
+      process.exitCode = await printStatus({ cwd, personal: args.personal, skinsDir });
+      return;
     }
-    console.log("squadquarium: server boot not yet implemented (pre-v0 scaffold)");
+
+    const context = await resolveContext({ cwd, personal: args.personal });
+    adapter = context.squadRoot
+      ? await SquadStateAdapter.create({
+          cwd: context.projectRoot,
+          personal: context.personal,
+          skinsDir,
+        })
+      : null;
+    const mode = adapter ? context.mode : "empty-state";
+    const squadRoot = adapter?.getSquadRoot() ?? context.squadRoot;
+
+    server = await startServer({
+      adapter,
+      port: args.port,
+      host: args.host,
+      squadVersion: adapter?.getSquadVersion() ?? null,
+      squadRoot,
+      mode,
+      skinsDir,
+    });
+
+    if (args.headlessSmoke) {
+      const result = await runHeadlessSmoke({ url: server.url, squadRoot });
+      console.log(JSON.stringify(result));
+      return;
+    }
+
+    console.log(`squadquarium: listening at ${server.url}`);
+    if (args.open) {
+      await open(server.url).catch(() => undefined);
+    }
+
+    await waitForShutdown();
+  } catch (err) {
+    console.error(`squadquarium: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  } finally {
+    await server?.close().catch(() => undefined);
+    await adapter?.dispose().catch(() => undefined);
+  }
+}
+
+function waitForShutdown(): Promise<void> {
+  return new Promise((resolve) => {
+    process.once("SIGINT", resolve);
+    process.once("SIGTERM", resolve);
   });
-
-program.parse();
+}

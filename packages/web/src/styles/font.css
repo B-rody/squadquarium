@@ -1,0 +1,9 @@
+/* JetBrains Mono — vendored woff2, SIL Open Font License 1.1 (redistributable) */
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block; /* no fallback flash */
+  font-feature-settings: "liga" 0; /* disable ligatures — glyph identity must be 1:1 */
+}

@@ -1,0 +1,87 @@
+import type { SquadquariumEvent } from "../events.js";
+
+export interface AgentSummary {
+  name: string;
+  role: string;
+  status: string;
+  charterPath: string;
+  historyPath: string;
+}
+
+export interface DecisionEntry {
+  date: string;
+  by: string;
+  what: string;
+  why: string;
+}
+
+export interface LogEntry {
+  timestamp: string;
+  agent?: string;
+  topic?: string;
+  body: string;
+  source: "orchestration-log" | "log";
+  path: string;
+}
+
+export interface Snapshot {
+  agents: AgentSummary[];
+  decisions: DecisionEntry[];
+  logTail: LogEntry[];
+  skinNames: string[];
+}
+
+export type ServerFrame =
+  | {
+      kind: "hello";
+      serverSeq: 0;
+      squadquariumVersion: string;
+      squadVersion: string | null;
+      squadRoot: string | null;
+      mode: "connected" | "empty-state";
+    }
+  | { kind: "snapshot"; serverSeq: number; snapshot: Snapshot }
+  | { kind: "event"; serverSeq: number; event: SquadquariumEvent }
+  | {
+      kind: "pty-spawned";
+      serverSeq: number;
+      ptyId: string;
+      replyTo: number;
+    }
+  | { kind: "pty-out"; serverSeq: number; ptyId: string; data: string }
+  | {
+      kind: "pty-exit";
+      serverSeq: number;
+      ptyId: string;
+      code: number;
+      signal?: string;
+    }
+  | {
+      kind: "error";
+      serverSeq: number;
+      replyTo?: number;
+      message: string;
+      code: string;
+    }
+  | { kind: "pong"; serverSeq: number; clientSeq: number };
+
+export type ClientFrame =
+  | {
+      kind: "pty-spawn";
+      clientSeq: number;
+      cmd: string;
+      args: string[];
+      cwd?: string;
+      cols: number;
+      rows: number;
+    }
+  | { kind: "pty-write"; clientSeq: number; ptyId: string; data: string }
+  | {
+      kind: "pty-resize";
+      clientSeq: number;
+      ptyId: string;
+      cols: number;
+      rows: number;
+    }
+  | { kind: "pty-kill"; clientSeq: number; ptyId: string }
+  | { kind: "ping"; clientSeq: number };

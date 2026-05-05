@@ -53,3 +53,17 @@
 
 **Reconciler design:** Bus > PTY > FS > log precedence is correct — do NOT gate higher-precedence sources on seq. Cross-source seq numbers are not comparable. Higher-precedence always wins regardless of seq; within equal precedence, seq is the watermark.
 
+### 2026-05-05T22:30Z — Phase 3 Wave 1: Full v0 backend
+
+**SDK adapter:** SDK's SquadObserver SKIPS orchestration-log/ changes by design (see squad-observer.js:88-90). Must use a separate fs.watch for orchestration-log/. SquadObserver emits agent:milestone events with payload { action: 'file_change' } — subscribe via EventBus.subscribeAll() and filter by payload.action to distinguish fs source from bus source. SDK Agent.charterPath is set by the collection; historyPath must be derived by replacing 'charter.md' with 'history.md'.
+
+**PTY pool:** node-pty.spawn() is synchronous; wrap in async for API consistency. EventEmitter used for data/exit routing per ptyId. Pool cap = 4; PtyPoolFullError carries code: 'pty-pool-full' so the WS server can send the right error code to the client.
+
+**Lock file:** process.kill(pid, 0) is cross-platform for liveness check (throws if process doesn't exist). Stale lock detection uses this. Lock file lives at {squadRoot}/.scratch/squadquarium.lock; mkdirSync with recursive:true ensures .scratch/ exists.
+
+**Headless smoke:** WS client uses the same 'ws' package. smoke test writes a temp file to decisions/inbox/ and waits for the SquadObserver FS event. Cleanup removes the file after the test regardless of outcome.
+
+**WS server:** Used http.createServer + WebSocketServer({ noServer: true }) pattern for fine-grained upgrade control. Origin validation rejects anything that isn't 127.0.0.1, localhost, or file:// (electron use case). serverSeq is per-connection (not global) — each connection gets its own counter starting at 0.
+
+**Static serving:** packages/web/dist/ is resolved relative to import.meta.url of server.ts using path.resolve. Falls back gracefully when web bundle doesn't exist yet (404 for static assets; WS path still works).
+

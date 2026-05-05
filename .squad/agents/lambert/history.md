@@ -47,3 +47,22 @@
 - Parker created manifest.json placeholders that were already valid against my schema (schema was designed to accept them). I updated both manifests to add: complete glyphAllowlist covering all sprite/habitat glyphs, proper fallbacks, author URL, font.asset, version bump 0.0.1→0.1.0, and x-skin-notes extension.
 - sprites.json, habitat.json, vocab.json, tokens.css were empty `{}` / empty CSS — replaced entirely with full content.
 
+
+### 2026-05-05T23:31Z — Phase 3 wave 1: Web v0 bundle
+
+**Implementation decisions:**
+
+- Added the web runtime dependencies for Zustand state, xterm.js terminal rendering, resizable panels, and static skin copying. Core now exports the shared WebSocket protocol types from `transport/protocol`.
+- Served skins from `/skins/<name>/...` in both dev and build: Vite dev uses a local middleware, while production copies the workspace `skins` directory into `dist/skins`.
+- Kept skin loading strict at runtime: manifest v1 requires the locked fields, palette hex tokens, and a space in `glyphAllowlist`; invalid manifests surface a visible load error and set `window.__squadquarium.skinManifestValid` for tests.
+- Rendered habitat sprites on a glyph atlas Canvas2D path with allowlist fallback to `▢`; ambient drift runs at 12 fps and role state is derived from recent reconciled events.
+- Kept the log terminal read-only in ambient mode. Interactive PTY mode is modal, toggles stdin only while active, exits via ESC, and intentionally does not load WebLinksAddon.
+- Added the v0 PWA affordance (manifest + service worker) and vendored JetBrains Mono woff2 so glyph metrics are stable offline.
+- Fixed Windows validation blockers in the CLI while running the full repo suite: absolute `C:\...` paths are parsed as root paths rather than subcommands, help exits 0, and shutdown terminates open WebSocket clients cleanly.
+
+**Validation:**
+
+- `pnpm install`
+- `pnpm -r build`
+- `pnpm -r test`
+- `pnpm lint`

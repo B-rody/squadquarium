@@ -1,0 +1,46 @@
+@import "./font.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--skin-bg, #001f1c);
+  color: var(--skin-fg, #00bfa5);
+  font-family: var(--skin-font-family, "JetBrains Mono", monospace);
+  font-size: var(--skin-font-size, 14px);
+  line-height: 1;
+}
+
+/* CRT effects — toggled via data-crt attribute on <body> */
+body[data-crt="scanlines"]::after,
+body[data-crt="all"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(0, 0, 0, var(--skin-scanline-opacity, 0.08)) 1px,
+    rgba(0, 0, 0, var(--skin-scanline-opacity, 0.08)) 2px
+  );
+  z-index: 9999;
+}
+
+body[data-crt="bloom"] .glyph-canvas,
+body[data-crt="all"] .glyph-canvas {
+  filter: drop-shadow(
+    0 0 var(--skin-bloom-radius, 4px) var(--skin-bloom-color, rgba(0, 191, 165, 0.35))
+  );
+}
