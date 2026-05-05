@@ -1,3 +1,52 @@
 {
-  "agents": {}
+  "agents": {
+    "dallas": {
+      "persistent_name": "Dallas",
+      "universe": "Alien",
+      "role": "Lead",
+      "created_at": "2026-05-05T22:30:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "lambert": {
+      "persistent_name": "Lambert",
+      "universe": "Alien",
+      "role": "Frontend Dev",
+      "created_at": "2026-05-05T22:30:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "parker": {
+      "persistent_name": "Parker",
+      "universe": "Alien",
+      "role": "Backend Dev",
+      "created_at": "2026-05-05T22:30:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "ripley": {
+      "persistent_name": "Ripley",
+      "universe": "Alien",
+      "role": "Tester / Reviewer",
+      "created_at": "2026-05-05T22:30:00Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "scribe": {
+      "persistent_name": "Scribe",
+      "universe": "exempt",
+      "role": "Session Logger",
+      "created_at": "2026-05-05T21:00:05Z",
+      "legacy_named": false,
+      "status": "active"
+    },
+    "ralph": {
+      "persistent_name": "Ralph",
+      "universe": "exempt",
+      "role": "Work Monitor",
+      "created_at": "2026-05-05T21:00:05Z",
+      "legacy_named": false,
+      "status": "dormant"
+    }
+  }
 }

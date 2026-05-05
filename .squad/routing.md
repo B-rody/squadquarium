@@ -6,13 +6,17 @@ How to decide who handles what.
 
 | Work Type | Route To | Examples |
 |-----------|----------|----------|
-| {domain 1} | {Name} | {example tasks} |
-| {domain 2} | {Name} | {example tasks} |
-| {domain 3} | {Name} | {example tasks} |
-| Code review | {Name} | Review PRs, check quality, suggest improvements |
-| Testing | {Name} | Write tests, find edge cases, verify fixes |
-| Scope & priorities | {Name} | What to build next, trade-offs, decisions |
-| Session logging | Scribe | Automatic — never needs routing |
+| Scope, architecture, decisions, plan.md amendments | Dallas (Lead) | Decompose v0 milestones, resolve trade-offs, approve PRs, amend plan |
+| Frontend / UI / glyph renderer / skins | Lambert | React 19 components, Canvas2D glyph cells, xterm.js wiring, skin loaders, PWA manifest |
+| Backend / SDK integration / process model | Parker | `core` package, Squad SDK adapter, `SquadObserver`, `node-pty` pool, event reconciler, HTTP/WS server, CLI bin |
+| Testing, validation, CI, screenshot baselines | Ripley | vitest suites, Playwright screenshot diffs, glyph-grid invariants, cross-platform PTY smoke, per-commit quality gate |
+| Code review (cross-cutting) | Ripley primary, Dallas secondary | Ripley reviews engineering PRs first; Dallas reviews scope/architecture |
+| Session logging, decisions merging, history archive | Scribe | Automatic — never needs routing |
+| Watch / monitor (dormant v0) | Ralph | Reserved for v1+ ambient watchdog; do not spawn in v0 |
+
+**Reviewer rejection lockout:** Ripley owns the strict-lockout reviewer rule. If Ripley rejects a PR/spike from an engineer, that engineer is **locked out** of producing the next revision — the Coordinator must route the fix to a different agent (typically the other engineer, or escalate to Dallas). See `.github/agents/squad.agent.md` → Reviewer Rejection Protocol.
+
+**Dogfooding lens:** Whenever an agent feels friction with Squad's UX (a missing CLI, a confusing error, a gap that the diorama would have made obvious), append a one-line distilled pattern to `.squad/identity/wisdom.md`. This is a v0 deliverable.
 
 ## Issue Routing
 

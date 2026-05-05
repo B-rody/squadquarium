@@ -803,6 +803,50 @@ Rules (v0):
 One Node process serving HTTP/WebSocket on loopback + the filesystem
 (`.squad/`). That's the whole runtime in v0.
 
+## Testing & quality
+
+Tester (Ripley) owns the cross-cutting validation suite; engineers
+(Lambert, Parker) own unit tests for their own code. The per-commit
+quality gate is non-negotiable.
+
+### Test stack
+
+| Surface          | Framework        | Owner               | Scope                                                                               |
+| ---------------- | ---------------- | ------------------- | ----------------------------------------------------------------------------------- |
+| `packages/core`  | Vitest 2.x       | Parker (units), Ripley (cross-cutting) | SDK adapter facade, `SquadObserver` classifier, reconciler invariants, PTY pool lifecycle, lock-file PID logic, context resolution, `squadquarium doctor` checks |
+| `packages/cli`   | Vitest 2.x       | Parker (units), Ripley (cross-cutting) | Argv parsing, context resolution end-to-end, port auto-pick, `--personal` flag, `--headless-smoke` mode, browser-launch shim |
+| `packages/web`   | Vitest 2.x + Playwright 1.x | Lambert (units), Ripley (cross-cutting + visual) | Component tests, glyph-grid invariants, palette token assertions, manifest schema compliance, ANSI trust boundary, Interactive-mode focus toggle, screenshot baselines per skin × state × OS at 1× and 2× DPI |
+| Cross-platform install | GitHub Actions matrix | Ripley | `pnpm pack` → `npm install -g <tarball>` → `squadquarium --headless-smoke` on `windows-latest` + `macos-latest` + `ubuntu-latest`. This is the `node-pty` cross-platform validation. |
+
+### Sprite / visual validation
+
+- **Playwright screenshot baselines** for each skin × each band-state combination, captured per OS at 1× and 2× DPI. Goldens live at `packages/web/test/__screenshots__/{skin}/{state}/{os}-{dpi}.png`. Updated only via explicit `pnpm test:web -u` from a clean run; CI never auto-updates.
+- **Glyph-grid invariants** (asserted programmatically): cell-row alignment, integer cell offsets for drift, palette tokens used not raw colors, `font-feature-settings: "liga" 0`, sprite grid size constant across skins so the loader doesn't reflow.
+- **Manifest schema compliance**: every skin's `manifest.json` validated against the v1 JSON Schema in CI.
+- **Glyph allowlist enforcement**: rendered text whitelisted against the active skin's `glyphAllowlist`; missing glyphs render `▢` and emit a dev-console warning. Both behaviors tested.
+- **Drives the v0 deliverable.** Aquarium and Office skin shipping checkpoints are gated on green render-diff CI on all three runner OSes.
+
+### CI strategy
+
+- **GitHub Actions matrix** — `windows-latest` (Brady's only local platform), `macos-latest`, `ubuntu-latest`. Node ≥ 22.5 (the minimum Squad requires).
+- **Per-push job** — `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` (Vitest workspace-wide) → `pnpm build` → `pnpm test:web` (Playwright on each OS) → `pnpm smoke` (`squadquarium --headless-smoke` on each OS). Playwright screenshot diffs uploaded as artifacts on failure.
+- **Pack-and-install smoke (release-candidate trigger)** — `pnpm pack` → `npm install -g <tarball>` → `squadquarium --headless-smoke` on each OS runner. Failures here block the release candidate.
+- **Branch protection (when GitHub remote exists):** all matrix jobs required green before merge to `main`.
+
+### Quality gate per commit
+
+Every commit on `main` must satisfy:
+
+```
+pnpm lint && pnpm test && pnpm build && pnpm smoke
+```
+
+— green, on the dev host (Windows) before push. CI re-runs the same commands across the matrix on push.
+
+`pnpm smoke` runs `node packages/cli/dist/index.js --headless-smoke`, which boots the server, waits for `core` to report ready, fires a synthetic event burst at the WS endpoint, asserts the `web` bundle responds, and exits with a non-zero code on any failure.
+
+**Reviewer-rejection lockout (strict).** When Ripley rejects a PR, the original author is **locked out** of producing the next revision; the Coordinator routes the fix to a different engineer or escalates to Dallas. Recursively: if that revision is also rejected, the second author is also locked out. This is enforced mechanically in the Coordinator's spawn logic (`squad.agent.md` → Reviewer Rejection Protocol), not by trust.
+
 ## CLI surface (`squadquarium` / `sqq`)
 
 The published binary is `squadquarium`, aliased to `sqq` for typing
@@ -924,6 +968,14 @@ personal\squadquarium\` (currently: `plan.md` only).
       screenshot baselines, glyph-grid invariants, cross-platform
       PTY smoke. Ralph stays dormant — he's a v1+ ambient watchdog
       and harmless to leave seeded.
+- [x] **Cast the v0 roster from the Alien universe** —
+      Dallas (Lead), Lambert (Frontend), Parker (Backend),
+      Ripley (Tester), Scribe (always Scribe), Ralph (dormant).
+      Charters seeded with opinionated voices. Recorded in
+      `.squad/team.md`, `.squad/routing.md`,
+      `.squad/casting/registry.json`, and
+      `.squad/casting/history.json` (assignment id
+      `v0-roster-2026-05-05`).
 
 (No Rust, no Tauri, no platform installers, no certs. v0 ships as a
 single npm package; users `npm install -g squadquarium` and run it.
@@ -985,8 +1037,11 @@ Everything that smells like "would be cool" lives in v1.
 - [ ] **CLI scaffold** (`packages/cli`): `squadquarium` (alias `sqq`)
       Node binary that parses args, resolves squad context (cwd →
       walk up → personal → empty-state), starts a local
-      HTTP/WebSocket server on `127.0.0.1`, opens the user's default
-      browser via the `open` package
+      HTTP/WebSocket server on `127.0.0.1` (auto-pick port starting
+      at 6280), opens the user's default browser via the `open`
+      package. Rejects `--host 0.0.0.0` with a clear error
+- [ ] **Test infrastructure**: Vitest 2 wired into `packages/core` and `packages/cli`; Playwright 1 wired into `packages/web` with screenshot baseline directory `packages/web/test/__screenshots__/`; root `pnpm lint` (eslint + prettier check) + `pnpm test` (workspace-wide vitest) + `pnpm test:web` (Playwright) + `pnpm smoke` (`squadquarium --headless-smoke`); GitHub Actions workflow `.github/workflows/ci.yml` running the matrix (windows-latest + macos-latest + ubuntu-latest) on push and PR
+- [ ] **`squadquarium --headless-smoke`**: boots the server, waits for `core` ready, fires a synthetic event burst at the WS endpoint, asserts the `web` bundle responds, exits 0 / non-zero. The contract Ripley enforces in CI on every OS
 - [ ] **Web bundle** (`packages/web`): React 19 + Vite served as
       static assets by the CLI's HTTP server in production; Vite dev
       server with HMR proxied through the CLI in development
