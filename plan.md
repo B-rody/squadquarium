@@ -758,6 +758,46 @@ Skins ship as data manifests (see [Skins](#skins)). The skin
 registry is loaded at startup; toggling skins triggers a re-bind of
 the renderer's font atlas + palette tokens — restart-free.
 
+### Concurrency model
+
+Squadquarium reads `.squad/` continuously and never writes to it
+directly — all mutations flow through Squad's Coordinator (PTY) or the
+`squad` CLI. That keeps Squad as the single source of truth for team
+state, but it doesn't make concurrency disappear. Several mutators can
+still race against the same workspace:
+
+- Two Squadquarium tabs open against the same `.squad/`
+- `squad triage` running in another terminal
+- The user invoking `squad` directly from a shell mid-session
+- A Squad GitHub Action committing back to `.squad/`
+
+Rules (v0):
+
+- **Single-flow invariant.** Mutating UI flows — Hatcher, Scriptorium,
+  approval-queue confirmations, anything that prompts the Coordinator
+  to write — acquire a workspace-scoped lock at
+  `.squad/.scratch/squadquarium.lock`. Lock holds the Squadquarium PID
+  + start time. Stale locks (PID gone) are auto-cleared on the next
+  `SquadObserver` scan. A second Hatcher attempt in another tab sees
+  the lock and surfaces "another flow is in progress — open it?"
+  rather than racing. `.scratch/` is already gitignored by Squad.
+- **External-mutator detection.** Any UI flow that stages user intent
+  (a draft conversation, a pending confirmation) records a `.squad/`
+  watermark on entry. If `SquadObserver` reports a mutation before the
+  user confirms, the flow re-renders against fresh state and the
+  staged draft is flagged "stale — review the changes below." We never
+  silently merge over a foreign edit.
+- **Read paths are lock-free.** Diorama rendering, log lane, and trace
+  panel all read against the latest reconciler snapshot without
+  acquiring any lock. Stale reads are bounded by the reconciler's
+  watermark logic ([Event reconciliation](#event-reconciliation)).
+- **Triage co-existence.** When `squad triage` is detected as running
+  (by `SquadObserver` seeing its activity in `orchestration-log/`),
+  Hatcher / Scriptorium flows refuse to start until triage is idle, or
+  the user explicitly overrides. This avoids the worst pathology:
+  triage and Hatcher both nudging the Coordinator to mutate the same
+  agent simultaneously.
+
 ### No DB, no backend service
 
 One Node process serving HTTP/WebSocket on loopback + the filesystem
