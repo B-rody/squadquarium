@@ -2,6 +2,31 @@
 
 ## Active Decisions
 
+### 2026-05-05T22:30Z — Spike 3: remote-ui bridge investigation outcome
+**By:** Dallas (Lead) — Spike 3 investigation  
+**What:** Pre-v0 spike 3 confirmed that `dist/remote-ui/` is a static PWA bundle (the Squad RC web UI), not a structured event channel. The EventBus WebSocket bridge (`startWSBridge` on port 6277) remains the highest-precedence activity source. The spike's goal was to determine if a fifth event source exists; finding none confirms Squadquarium stays on PTY+bus+fs+log.  
+**Why:** Plan.md item 10 required this investigation to decide: either remote-ui becomes a fifth source, or the existing four sources remain canonical. Spike confirms the latter. No plan.md amendments needed.
+
+### 2026-05-05T22:30Z — Spike 4: Manifest schema lock at manifestVersion 1
+**By:** Lambert (Frontend) — Spike 4 delivery  
+**What:** `skins/manifest.schema.json` (JSON Schema draft 2020-12) is the canonical v1 schema. Both stock skins (aquarium, office) validate against it. Integer discriminant (`manifestVersion: const 1`), npm semver ranges for `engineVersion`, SPDX strings for license, `glyphAllowlist` with space requirement. Delivered: full `manifest.json`, `sprites.json`, `habitat.json`, `vocab.json`, `tokens.css` for both skins, plus `AUTHOR-CONTRACT.md` and `validate.mjs`.  
+**Why:** Locks the skin API for v0; v2 evolution is additive via `x-*` namespace. Both stock skins now populate and validate clean.
+
+### 2026-05-05T22:30Z — Spike 1: node-pty cross-platform load (Windows) PASS
+**By:** Parker (Backend) — Spike 1 Windows validation  
+**What:** node-pty 1.1.0 installed and built its native addon on Windows without manual intervention (one-time `pnpm approve-builds` is expected; CI will pre-approve via `.pnpmfile.cjs`). Test `packages/core/test/spikes/pty-load.test.ts` spawned `node --version` via PTY, captured `v24.14.1`, passed. macOS/Linux deferred to CI matrix.  
+**Why:** Validates option (a) from plan.md "node-pty install fallback"—the native build succeeds locally. CI will confirm cross-platform; if any OS fails, fallback is ready.
+
+### 2026-05-05T22:30Z — Spike 6: Event reconciler design + invariants implemented
+**By:** Parker (Backend) — Spike 6 delivery  
+**What:** `packages/core/src/events.ts` implements the reconciler envelope, precedence (`bus>pty>fs>log`), deduplication key, and seven invariant rules. All tests pass: single-source ordering, cross-source precedence, duplicate detection, stale-seq rejection, listener emission gating. Exported from `packages/core/src/index.ts`.  
+**Why:** Event reconciliation is the v0 linchpin for fusing PTY + bus + fs + log. Implemented and tested before any UI wiring. Precedence table is stable and exported for engine use.
+
+### 2026-05-05T22:30Z — Spike 5: CI matrix + per-commit gate + screenshot baseline policy
+**By:** Ripley (Tester) — Spike 5 delivery  
+**What:** GitHub Actions matrix (ubuntu-latest, windows-latest, macos-latest) running `pnpm lint && pnpm test && pnpm build && pnpm test:web` (Playwright skipped on macOS in v0 for cost/speed). Per-commit gate via `pnpm smoke` (calls `node scripts/quality-gate.mjs`). Screenshot baselines per-OS in `packages/web/test/e2e/__screenshots__/`; `pnpm test:web -u` updates only from clean run; CI never auto-updates. Pixel tolerance = zero.  
+**Why:** Brady is offline; autonomous build with per-commit gate enforced by Tester is the only guard rail. macOS Playwright deferred to v1 (10× cost premium, 2–3× slower). CONTRIBUTING.md documents the gate.
+
 ### 2026-05-05T22:30Z — North star: ambient-by-default, drill-in on demand, CLI parity
 **By:** Dallas (via Coordinator) — distilled from `plan.md` "North star"
 **What:** Squadquarium is ambient by default (zero required interaction; glanceable from across a room), drill-in on demand, CLI-parity for management actions, optional cosmetic-only game layer, local-first (no network calls except those Squad itself makes).
