@@ -1,0 +1,13 @@
+# .vscodeignore — files excluded from the VSIX package
+
+# Source / dev artifacts
+src/
+scripts/
+*.ts
+!dist/**
+tsconfig.json
+node_modules/
+.pnpm-debug.log
+
+# Monorepo root files (not relevant to the extension install)
+../../node_modules/

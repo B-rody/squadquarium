@@ -6,9 +6,13 @@ import { fileURLToPath } from "node:url";
 import {
   PTYPool,
   PtyPoolFullError,
+  listMarketplaces,
+  browseMarketplace,
+  installPlugin,
   type ClientFrame,
   type ServerFrame,
   type SquadStateAdapter,
+  type SquadquariumEvent,
 } from "@squadquarium/core";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 
@@ -18,8 +22,15 @@ const pkg = require(path.resolve(__dirname, "..", "package.json")) as { version:
 const DEFAULT_PORT = 6280;
 const MAX_PORT = 6290;
 
+export interface AttachedAdapterInfo {
+  id: string;
+  label: string;
+  adapter: SquadStateAdapter;
+}
+
 export interface ServerOptions {
   adapter: SquadStateAdapter | null;
+  attachedAdapters?: AttachedAdapterInfo[];
   port?: number;
   host?: string;
   squadVersion: string | null;
@@ -92,6 +103,7 @@ export async function startServer(opts: ServerOptions): Promise<ServerInstance> 
 async function handleConnection(ws: WebSocket, opts: ServerOptions, pool: PTYPool): Promise<void> {
   let serverSeq = 0;
   const ptyCleanup = new Map<string, () => void>();
+  const attachedUnsubscribers: Array<() => void> = [];
 
   const nextSeq = () => {
     serverSeq += 1;
@@ -118,21 +130,43 @@ async function handleConnection(ws: WebSocket, opts: ServerOptions, pool: PTYPoo
   try {
     if (opts.adapter) {
       const snapshot = await opts.adapter.getSnapshot();
-      send({ kind: "snapshot", serverSeq: nextSeq(), snapshot });
+      const attachedSquads = opts.attachedAdapters
+        ? await Promise.all(
+            opts.attachedAdapters.map(async ({ id, label, adapter }) => ({
+              id,
+              label,
+              snapshot: await adapter.getSnapshot(),
+            })),
+          )
+        : undefined;
+      send({ kind: "snapshot", serverSeq: nextSeq(), snapshot, attachedSquads });
       unsubscribe = opts.adapter.subscribe((event) =>
         send({ kind: "event", serverSeq: nextSeq(), event }),
       );
+
+      for (const { id: attachedSquadId, adapter } of opts.attachedAdapters ?? []) {
+        const unsub = adapter.subscribe((event) =>
+          send({
+            kind: "event",
+            serverSeq: nextSeq(),
+            event: { ...event, payload: { ...(event.payload as object), attachedSquadId } },
+            attachedSquadId,
+          }),
+        );
+        attachedUnsubscribers.push(unsub);
+      }
     }
   } catch (err) {
     sendError(err instanceof Error ? err.message : String(err), "snapshot-failed");
   }
 
   ws.on("message", (data) => {
-    void handleClientFrame(data, pool, ptyCleanup, send, sendError, nextSeq);
+    void handleClientFrame(data, opts, pool, ptyCleanup, send, sendError, nextSeq);
   });
 
   await onceClose(ws);
   unsubscribe?.();
+  for (const unsub of attachedUnsubscribers) unsub();
   for (const [ptyId, cleanup] of ptyCleanup) {
     cleanup();
     pool.kill(ptyId);
@@ -141,6 +175,7 @@ async function handleConnection(ws: WebSocket, opts: ServerOptions, pool: PTYPoo
 
 async function handleClientFrame(
   data: RawData,
+  opts: ServerOptions,
   pool: PTYPool,
   ptyCleanup: Map<string, () => void>,
   send: (frame: ServerFrame) => void,
@@ -193,6 +228,54 @@ async function handleClientFrame(
       case "ping":
         send({ kind: "pong", serverSeq: nextSeq(), clientSeq: frame.clientSeq });
         break;
+      case "marketplace-list-req": {
+        const marketplaces = opts.squadRoot ? await listMarketplaces(opts.squadRoot) : [];
+        send({ kind: "marketplace-list", serverSeq: nextSeq(), marketplaces });
+        break;
+      }
+      case "marketplace-browse-req": {
+        const plugins = opts.squadRoot
+          ? await browseMarketplace(opts.squadRoot, frame.marketplace)
+          : [];
+        send({
+          kind: "marketplace-browse",
+          serverSeq: nextSeq(),
+          marketplace: frame.marketplace,
+          plugins,
+        });
+        break;
+      }
+      case "marketplace-install-req": {
+        if (!opts.squadRoot) {
+          sendError("No squad root available", "no-squad-root", frame.clientSeq);
+          break;
+        }
+        let output = "";
+        const exitCode = await installPlugin(
+          opts.squadRoot,
+          frame.marketplace,
+          frame.plugin,
+          (d) => {
+            output += d;
+          },
+        );
+        send({
+          kind: "marketplace-install",
+          serverSeq: nextSeq(),
+          marketplace: frame.marketplace,
+          plugin: frame.plugin,
+          output,
+          exitCode,
+        });
+        break;
+      }
+      case "replay-request": {
+        const events = opts.squadRoot
+          ? await readReplayEvents(opts.squadRoot, frame.from, frame.to)
+          : [];
+        send({ kind: "replay", serverSeq: nextSeq(), events });
+        break;
+      }
       default:
         sendError(
           "Unsupported client frame",
@@ -204,6 +287,69 @@ async function handleClientFrame(
     const code = err instanceof PtyPoolFullError ? err.code : "frame-failed";
     sendError(err instanceof Error ? err.message : String(err), code, frame.clientSeq);
   }
+}
+
+const REPLAY_EVENT_CAP = 1000;
+
+async function readReplayEvents(
+  squadRoot: string,
+  from: number | undefined,
+  to: number | undefined,
+): Promise<SquadquariumEvent[]> {
+  const logDir = path.join(squadRoot, "orchestration-log");
+  const events: SquadquariumEvent[] = [];
+
+  let files: string[];
+  try {
+    const dirents = await fs.promises.readdir(logDir, { withFileTypes: true });
+    files = dirents.filter((d) => d.isFile()).map((d) => d.name);
+  } catch {
+    return events;
+  }
+
+  for (const file of files) {
+    let body = "";
+    try {
+      body = await fs.promises.readFile(path.join(logDir, file), "utf8");
+    } catch {
+      continue;
+    }
+
+    const ts = parseReplayTimestamp(file);
+    const observedAt = ts ? new Date(ts).getTime() : 0;
+    if (from !== undefined && observedAt < from) continue;
+    if (to !== undefined && observedAt > to) continue;
+
+    const agent = /(?:^|\n)\*{0,2}Agent:\*{0,2}\s*([^\n]+)/i.exec(body)?.[1]?.trim();
+    events.push({
+      sessionId: "replay",
+      source: "log",
+      seq: events.length + 1,
+      entityKey: `log:${file}`,
+      observedAt,
+      payload: {
+        action: "log_change",
+        file,
+        path: path.join(logDir, file),
+        source: "orchestration-log",
+        agent,
+        body: body.slice(0, 500),
+      },
+    });
+  }
+
+  events.sort((a, b) => a.observedAt - b.observedAt);
+  return events.slice(0, REPLAY_EVENT_CAP);
+}
+
+function parseReplayTimestamp(file: string): string | null {
+  const m = /(\d{4}-\d{2}-\d{2}(?:[T_]\d{2}[-:]\d{2}(?:[-:]\d{2})?(?:\.\d+)?Z?)?)/.exec(file);
+  if (!m) return null;
+  const candidate = m[1]
+    .replace(/_(\d{2})[-:](\d{2})/, "T$1:$2")
+    .replace(/T(\d{2})-(\d{2})-(\d{2})/, "T$1:$2:$3");
+  const d = new Date(candidate);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
 function resolveWebDist(): string {

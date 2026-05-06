@@ -1,0 +1,39 @@
+{
+  "name": "squadquarium-vscode",
+  "displayName": "Squadquarium",
+  "description": "Ambient terminal diorama for squad agent status — VS Code webview wrapper",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=22.5.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "squadquarium.open",
+        "title": "Squadquarium: Open Diorama"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/bundle.mjs",
+    "lint": "echo 'no lint configured for vscode package'"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.0",
+    "esbuild": "^0.25.0",
+    "typescript": "~5.6.0"
+  },
+  "dependencies": {
+    "ws": "^8.0.0"
+  }
+}

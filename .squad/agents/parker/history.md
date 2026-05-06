@@ -75,3 +75,13 @@
 **HookPipeline fallback:** Squad SDK 0.9.4 does not expose a HookPipeline API in this adapter surface. The safe v1 fallback is to seed existing orchestration-log filenames, poll `.squad/orchestration-log/` every 200ms, and emit synthetic `tool:start` events only for new files using filename keyword mapping to browse/edit/shell/misc.
 
 **Marketplace backend:** Core marketplace support is intentionally filesystem-first: defaults merge with `.squad/plugins/marketplaces.json`, browse reads `.squad/plugins/{marketplace}/index.json`, and install delegates to `squad plugin install` via child_process spawn.
+
+### 2026-05-06T03:51Z — Phase 5 Wave 2: Replay frame, Multi-attach, VSCode wrapper, prebuilds
+
+**Replay WS frame:** `replay-request` client frame + `replay` server frame added to protocol. Server reads orchestration-log/ files best-effort (timestamp from filename regex, agent from `**Agent:**` markdown field), sorts by observedAt, caps at 1000 events. `from`/`to` filter is ms-since-epoch matching `SquadquariumEvent.observedAt`.
+
+**Multi-attach:** `SquadStateAdapter` gains public `id` and `label` fields. `createMulti({ contexts })` is the multi-squad factory — creates adapters in parallel, filters nulls. CLI `--attach <path>` is a repeatable Commander accumulator option. Server snapshot frame gains `attachedSquads` (optional); event frames gain `attachedSquadId` (optional). Each attached adapter runs its own observer/bus subscription; events are tagged with `attachedSquadId` and forwarded over the shared `serverSeq` counter. All attached adapters are disposed in the CLI's `finally` block.
+
+**VS Code webview wrapper:** New `packages/squadquarium-vscode/` CJS package (engines.vscode `^1.85.0`). `activate()` registers `squadquarium.open`; command handler spawns `squadquarium --serve-only` on first use, creates a webview panel, and proxies WS via `acquireVsCodeApi().postMessage`. A JS shim patches `window.WebSocket` in the renderer. Built with esbuild (`format: "cjs"`, `vscode` external). `@types/vscode ^1.85.0` provides types; `@ts-expect-error` guards the `import type` line. `vsce package` is a manual Brady step.
+
+**node-pty prebuilds:** `prebuildify` + `node-gyp-build` added to cli devDependencies. Script `packages/cli/scripts/prebuild-node-pty.mjs` resolves node-pty source through three fallback paths (local → hoisted → require.resolve). `.github/workflows/prebuild.yml` runs the matrix (windows/macos/ubuntu) on tag push; prebuilds uploaded as artifacts; publish step intentionally omitted. `prebuilds/` added to cli `files` array. `continue-on-error: true` on the prebuild step guards against pnpm 10 isolated nodeLinker resolution issues until validated; see `.squad/decisions/inbox/parker-prebuilds.md` for the workaround.

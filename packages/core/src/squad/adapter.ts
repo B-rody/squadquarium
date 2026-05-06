@@ -18,6 +18,7 @@ interface CreateOptions {
   cwd?: string;
   personal?: boolean;
   skinsDir?: string;
+  label?: string;
 }
 
 type Unsubscribe = () => void;
@@ -28,6 +29,8 @@ export class SquadStateAdapter {
   private readonly subscribers = new Set<(ev: SquadquariumEvent) => void>();
   private readonly logWatchers: fs.FSWatcher[] = [];
   private readonly sessionId = createSessionId();
+  readonly id: string;
+  readonly label: string;
   private seq = 0;
   private unsubscribeBus: Unsubscribe | null = null;
   private unsubscribeToolPreHook: Unsubscribe | null = null;
@@ -42,7 +45,12 @@ export class SquadStateAdapter {
     private readonly bus: RuntimeEventBus,
     private readonly observer: SquadObserver,
     private readonly skinsDir?: string,
-  ) {}
+    adapterId?: string,
+    adapterLabel?: string,
+  ) {
+    this.id = adapterId ?? createSessionId();
+    this.label = adapterLabel ?? path.basename(path.dirname(squadDir));
+  }
 
   static async create(opts: CreateOptions): Promise<SquadStateAdapter | null> {
     try {
@@ -61,11 +69,20 @@ export class SquadStateAdapter {
       const state = await SquadState.create(storage, parentDir);
       const bus = new RuntimeEventBus();
       const observer = new SquadObserver({ squadDir, eventBus: bus, debounceMs: 200 });
+      const id = createSessionId();
+      const label = opts.label ?? path.basename(path.dirname(squadDir));
 
-      return new SquadStateAdapter(squadDir, state, bus, observer, opts.skinsDir);
+      return new SquadStateAdapter(squadDir, state, bus, observer, opts.skinsDir, id, label);
     } catch {
       return null;
     }
+  }
+
+  static async createMulti(opts: {
+    contexts: { cwd?: string; personal?: boolean; label?: string }[];
+  }): Promise<SquadStateAdapter[]> {
+    const results = await Promise.all(opts.contexts.map((ctx) => SquadStateAdapter.create(ctx)));
+    return results.filter((a): a is SquadStateAdapter => a !== null);
   }
 
   async getSnapshot(): Promise<Snapshot> {

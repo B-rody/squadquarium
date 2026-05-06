@@ -8,9 +8,13 @@ import CommandPalette from "./CommandPalette.js";
 import TimeScrubberPanel from "./TimeScrubberPanel.js";
 import WisdomWing, { type SkillChip } from "./WisdomWing.js";
 import SettingsPanel from "./SettingsPanel.js";
-import { useStore, useIsSelfPortrait } from "../transport/store.js";
+import MarketplacePanel from "./MarketplacePanel.js";
+import SkinBrowser from "./SkinBrowser.js";
+import GamePanel from "./GamePanel.js";
+import VisitorAnimation from "./VisitorAnimation.js";
+import { useStore, useIsSelfPortrait, useVisitorArrivals } from "../transport/store.js";
 import { useWsClient } from "../transport/wsClient.js";
-import { loadSettings, saveSettings, type AppSettings } from "../settings/store.js";
+import { loadSettings, saveSettings, type AppSettings, type ObsMode } from "../settings/store.js";
 import type { SkinAssets } from "../skin/loader.js";
 import type { AgentSummary } from "../transport/protocol.js";
 
@@ -90,6 +94,15 @@ export default function AppShell({
   const [wisdomOpen, setWisdomOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ralphActive, setRalphActive] = useState(false);
+  const [marketplaceOpen, setMarketplaceOpen] = useState(false);
+  const [skinBrowserOpen, setSkinBrowserOpen] = useState(false);
+  const [gamePanelOpen, setGamePanelOpen] = useState(false);
+  const [standupTrigger, setStandupTrigger] = useState(0);
+
+  // Visitor arrivals (Part 7)
+  const visitorArrivals = useVisitorArrivals();
+  const lastVisitor = visitorArrivals[visitorArrivals.length - 1] ?? null;
+  const visitorEvent = lastVisitor ? { name: lastVisitor.name, startedAt: lastVisitor.at } : null;
 
   useEffect(() => {
     const initialMode = settingsToCrtMode(settings);
@@ -111,6 +124,25 @@ export default function AppShell({
     document.body.dataset.crt = crtMode === "off" ? "" : crtMode;
   }, [crtMode]);
 
+  // OBS mode (Part 5): apply background override to document.body
+  useEffect(() => {
+    const obsMode = settings.obsMode;
+    document.body.dataset.obsMode = obsMode;
+    switch (obsMode) {
+      case "transparent":
+        document.body.style.background = "transparent";
+        break;
+      case "chroma-green":
+        document.body.style.background = "#00FF00";
+        break;
+      case "chroma-magenta":
+        document.body.style.background = "#FF00FF";
+        break;
+      default:
+        document.body.style.background = "";
+    }
+  }, [settings.obsMode]);
+
   const applySettings = useCallback(
     (next: AppSettings) => {
       setSettings(next);
@@ -118,6 +150,15 @@ export default function AppShell({
       setCrtMode(settingsToCrtMode(next));
     },
     [setCrtMode],
+  );
+
+  const applyObsMode = useCallback(
+    (mode: ObsMode) => {
+      const next = { ...settings, obsMode: mode };
+      setSettings(next);
+      saveSettings(next);
+    },
+    [settings],
   );
 
   const cycleCrt = useCallback(() => {
@@ -189,6 +230,34 @@ export default function AppShell({
 
   const agentNames = useMemo(() => (snapshot?.agents ?? []).map((agent) => agent.name), [snapshot]);
   const isEmptyState = connection.mode === "empty-state";
+
+  // Multi-attach (Part 4): detect attached squads from snapshot
+  const attachedSquads = snapshot?.attachedSquads ?? [];
+  const showMultiAttach = settings.enableMultiAttach && attachedSquads.length > 1;
+
+  // Part 7: Register debug helper for Playwright/manual visitor testing
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    if (!win.__squadquarium__) win.__squadquarium__ = {};
+    win.__squadquarium__.__triggerVisitor = (name: string) => {
+      // Dispatch a synthetic visitor event into the store's event queue
+      const { appendEvent } = useStore.getState();
+      appendEvent({
+        sessionId: "debug",
+        source: "bus",
+        seq: Date.now(),
+        entityKey: `agent:guest:${name}`,
+        observedAt: Date.now(),
+        payload: { kind: "visitor-arrived", name },
+      });
+    };
+    return () => {
+      if (win.__squadquarium__) {
+        delete win.__squadquarium__.__triggerVisitor;
+      }
+    };
+  }, []);
 
   const statusColor =
     connection.status === "connected"
@@ -296,89 +365,153 @@ export default function AppShell({
             onClose={() => setSettingsOpen(false)}
           />
         )}
-        <PanelGroup direction="horizontal">
-          {!leftCollapsed && (
-            <>
-              <Panel defaultSize={55} minSize={20}>
-                <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                  <HabitatPanel
-                    skinAssets={skinAssets}
-                    onAgentClick={handleAgentClick}
-                    voiceBubbles={settings.voiceBubbles}
-                    moodGlyphs={settings.moodGlyphs}
-                    ralphActive={ralphActive}
-                  />
-                  <button
-                    onClick={() => setLeftCollapsed(true)}
-                    style={{
-                      ...btnStyle,
-                      position: "absolute",
-                      top: 2,
-                      right: 2,
-                      zIndex: 10,
-                    }}
-                    title="Collapse habitat"
-                  >
-                    [◀]
-                  </button>
-                </div>
-              </Panel>
-              <PanelResizeHandle
+        {marketplaceOpen && (
+          <MarketplacePanel
+            onClose={() => setMarketplaceOpen(false)}
+            onPluginInstalled={(name, mp) => {
+              console.info(`[marketplace] installed ${name} from ${mp}`);
+            }}
+          />
+        )}
+        {skinBrowserOpen && (
+          <SkinBrowser
+            localSkins={availableSkins}
+            activeSkin={activeSkin}
+            onSkinChange={(name) => {
+              setActiveSkin(name);
+              setSkinBrowserOpen(false);
+            }}
+            onClose={() => setSkinBrowserOpen(false)}
+          />
+        )}
+        {gamePanelOpen && (
+          <GamePanel ralphActive={ralphActive} onClose={() => setGamePanelOpen(false)} />
+        )}
+        {/* Visitor animation overlay (Part 7) */}
+        <VisitorAnimation event={visitorEvent} skinId={activeSkin} />
+        {/* Multi-attach: horizontal split when enableMultiAttach + attachedSquads.length > 1 */}
+        {showMultiAttach ? (
+          <div style={{ display: "flex", width: "100%", height: "100%", gap: "2px" }}>
+            {attachedSquads.map((sq) => (
+              <div
+                key={sq.id}
                 style={{
-                  width: "4px",
-                  background: "var(--skin-dim, #004d40)",
-                  cursor: "col-resize",
+                  flex: 1,
+                  border: "1px solid var(--skin-dim, #004d40)",
+                  position: "relative",
+                  overflow: "hidden",
                 }}
-              />
-            </>
-          )}
-          {!rightCollapsed && (
-            <Panel defaultSize={45} minSize={20}>
-              <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                <LogPanel
-                  skinAssets={skinAssets}
-                  ptyId={ptyId}
-                  onPtyExit={exitInteractive}
-                  interactive={interactive}
-                />
-                <button
-                  onClick={() => setRightCollapsed(true)}
+              >
+                <div
                   style={{
-                    ...btnStyle,
                     position: "absolute",
                     top: 2,
-                    left: 2,
-                    zIndex: 10,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    fontSize: "11px",
+                    color: "var(--skin-dim)",
+                    zIndex: 5,
                   }}
-                  title="Collapse log"
                 >
-                  [▶]
-                </button>
+                  {sq.label}
+                </div>
+                <HabitatPanel
+                  skinAssets={skinAssets}
+                  onAgentClick={handleAgentClick}
+                  voiceBubbles={settings.voiceBubbles}
+                  moodGlyphs={settings.moodGlyphs}
+                  ralphActive={ralphActive}
+                />
               </div>
-            </Panel>
-          )}
-        </PanelGroup>
-        {(leftCollapsed || rightCollapsed) && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: 4,
-              right: 4,
-              display: "flex",
-              gap: "4px",
-            }}
-          >
-            {leftCollapsed && (
-              <button style={btnStyle} onClick={() => setLeftCollapsed(false)}>
-                [habitat▶]
-              </button>
-            )}
-            {rightCollapsed && (
-              <button style={btnStyle} onClick={() => setRightCollapsed(false)}>
-                [◀log]
-              </button>
-            )}
+            ))}
           </div>
+        ) : (
+          <>
+            <PanelGroup direction="horizontal">
+              {!leftCollapsed && (
+                <>
+                  <Panel defaultSize={55} minSize={20}>
+                    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                      <HabitatPanel
+                        skinAssets={skinAssets}
+                        onAgentClick={handleAgentClick}
+                        voiceBubbles={settings.voiceBubbles}
+                        moodGlyphs={settings.moodGlyphs}
+                        ralphActive={ralphActive}
+                      />
+                      <button
+                        onClick={() => setLeftCollapsed(true)}
+                        style={{
+                          ...btnStyle,
+                          position: "absolute",
+                          top: 2,
+                          right: 2,
+                          zIndex: 10,
+                        }}
+                        title="Collapse habitat"
+                      >
+                        [◀]
+                      </button>
+                    </div>
+                  </Panel>
+                  <PanelResizeHandle
+                    style={{
+                      width: "4px",
+                      background: "var(--skin-dim, #004d40)",
+                      cursor: "col-resize",
+                    }}
+                  />
+                </>
+              )}
+              {!rightCollapsed && (
+                <Panel defaultSize={45} minSize={20}>
+                  <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                    <LogPanel
+                      skinAssets={skinAssets}
+                      ptyId={ptyId}
+                      onPtyExit={exitInteractive}
+                      interactive={interactive}
+                    />
+                    <button
+                      onClick={() => setRightCollapsed(true)}
+                      style={{
+                        ...btnStyle,
+                        position: "absolute",
+                        top: 2,
+                        left: 2,
+                        zIndex: 10,
+                      }}
+                      title="Collapse log"
+                    >
+                      [▶]
+                    </button>
+                  </div>
+                </Panel>
+              )}
+            </PanelGroup>
+            {(leftCollapsed || rightCollapsed) && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 4,
+                  right: 4,
+                  display: "flex",
+                  gap: "4px",
+                }}
+              >
+                {leftCollapsed && (
+                  <button style={btnStyle} onClick={() => setLeftCollapsed(false)}>
+                    [habitat▶]
+                  </button>
+                )}
+                {rightCollapsed && (
+                  <button style={btnStyle} onClick={() => setRightCollapsed(false)}>
+                    [◀log]
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -396,6 +529,11 @@ export default function AppShell({
         <span style={{ color: statusColor }}>● {connection.status}</span>
         {connection.squadRoot && (
           <span style={{ color: "var(--skin-dim, #004d40)" }}>{connection.squadRoot}</span>
+        )}
+        {settings.obsMode !== "off" && (
+          <span style={{ color: "var(--skin-alert, #ff5252)", fontSize: "11px" }}>
+            obs:{settings.obsMode}
+          </span>
         )}
         <span style={{ flex: 1 }} />
         <select
@@ -430,9 +568,18 @@ export default function AppShell({
         onOpenWisdom={() => setWisdomOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         onRalphStop={stopRalph}
+        onOpenMarketplace={() => setMarketplaceOpen(true)}
+        onOpenSkins={() => setSkinBrowserOpen(true)}
+        onOpenGame={() => setGamePanelOpen(true)}
+        onObsMode={applyObsMode}
+        onStandup={() => setStandupTrigger((n) => n + 1)}
         availableSkins={availableSkins}
         agentNames={agentNames}
       />
+      {/* Standup trigger side effect — GamePanel handles the modal when trigger fires */}
+      {standupTrigger > 0 && !gamePanelOpen && (
+        <GamePanel ralphActive={ralphActive} onClose={() => {}} />
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+export type ObsMode = "off" | "transparent" | "chroma-green" | "chroma-magenta";
+
 export interface AppSettings {
   ambientSfx: boolean;
   alwaysOnTop: boolean;
@@ -5,6 +7,9 @@ export interface AppSettings {
   crtScanlines: boolean;
   voiceBubbles: boolean;
   moodGlyphs: boolean;
+  gameMode: boolean;
+  obsMode: ObsMode;
+  enableMultiAttach: boolean;
 }
 
 const STORAGE_KEY = "squadquarium:settings";
@@ -17,6 +22,9 @@ export function defaultSettings(): AppSettings {
     crtScanlines: false,
     voiceBubbles: true,
     moodGlyphs: true,
+    gameMode: false,
+    obsMode: "off",
+    enableMultiAttach: false,
   };
 }
 

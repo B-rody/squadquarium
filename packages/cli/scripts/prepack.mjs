@@ -44,6 +44,18 @@ copyDir(skinsSrc, skinsDest);
 console.log("prepack: done.");
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Copy node-pty prebuilds if present (built by prebuild-node-pty.mjs).
+// This is a best-effort copy: if the prebuilds/ dir doesn't exist the tarball
+// ships without them and the install-time node-gyp build path is used instead.
+const prebuildsSrc = path.resolve(cliDir, "prebuilds");
+if (fs.existsSync(prebuildsSrc)) {
+  const prebuildsRelDest = path.resolve(cliDir, "prebuilds"); // already in "files"
+  console.log(`prepack: prebuilds/ present — included in tarball (${prebuildsSrc})`);
+} else {
+  console.log("prepack: no prebuilds/ dir — skipping (node-gyp will run on install).");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function copyDir(src, dest) {
   if (!fs.existsSync(src)) {

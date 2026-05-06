@@ -1,4 +1,4 @@
-import type { AppSettings } from "../settings/store.js";
+import type { AppSettings, ObsMode } from "../settings/store.js";
 import { saveSettings } from "../settings/store.js";
 
 interface Props {
@@ -7,18 +7,33 @@ interface Props {
   onClose: () => void;
 }
 
-const labels: Array<[keyof AppSettings, string]> = [
+const boolLabels: Array<[keyof AppSettings, string]> = [
   ["ambientSfx", "Ambient SFX"],
   ["alwaysOnTop", "Always on top"],
   ["crtBloom", "CRT Bloom"],
   ["crtScanlines", "CRT Scanlines"],
   ["voiceBubbles", "Voice Bubbles"],
   ["moodGlyphs", "Mood Glyphs"],
+  ["gameMode", "Game Mode (cosmetic only)"],
+  ["enableMultiAttach", "Multi-Attach view"],
+];
+
+const OBS_OPTIONS: Array<{ value: ObsMode; label: string }> = [
+  { value: "off", label: "off" },
+  { value: "transparent", label: "transparent" },
+  { value: "chroma-green", label: "chroma-green (#00FF00)" },
+  { value: "chroma-magenta", label: "chroma-magenta (#FF00FF)" },
 ];
 
 export default function SettingsPanel({ settings, onChange, onClose }: Props) {
-  const update = (key: keyof AppSettings) => {
+  const updateBool = (key: keyof AppSettings) => {
     const next = { ...settings, [key]: !settings[key] };
+    saveSettings(next);
+    onChange(next);
+  };
+
+  const updateObs = (value: ObsMode) => {
+    const next = { ...settings, obsMode: value };
     saveSettings(next);
     onChange(next);
   };
@@ -29,7 +44,7 @@ export default function SettingsPanel({ settings, onChange, onClose }: Props) {
         position: "absolute",
         right: "24px",
         top: "48px",
-        width: "280px",
+        width: "300px",
         background: "var(--skin-bg, #001f1c)",
         border: "1px solid var(--skin-fg, #00bfa5)",
         color: "var(--skin-fg, #00bfa5)",
@@ -52,15 +67,40 @@ export default function SettingsPanel({ settings, onChange, onClose }: Props) {
         </button>
       </div>
       <div style={{ padding: "8px", display: "grid", gap: "6px" }}>
-        {labels.map(([key, label]) => (
+        {boolLabels.map(([key, label]) => (
           <label
             key={key}
             style={{ display: "flex", justifyContent: "space-between", cursor: "pointer" }}
           >
             <span>{label}</span>
-            <input type="checkbox" checked={settings[key]} onChange={() => update(key)} />
+            <input
+              type="checkbox"
+              checked={settings[key] as boolean}
+              onChange={() => updateBool(key)}
+            />
           </label>
         ))}
+        {/* OBS mode select */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>OBS Mode</span>
+          <select
+            value={settings.obsMode}
+            onChange={(e) => updateObs(e.target.value as ObsMode)}
+            style={{
+              background: "var(--skin-bg, #001f1c)",
+              color: "var(--skin-fg, #00bfa5)",
+              border: "1px solid var(--skin-dim, #004d40)",
+              fontFamily: "inherit",
+              fontSize: "12px",
+            }}
+          >
+            {OBS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );

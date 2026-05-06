@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import type { ObsMode } from "../settings/store.js";
 
 export interface ParsedCommand {
   verb: string;
@@ -14,6 +15,11 @@ interface Props {
   onOpenWisdom: () => void;
   onOpenSettings: () => void;
   onRalphStop: () => void;
+  onOpenMarketplace: () => void;
+  onOpenSkins: () => void;
+  onOpenGame: () => void;
+  onObsMode: (mode: ObsMode) => void;
+  onStandup: () => void;
   availableSkins?: string[];
   agentNames?: string[];
 }
@@ -37,6 +43,14 @@ const KNOWN_COMMANDS = [
   "ralph",
   "ralph start",
   "ralph stop",
+  "skins",
+  "game",
+  "obs",
+  "obs off",
+  "obs transparent",
+  "obs chroma-green",
+  "obs chroma-magenta",
+  "standup",
 ];
 
 export function parseCommand(cmd: string): ParsedCommand {
@@ -85,6 +99,11 @@ export default function CommandPalette({
   onOpenWisdom,
   onOpenSettings,
   onRalphStop,
+  onOpenMarketplace,
+  onOpenSkins,
+  onOpenGame,
+  onObsMode,
+  onStandup,
   availableSkins = [],
   agentNames = [],
 }: Props) {
@@ -152,11 +171,27 @@ export default function CommandPalette({
         case "marketplace":
           if (args[0] === "browse" && args[1]) {
             onInteractive("squad", ["marketplace", "browse", args.slice(1).join(" ")]);
+          } else {
+            onOpenMarketplace();
           }
           break;
         case "ralph":
           if (args[0] === "start") onInteractive("squad", ["watch"]);
           if (args[0] === "stop") onRalphStop();
+          break;
+        case "skins":
+          onOpenSkins();
+          break;
+        case "game":
+          onOpenGame();
+          break;
+        case "obs": {
+          const mode = (args[0] ?? "off") as ObsMode;
+          onObsMode(mode);
+          break;
+        }
+        case "standup":
+          onStandup();
           break;
         case "quit":
           window.close();
@@ -174,6 +209,11 @@ export default function CommandPalette({
       onOpenWisdom,
       onOpenSettings,
       onRalphStop,
+      onOpenMarketplace,
+      onOpenSkins,
+      onOpenGame,
+      onObsMode,
+      onStandup,
       onClose,
     ],
   );
@@ -260,7 +300,7 @@ export default function CommandPalette({
             fontFamily: "inherit",
             fontSize: "inherit",
           }}
-          placeholder=":skin aquarium | :hatch | :scrub | :wisdom"
+          placeholder=":skin aquarium | :hatch | :scrub | :marketplace | :skins | :game | :obs transparent"
         />
         <div
           style={{

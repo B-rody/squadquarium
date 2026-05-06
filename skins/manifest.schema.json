@@ -146,8 +146,12 @@
     }
   },
   "patternProperties": {
-    "^x-": {
-      "description": "Extension namespace. Any root-level key beginning with 'x-' is permitted and carries any value. The engine ignores all x-* keys; they are reserved for skin authors, tooling, and future community conventions."
+    "^x-signature$": {
+      "type": "string",
+      "description": "Ed25519 signature for signed manifest verification (v3+). Format: base64url(Ed25519.sign(privateKey, canonicalJSON)) where canonicalJSON is the canonical-JSON encoding of the manifest object with the x-signature key itself removed before signing. Verification tools should resolve the author's public key from a published key bundle. Implementation of actual verification ships in v3+; this field is an extension point only."
+    },
+    "^x-(?!signature$)": {
+      "description": "Extension namespace. Any root-level key beginning with 'x-' (except x-signature, which has a typed schema) is permitted and carries any value. The engine ignores all x-* keys; they are reserved for skin authors, tooling, and future community conventions."
     }
   },
   "additionalProperties": false

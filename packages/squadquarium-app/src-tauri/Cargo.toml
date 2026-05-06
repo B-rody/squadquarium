@@ -1,0 +1,18 @@
+[package]
+name = "squadquarium-app"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "squadquarium_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri 2 core — tray-icon feature enables system tray support.
+# image-default bundles platform-default icon handling.
+tauri = { version = "2", features = ["tray-icon", "image-default"] }

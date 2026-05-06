@@ -93,35 +93,145 @@ If `node-pty` still fails to build, Squadquarium falls back to **no-PTY log-tail
 
 ## Commands
 
-| Command                         | Purpose                                                                                                                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `squadquarium [path]`           | Resolve squad context and launch the diorama in your default browser. `path` defaults to cwd; walks up to find `.squad/`; falls back to personal squad; shows empty-state if none found. |
-| `squadquarium --personal`       | Force open the personal/global squad regardless of cwd.                                                                                                                                  |
-| `squadquarium doctor`           | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                             |
-| `squadquarium status`           | Concise one-screen status snapshot (agents, last decision, last bus event). No browser required.                                                                                         |
-| `squadquarium --headless-smoke` | Boot the server, verify the WebSocket endpoint, fire a synthetic event burst, assert the web bundle responds, exit 0/non-zero. CI-friendly.                                              |
+| Command                                             | Purpose                                                                                                                                                                                  |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `squadquarium [path]`                               | Resolve squad context and launch the diorama in your default browser. `path` defaults to cwd; walks up to find `.squad/`; falls back to personal squad; shows empty-state if none found. |
+| `squadquarium --personal`                           | Force open the personal/global squad regardless of cwd.                                                                                                                                  |
+| `squadquarium doctor`                               | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                             |
+| `squadquarium status`                               | Concise one-screen status snapshot (agents, last decision, last bus event). No browser required.                                                                                         |
+| `squadquarium trace <agent> [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--since` limits the window.                                          |
+| `squadquarium why <decision-id>`                    | Expand a `decisions.md` entry: nearest orchestration log entries (±1 hour), matched skills, related decisions. Accepts index number, timestamp prefix, or title keyword.                 |
+| `squadquarium inspect <agent>`                      | Compact agent card: charter role + voice line, recent history, skills matched by role, files touched in `orchestration-log/`. Good for quick context without opening the browser.        |
+| `squadquarium diorama [--frames N] [--width N]`     | Render the current team's glyph sprites to stdout using the aquarium skin. Animates `N` frames in-place (TTY) or newline-separated (pipe). Smoke-tests skin asset loading.               |
+| `squadquarium aspire`                               | Shell out to `squad aspire`, extract the Aspire dashboard URL from its output, and open it in the default browser. Prints install guidance if `squad aspire` is not found.               |
+| `squadquarium --headless-smoke`                     | Boot the server, verify the WebSocket endpoint, fire a synthetic event burst, assert the web bundle responds, exit 0/non-zero. CI-friendly.                                              |
 
 `sqq` is an alias for `squadquarium` for typing brevity.
+
+### In-app command palette
+
+Press `:` anywhere in the diorama to open the Vim-style command palette. Commands include:
+
+```
+: skin aquarium          # switch skin
+: skin office
+: hatch                  # open Hatchery (agent creation) in the PTY panel
+: inscribe               # open Scriptorium (skill creation) in the PTY panel
+: aspire                 # launch squad aspire dashboard
+: marketplace            # list configured marketplaces
+: marketplace browse <name>   # list plugins in a marketplace
+: scrub                  # open the time-scrubber replay panel
+: wisdom                 # open the Wisdom Wing panel
+: settings               # open the settings panel
+: ralph start / stop     # control the squad watch night-shift daemon
+: trace <agent>          # equivalent to the CLI subcommand, shown in log panel
+: why <id>               # equivalent to the CLI subcommand, shown in log panel
+: inspect <agent>        # equivalent to the CLI subcommand, shown in log panel
+```
 
 ---
 
 ## Skins
 
-Two skins ship in v0:
+Two skins ship in v0/v1:
 
-| Skin                   | Palette                                        | Style                                                                                                      |
-| ---------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **Aquarium** (default) | Phosphor cyan `#00bfa5` on deep teal `#001f1c` | Literal ASCII fish, anglerfish Lead `(°)>=<` with `*` lure, kelp dressing, bioluminescent trench           |
-| **Office** (alternate) | Phosphor amber on near-black                   | `[¤]` figures at `╔═╗` desks, server racks `▓▓▓` blinking, minimal content — proves the schema, not Polish |
+| Skin                   | Palette                                        | Style                                                                                                     |
+| ---------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Aquarium** (default) | Phosphor cyan `#00bfa5` on deep teal `#001f1c` | Literal ASCII fish, anglerfish Lead `(°)>=<` with `*` lure, kelp dressing, bioluminescent trench          |
+| **Office** (alternate) | Phosphor amber on near-black                   | `[¤]` figures at `╔═╗` desks, server racks `▓▓▓` blinking, vocab-mapped labels (`elevator`, `tube`, etc.) |
 
-Toggle via the command palette:
+Toggle via the command palette or the skin selector in the status bar:
 
 ```
 : skin office
 : skin aquarium
 ```
 
-No restart required. v2 opens the manifest format to community contributions — same bones, new glyphs (deep trench, cottage village, space station, fungus colony).
+No restart required.
+
+**Community skin packs (roadmap — v2+):** the manifest format (`manifestVersion: 1`) will be opened to contributors once the schema stabilises. Planned themes: deep trench, cottage village, space station, fungus colony. An in-app skin browser is on the v2 roadmap; for now, drop a skin folder into `skins/` and restart.
+
+---
+
+## Settings panel
+
+Press `:` then `settings`, or click `[⚙]` in the header, to open the settings panel. All toggles persist to `localStorage`.
+
+| Setting       | Default | What it does                                              |
+| ------------- | ------- | --------------------------------------------------------- |
+| CRT Bloom     | off     | Phosphor bloom glow over the canvas                       |
+| CRT Scanlines | off     | Horizontal scanline overlay                               |
+| Voice Bubbles | on      | Per-agent speech bubbles with charter voice lines         |
+| Mood Glyphs   | on      | Ambient glyph overlays reflecting agent activity state    |
+| Ambient SFX   | off     | Optional ambient audio (requires browser autoplay policy) |
+| Always on top | off     | Hint for PWA/Tauri window manager (best-effort)           |
+
+The CRT mode cycles: `off → scanlines → bloom → all`. Click `[CRT:off]` in the header to cycle without opening the panel.
+
+**OBS-friendly mode** (v2 roadmap): transparent/chroma-key canvas for streamers. Not yet shipped.
+
+---
+
+## Wisdom Wing
+
+The Wisdom Wing panel (`: wisdom`) renders `identity/wisdom.md` from the active Squad project as a browsable museum:
+
+- **Patterns** — each `**Pattern:** … **Context:** …` entry renders as a card.
+- **Skills** — active skills with confidence levels shown as chips below the pattern list.
+
+The panel is read-only. Wisdom entries are written by agents into `identity/wisdom.md` via the Squad CLI; Squadquarium only reads and displays them.
+
+---
+
+## Plugin marketplace
+
+Squadquarium includes a plugin marketplace backend that reads from configured Squad marketplaces:
+
+**Default marketplaces:** `anthropics/skills` and `awesome-copilot`.
+
+**Add a marketplace:** create `.squad/plugins/marketplaces.json`:
+
+```json
+{
+  "marketplaces": [
+    { "name": "mattpocock/skills", "description": "Matt Pocock's type-safe skill library" }
+  ]
+}
+```
+
+**From the command palette:**
+
+```
+: marketplace               # list configured marketplaces
+: marketplace browse <name> # list plugins from a marketplace's local index
+```
+
+Install happens via `squad plugin install <marketplace>/<plugin>` — the UI shells out to the Squad CLI and streams the output into the log panel. Squadquarium never writes to `.squad/` directly.
+
+---
+
+## Game mode (v2 roadmap — cosmetic only)
+
+A game layer is planned for v2: XP, daily stand-up summary cartoons, cosmetic loot drops. **It is explicitly cosmetic.** The game layer never affects agent decisions, orchestration, or the Squad CLI. Agents do not receive XP bonuses, and no game mechanic routes an agent off-task. This is a deliberate architectural constraint enforced at the product boundary.
+
+Game mode will be off by default and toggled via a settings switch.
+
+---
+
+## v1 + v2 added
+
+Compared to the v0 release, v1 and v2 add (or plan to add) the following:
+
+- **`trace`, `why`, `inspect`, `diorama`, `aspire` subcommands** — CLI diagnostics without launching the browser.
+- **Settings panel** — CRT bloom/scanlines toggles, voice bubbles, mood glyphs, ambient SFX, always-on-top.
+- **Wisdom Wing** — `identity/wisdom.md` rendered as a browsable pattern museum inside the diorama.
+- **Plugin marketplace UX** — browse and install Squad plugins from configured marketplaces via the command palette.
+- **Game mode** _(v2 roadmap, cosmetic-only)_ — XP + daily summaries. Does NOT affect agent behavior.
+- **Multi-attach view** _(v2 roadmap)_ — `--attach <path>` flag to show personal squad + project squad as side-by-side habitats in the same window.
+- **Skin browser + community skin packs** _(v2 roadmap)_ — in-app browser; signed manifests; community themes.
+- **VS Code webview wrapper** _(v2 roadmap)_ — same web bundle wrapped as a VS Code extension, published as a separate package, opt-in.
+- **Tauri desktop wrapper** _(v1+ roadmap)_ — always-on-top desktop window, system tray, global hotkey. Separate `squadquarium-app` package. Requires Rust toolchain to build from source; binary releases require code signing (gated on demand).
+- **`prebuildify` prebuilds** _(v1 roadmap)_ — per-platform `node-pty` `.node` binaries shipped in the npm tarball so `node-gyp` is not required on install. Not yet shipped; fallback to the build-at-install path remains active.
 
 ---
 

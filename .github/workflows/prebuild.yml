@@ -1,0 +1,86 @@
+# .github/workflows/prebuild.yml
+#
+# Builds native node-pty prebuilt binaries per platform on tag push (v*.*.*).
+# Outputs are uploaded as workflow artifacts.
+#
+# NOTE: The `npm publish` step is intentionally omitted from this workflow.
+# Brady runs publish manually with credentials:
+#   cd packages/cli && npm publish --access public
+#
+# To attach prebuilds to a GitHub Release automatically, uncomment the
+# "Attach to draft release" step below and ensure GITHUB_TOKEN has
+# write:releases permission.
+
+name: Prebuild node-pty
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write  # needed if attaching to release (see commented step below)
+
+jobs:
+  prebuild:
+    name: Prebuild (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "10"
+          run_install: false
+
+      - name: Install dependencies
+        # The prebuildify and node-gyp-build devDeps live in packages/cli.
+        # --ignore-scripts is NOT used here because node-pty must build natively.
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI (TypeScript + esbuild)
+        run: pnpm --filter squadquarium build
+
+      - name: Run prebuild-node-pty
+        # NOTE: prebuildify relies on node-gyp being available (via node-gyp-build).
+        # On CI, node-gyp is available as part of the Node.js setup action.
+        #
+        # pnpm 10 isolated nodeLinker workaround:
+        # If prebuildify cannot resolve node-pty via the pnpm symlink layout,
+        # set NODE_PTY_DIR to the real path. See parker-prebuilds.md.
+        run: node packages/cli/scripts/prebuild-node-pty.mjs
+        # Continue on error so other matrix legs still upload their artifacts
+        # even if one platform's build fails. Remove continue-on-error once
+        # the prebuild path is validated on all three platforms.
+        continue-on-error: true
+
+      - name: Upload prebuilds artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuilds-${{ matrix.os }}
+          path: packages/cli/prebuilds/
+          if-no-files-found: warn
+          retention-days: 30
+
+      # ── Attach to draft GitHub Release (uncomment when ready) ───────────────
+      # - name: Attach to draft release
+      #   uses: softprops/action-gh-release@v2
+      #   if: startsWith(github.ref, 'refs/tags/')
+      #   with:
+      #     draft: true
+      #     files: packages/cli/prebuilds/**
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

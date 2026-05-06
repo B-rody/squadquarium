@@ -326,6 +326,8 @@ Each capability is opt-in. Declaring a capability in `manifest.capabilities` act
 
 Any `x-*` root key is permitted. The engine ignores all `x-*` keys. Authors use the namespace for documentation, tooling metadata, or experimental pre-standard fields. Convention: `x-<tool>-<purpose>`, e.g., `x-vscode-preview-scale`.
 
+**Reserved key: `x-signature`** — see [Future: Signed manifest verification](#future-signed-manifest-verification) below.
+
 ### engineVersion range
 
 The engine refuses to load a skin if `semver.satisfies(engine.version, manifest.engineVersion)` returns `false`. Author responsibility: test against the target engine range before publishing. The range `">=0.1.0 <0.2.0"` means "any 0.1.x engine."
@@ -335,6 +337,52 @@ The engine refuses to load a skin if `semver.satisfies(engine.version, manifest.
 Every skin must pass the render-diff CI test on Windows, macOS, and Linux at 1× and 2× DPI. The CI matrix renders each skin's sprites and habitat in a headless Chromium instance with the bundled font, compares screenshots to platform-specific baselines, and fails the build on drift beyond 1 pixel.
 
 **Skins that include glyphs not present in JetBrains Mono will fail CI.** Before publishing, verify your glyphs render correctly in JetBrains Mono. A safe heuristic: if it renders in a standard terminal using JetBrains Mono, it's in the font.
+
+---
+
+## Future: Signed manifest verification
+
+> **Status:** Extension point only — v3+. The `x-signature` field is reserved in the schema now so community tools can prepare. The engine does not verify signatures in v1 or v2.
+
+### What it will be
+
+A **base64url-encoded Ed25519 signature** over the canonical-JSON encoding of the `manifest.json` object. The signing process removes the `x-signature` field itself before computing the canonical form, then signs the result.
+
+```json
+{
+  "manifestVersion": 1,
+  "name": "my-skin",
+  ...
+  "x-signature": "base64url(Ed25519.sign(privateKey, canonicalJSON))"
+}
+```
+
+### Key format
+
+- **Key type:** Ed25519 (RFC 8032)
+- **Private key:** 32-byte seed, represented as PEM (`-----BEGIN PRIVATE KEY-----`) or raw hex for tooling
+- **Public key:** 32-byte public key, published in a `keys.json` file alongside the skin's registry entry
+
+### Canonical JSON rules
+
+Before signing, the manifest object is serialised with:
+
+1. All keys sorted alphabetically (deep, recursive)
+2. `x-signature` key removed from the top level
+3. No trailing whitespace; no indentation; UTF-8 encoding
+
+### Verification flow (v3+)
+
+1. Load `manifest.json`
+2. Extract and remove `x-signature` from the object
+3. Serialise to canonical JSON
+4. Fetch the author's public key from the skin registry (`keys.json`)
+5. Verify `Ed25519.verify(publicKey, canonicalJSON, base64urlDecode(x-signature))`
+6. Reject the skin if verification fails
+
+### Tooling (community)
+
+Until the engine implements verification, community tools and CI pipelines may verify signatures independently using any Ed25519 implementation (e.g., `@noble/ed25519`, `libsodium`, `tweetnacl`).
 
 ---
 

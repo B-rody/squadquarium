@@ -13,11 +13,13 @@
     "dist/",
     "web-dist/",
     "skins/",
+    "prebuilds/",
     "README.md"
   ],
   "scripts": {
     "build": "tsc --noEmit && node scripts/bundle.mjs",
     "prepack": "node scripts/prepack.mjs",
+    "prebuild-node-pty": "node scripts/prebuild-node-pty.mjs",
     "test": "vitest run",
     "lint": "eslint src"
   },
@@ -33,6 +35,8 @@
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.0",
     "esbuild": "^0.25.0",
+    "node-gyp-build": "^4.8.0",
+    "prebuildify": "^6.0.0",
     "typescript": "~5.6.0",
     "vitest": "^3.0.0"
   },

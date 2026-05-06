@@ -22,6 +22,7 @@ void main();
 async function main(): Promise<void> {
   let server: ServerInstance | null = null;
   let adapter: SquadStateAdapter | null = null;
+  const attachedAdapters: SquadStateAdapter[] = [];
 
   try {
     const directSub = checkDirectSubcommand();
@@ -83,8 +84,16 @@ async function main(): Promise<void> {
     const mode = adapter ? context.mode : "empty-state";
     const squadRoot = adapter?.getSquadRoot() ?? context.squadRoot;
 
+    if (args.attachPaths.length > 0) {
+      const multi = await SquadStateAdapter.createMulti({
+        contexts: args.attachPaths.map((p) => ({ cwd: path.resolve(p), label: path.basename(p) })),
+      });
+      attachedAdapters.push(...multi);
+    }
+
     server = await startServer({
       adapter,
+      attachedAdapters: attachedAdapters.map((a) => ({ id: a.id, label: a.label, adapter: a })),
       port: args.port,
       host: args.host,
       squadVersion: adapter?.getSquadVersion() ?? null,
@@ -111,6 +120,9 @@ async function main(): Promise<void> {
   } finally {
     await server?.close().catch(() => undefined);
     await adapter?.dispose().catch(() => undefined);
+    for (const a of attachedAdapters) {
+      await a.dispose().catch(() => undefined);
+    }
   }
 }
 

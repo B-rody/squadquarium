@@ -46,7 +46,36 @@
 
 **Plan.md amendments:** None. Item 10 is satisfied; item 4 & 5 verified as correct priority.
 
-### 2026-05-06T03:51:00Z — Phase 5 Wave 1: v1 design slice (Dallas)
+### 2026-05-06T03:51:00Z — Phase 5 Wave 2: Dallas docs/audit slice
+
+**Deliverables produced:**
+
+- `README.md` — updated from 211 lines to reflect v1+v2 reality. New sections: expanded Commands table (trace/why/inspect/diorama/aspire), in-app command palette reference, Settings panel table (CRT/voice bubbles/mood glyphs/SFX/always-on-top), Wisdom Wing, Plugin marketplace, Game mode (cosmetic-only constraint explicit), v1+v2 added bullet list (shipped vs parked). Skins section updated with community skin packs roadmap note. No marketing fluff added; spirit of v0 README preserved.
+- `.github/CONTRIBUTING-UPSTREAM.md` — new file. Two upstream PR prep guides with copyable git commands: (a) filing `squad-grill-template` as a Squad built-in skill (fork, copy, issue, PR, body template including Pocock credit block); (b) proposing Squadquarium as `squad ui` subcommand (discussion-first approach, naming risk section for SquadOffice/squad rc collision, stub PR flow).
+- `.github/POCOCK-PACK.md` — new file. Documents the v2 Pocock pack item: what it is, why it's blocked (license not confirmed permissive), outreach plan (Brady-only action: GitHub Discussion in mattpocock/skills), v3+ flow if co-authoring lands, what is safe to do autonomously right now (cite + link only).
+- `.squad/decisions/inbox/dallas-final-v1-v2-audit.md` — final v1+v2 plan.md audit, 18 v1 items + 8 v2 items. Per-item verdict with artifact citations. Coordinator summary table: 10 items to flip `[x]`, 6 items to mark `[partial]`, 6 items to mark `[parked]`, 5 items to hold at `[ ]`. This is the master manifest for the Coordinator's plan.md checkpoint pass.
+- `.squad/identity/wisdom.md` — two patterns appended: upstream PR prep docs as deliverable (not post-ship), and `[parked]` vs `[ ]` classification discipline in audit manifests.
+
+**Audit findings (summary):**
+
+v1 shipped items confirmed: `trace`/`why`/`inspect`/`diorama`/`aspire` CLI subcommands, `squad-grill-template` skill, Wisdom Wing component, Settings panel (CRT/voice/mood/SFX/always-on-top), Vim-style `:` command palette with history, Ralph night-shift creature + daemon controls, per-agent voice-line samples from charter, Open Aspire dashboard. Partial: approval queue (client badge yes, server-clear frame no), time-scrubber (stub; replay deferred), Hatchery cross-suggestion (design only), plugin marketplace (backend + palette; no browse panel UI), Office skin polish (files present; Aquarium parity unverified), community skin packs (manifest locked; no in-app browser). Parked: HookPipeline (not attempted), Tauri wrapper (demand gate), prebuildify (friction gate). v2 items: all not yet designed/implemented; Pocock pack and upstream PR are externally gated.
+
+**Decisions recorded:**
+
+- `.squad/decisions/inbox/dallas-final-v1-v2-audit.md` is the definitive checkpoint manifest.
+- `.github/CONTRIBUTING-UPSTREAM.md` and `.github/POCOCK-PACK.md` are the two new governance artifacts that unlock Brady-gated upstream actions.
+
+## Learnings
+
+**Audit discipline:**
+The distinction between `[parked]` and `[ ]` proved important. Five v2 items are `[ ]` (not designed, no external blocker — just not done yet). Six items are `[parked]` (externally gated: Brady must initiate a conversation, or audience demand must appear, or a license must be confirmed). Mixing the two classifications would hide which items require Brady action and which are just in the queue.
+
+**Upstream PR prep as a deliverable:**
+Writing CONTRIBUTING-UPSTREAM.md before the upstream PRs are filed makes the path from "working on our end" to "living upstream" concrete. The friction of forgetting the exact fork/copy/PR-body steps is higher than the cost of writing it now. This pattern should apply to any future Squadquarium feature that has a known upstream home.
+
+**Game mode constraint:**
+The "cosmetic-only" constraint for game mode is the single most important product guardrail in the v2 section. It belongs in the README, in plan.md, and in any future settings UI that exposes the toggle — not just in plan.md prose. Added it to README explicitly.
+
 
 **Deliverables produced:**
 - `.squad/skills/squad-grill-template/SKILL.md` — Squadquarium's first authored skill. ~340 lines. Frontmatter-complete per Squad schema. Five named patterns (scope-respect, required-field completeness, cross-template coherence, fail-closed, deep-interview toggle). Six anti-patterns named explicitly. Hatchery + Scriptorium worked examples. Pocock `grill-with-docs` cited and linked. Domain `meta`; confidence `low` (first observation; bumps with real use).

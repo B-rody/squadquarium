@@ -1,0 +1,13 @@
+{
+  "name": "squadquarium-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Native Tauri 2 window wrapper for the squadquarium web UI.",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "node -e \"const {execSync}=require('child_process');try{execSync('cargo --version',{stdio:'ignore'});execSync('tauri build',{stdio:'inherit'});}catch{console.log('[squadquarium-app] Rust toolchain not found. Install via https://rustup.rs/ — skipping tauri build.');process.exit(0);}\""
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

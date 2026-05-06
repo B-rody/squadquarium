@@ -17,6 +17,7 @@ export interface ParsedArgs {
   serveOnly: boolean;
   subcommand: "doctor" | "status" | null;
   version: boolean;
+  attachPaths: string[];
 }
 
 const ALLOWED_HOSTS = ["127.0.0.1", "localhost"];
@@ -52,6 +53,12 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     .option("--no-open", "do not auto-open browser")
     .option("--headless-smoke", "boot, run synthetic smoke, then exit 0", false)
     .option("--serve-only", "boot server and keep it running (no smoke, no browser open)", false)
+    .option(
+      "--attach <path>",
+      "additional squad root to attach (repeatable)",
+      (value: string, previous: string[]) => [...previous, value],
+      [] as string[],
+    )
     .allowExcessArguments(false)
     .addHelpText(
       "after",
@@ -72,6 +79,7 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     open: boolean;
     headlessSmoke: boolean;
     serveOnly: boolean;
+    attach: string[];
   }>();
 
   if (!ALLOWED_HOSTS.includes(opts.host)) {
@@ -91,5 +99,6 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     serveOnly: opts.serveOnly,
     subcommand,
     version: false,
+    attachPaths: opts.attach ?? [],
   };
 }

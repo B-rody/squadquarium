@@ -27,12 +27,14 @@ export interface AppStore {
   connection: ConnectionState;
   logLines: LogEntry[];
   approvalPending: ApprovalPendingSignal[];
+  isScrubbing: boolean;
 
   setSnapshot: (s: Snapshot) => void;
   appendEvent: (e: SquadquariumEvent) => void;
   setConnection: (c: Partial<ConnectionState>) => void;
   appendLogLine: (l: LogEntry) => void;
   addApprovalSignal: (s: ApprovalPendingSignal) => void;
+  setScrubbing: (v: boolean) => void;
 }
 
 function detectApprovalPendingSignal(event: SquadquariumEvent): ApprovalPendingSignal | null {
@@ -65,6 +67,7 @@ export const useStore = create<AppStore>((set) => ({
   },
   logLines: [],
   approvalPending: [],
+  isScrubbing: false,
 
   setSnapshot: (snapshot) =>
     set((s) => ({
@@ -75,6 +78,8 @@ export const useStore = create<AppStore>((set) => ({
 
   appendEvent: (event) =>
     set((s) => {
+      // Pause live event ingestion while the time scrubber is active
+      if (s.isScrubbing) return {};
       const events = [...s.events, event].slice(-MAX_EVENTS);
       const entityState = new Map(s.entityState);
       entityState.set(event.entityKey, event.payload);
@@ -91,6 +96,8 @@ export const useStore = create<AppStore>((set) => ({
 
   addApprovalSignal: (signal) =>
     set((s) => ({ approvalPending: [...s.approvalPending, signal].slice(-20) })),
+
+  setScrubbing: (isScrubbing) => set({ isScrubbing }),
 }));
 
 // ── Ritual Events ────────────────────────────────────────────────────────────
@@ -198,4 +205,49 @@ export function useIsSelfPortrait(): boolean {
   const parts = squadRoot.replace(/\\/g, "/").split("/").filter(Boolean);
   const repoBasename = parts.length >= 2 ? (parts[parts.length - 2] ?? "") : "";
   return repoBasename.toLowerCase() === "squadquarium";
+}
+
+// ── Visitor Events ────────────────────────────────────────────────────────────
+
+export interface VisitorArrival {
+  name: string;
+  entityKey: string;
+  at: number;
+}
+
+export function detectVisitorArrival(event: SquadquariumEvent): VisitorArrival | null {
+  if (/agent:guest:/i.test(event.entityKey)) {
+    const nameMatch = /agent:guest:([^:/]+)/i.exec(event.entityKey);
+    return { name: nameMatch?.[1] ?? "visitor", entityKey: event.entityKey, at: event.observedAt };
+  }
+  if (typeof event.payload === "object" && event.payload !== null) {
+    const p = event.payload as Record<string, unknown>;
+    if (p["kind"] === "visitor-arrived") {
+      return {
+        name: (typeof p["name"] === "string" ? p["name"] : null) ?? "visitor",
+        entityKey: event.entityKey,
+        at: event.observedAt,
+      };
+    }
+  }
+  return null;
+}
+
+export function useVisitorArrivals(): VisitorArrival[] {
+  const events = useStore((s) => s.events);
+  const processedRef = useRef(0);
+  const [arrivals, setArrivals] = useState<VisitorArrival[]>([]);
+
+  useEffect(() => {
+    const newEvents = events.slice(processedRef.current);
+    if (newEvents.length === 0) return;
+    processedRef.current = events.length;
+
+    const newArrivals = newEvents.map(detectVisitorArrival).filter(Boolean) as VisitorArrival[];
+    if (newArrivals.length > 0) {
+      setArrivals((prev) => [...prev, ...newArrivals].slice(-10));
+    }
+  }, [events]);
+
+  return arrivals;
 }

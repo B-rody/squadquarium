@@ -1,6 +1,6 @@
 # Contributing to Squadquarium
 
-> Last updated: 2026-05-05 — Ripley (Tester / Reviewer)
+> Last updated: 2026-05-06 — Ripley (Tester / Reviewer)
 
 ---
 
@@ -125,8 +125,10 @@ build tools.
 | `@squadquarium/core` | `packages/core/` | Parker | No (internal) |
 | `@squadquarium/web` | `packages/web/` | Lambert | No (bundled via CLI) |
 | `squadquarium` (CLI) | `packages/cli/` | Parker | **Yes** — npm |
+| `squadquarium-vscode` | `packages/squadquarium-vscode/` | Lambert | **Yes** — VS Marketplace |
+| `squadquarium-app` | `packages/squadquarium-app/` | Lambert | **Opt-in** — Tauri native binary |
 
-The CLI is the only published artifact. It uses **esbuild** to bundle
+The CLI is the only **npm-published** artifact. It uses **esbuild** to bundle
 `@squadquarium/core` inline at build time; `@squadquarium/web`'s Vite bundle is
 copied into `web-dist/` by the `prepack` script. See `packages/cli/README.md`.
 
@@ -139,3 +141,187 @@ running the headless smoke burst or opening a browser — used by Playwright's
 ```bash
 node packages/cli/dist/index.js --serve-only --port=6280
 ```
+
+---
+
+## prebuildify and native prebuilds
+
+`node-pty` (and any future native addon) ships prebuilt binaries via the
+`prebuildify` pipeline. When a prebuild exists for your Node + platform tuple,
+`pnpm install` uses it directly and **does not invoke node-gyp**. This makes
+installs fast and build-tool-free for most users.
+
+If no prebuild exists for your platform (uncommon), node-gyp runs automatically.
+The `squadquarium doctor` command reports whether `node-pty` loaded from a prebuild
+or fell back to a gyp build:
+
+```bash
+node packages/cli/dist/index.js doctor
+```
+
+---
+
+## Tauri native window wrapper (`squadquarium-app`)
+
+`packages/squadquarium-app/` is an **opt-in** Tauri 2 wrapper that produces a
+frameless, transparent native OS window instead of a browser tab.
+
+### Build prerequisites
+
+The Tauri wrapper requires the **Rust toolchain** — Brady's host does not have
+Rust installed by policy, so the package ships as a scaffold only. Install via:
+
+```
+https://rustup.rs/
+```
+
+On **Windows** also install MSVC Build Tools:
+
+```
+winget install Microsoft.VisualStudio.2022.BuildTools
+```
+
+### Developing the Tauri wrapper
+
+```bash
+# 1. Build the CLI (produces web bundle the Tauri window loads):
+pnpm --filter squadquarium build
+
+# 2. Start the CLI server:
+node packages/cli/dist/index.js --serve-only --port=6280
+
+# 3. In a second terminal, run Tauri dev:
+pnpm --filter squadquarium-app dev
+```
+
+### Building platform binaries
+
+```bash
+pnpm --filter squadquarium-app build
+```
+
+This produces `.app` / `.exe` / `.AppImage` / `.deb` installers in
+`packages/squadquarium-app/src-tauri/target/release/bundle/`.
+
+---
+
+## VS Code webview wrapper (`squadquarium-vscode`)
+
+```bash
+pnpm --filter squadquarium-vscode build
+```
+
+This produces the VS Code extension VSIX in `packages/squadquarium-vscode/`.
+Run `code --install-extension packages/squadquarium-vscode/*.vsix` to install locally.
+
+---
+
+## CLI subcommands (v1 + v2)
+
+The `squadquarium` CLI now supports the following subcommands in addition to the
+base `squadquarium [path]` server command:
+
+| Subcommand | Description |
+|-----------|-------------|
+| `squadquarium doctor` | Node/PTY/port/Squad health checks |
+| `squadquarium status` | One-screen snapshot (agents, decisions, events) |
+| `squadquarium trace <agent>` | Live trace for a named agent |
+| `squadquarium why <query>` | Ask Squad why it did something |
+| `squadquarium inspect <agent>` | Full agent inspection (charter, history, skills) |
+| `squadquarium diorama` | Launch the terminal diorama view |
+| `squadquarium aspire` | Browse and trigger aspirations |
+| `squadquarium --headless-smoke` | CI smoke boot (exits 0/non-zero) |
+
+```bash
+node packages/cli/dist/index.js --help
+```
+
+---
+
+## Command palette (`:` key) — v1 + v2 verbs
+
+Inside the diorama web UI, press `:` to open the command palette. New v1 + v2 verbs:
+
+| Verb | Effect |
+|------|--------|
+| `:scrub` | Open the Time Scrubber panel (replay events) |
+| `:wisdom` | Open the Wisdom Wing overlay (team patterns + skills) |
+| `:settings` | Open the Settings panel |
+| `:marketplace` | Open the Plugin Marketplace panel |
+| `:obs <mode>` | Toggle OBS-friendly background mode (`green-screen` / `transparent` / `dark` / `off`) |
+| `:skins` | Open the Skin Browser |
+| `:standup` | Generate a standup summary from recent events |
+| `:ralph start` | Start `squad watch` in an interactive PTY session |
+| `:ralph stop` | Stop the running `squad watch` session |
+| `:trace <agent>` | Open a live trace overlay for the named agent |
+| `:why <query>` | Ask Squad why it did something (interactive PTY) |
+| `:inspect <agent>` | Full agent inspect panel |
+| `:diorama` | Launch terminal diorama |
+| `:aspire` | Browse and trigger aspirations |
+
+---
+
+## Multi-attach mode
+
+The CLI supports attaching to multiple squad roots simultaneously via repeated
+`--attach` flags:
+
+```bash
+node packages/cli/dist/index.js --attach ~/project-a/.squad --attach ~/project-b/.squad
+```
+
+When multiple roots are attached, the web UI renders a horizontal split with one
+habitat panel per root. Each panel observes its own event stream independently.
+
+---
+
+## Game mode (cosmetic-only, hard rule)
+
+Game mode adds an XP / Level / Ideas overlay to the diorama. Toggle it in the
+Settings panel (`⚙` button or `:settings`).
+
+**Hard rule:** game-mode values (XP, level, ideas) are cosmetic counters derived
+from event counts. They **must never** affect:
+
+- Habitat glyph layout
+- Band positions or agent role state
+- The log panel output
+- Any value in the reconciler state
+
+This invariant is enforced by the Playwright `game-mode.spec.ts` test
+(`window.__squadquarium__.__getReconcilerState()` must be identical with/without
+game mode enabled). Violations are a blocker — do not bypass Ripley's gate.
+
+---
+
+## Plugin marketplace
+
+Browse and install Squad plugins via:
+
+- **UI:** `:marketplace` in the command palette, or `squad plugin install <name>`
+  via the interactive PTY (`:marketplace browse <url>`)
+- **CLI:** `squad plugin install <name>` directly from a terminal
+
+Installed plugins are tracked in `.squad/plugins/marketplaces.json`. The
+marketplace panel reads this file via the CLI's WebSocket bridge.
+
+---
+
+## Screenshot baseline policy (updated for v1 + v2)
+
+Baselines now cover all skins × all states × all OS variants. The policy is
+**deferred until visuals stabilize** (i.e., all v1 + v2 components are landed
+and the screenshot suite passes cleanly on CI for two consecutive pushes).
+
+Until stabilized:
+- **Do not update baselines for WIP components.** Wait for Lambert's sign-off.
+- **Skin browser, OBS mode, game panel, marketplace** — no baselines yet.
+- **Core smoke baseline** (`smoke-root.png`) is the only active golden.
+
+Once visuals stabilize, run the clean-baseline procedure from the repo root:
+
+```bash
+pnpm test:web -u
+```
+
+Commit the updated `.png` files. CI never auto-updates baselines.

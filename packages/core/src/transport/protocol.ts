@@ -31,6 +31,14 @@ export interface Snapshot {
   decisions: DecisionEntry[];
   logTail: LogEntry[];
   skinNames: string[];
+  /** v2: multiple attached squads (Parker adds this in Wave 2). Falls back gracefully if absent. */
+  attachedSquads?: Array<{ id: string; label: string; snapshot: Snapshot }>;
+}
+
+export interface AttachedSquadSummary {
+  id: string;
+  label: string;
+  snapshot: Snapshot;
 }
 
 export type ServerFrame =
@@ -42,8 +50,19 @@ export type ServerFrame =
       squadRoot: string | null;
       mode: "connected" | "empty-state";
     }
-  | { kind: "snapshot"; serverSeq: number; snapshot: Snapshot }
-  | { kind: "event"; serverSeq: number; event: SquadquariumEvent }
+  | {
+      kind: "snapshot";
+      serverSeq: number;
+      snapshot: Snapshot;
+      attachedSquads?: AttachedSquadSummary[];
+    }
+  | {
+      kind: "event";
+      serverSeq: number;
+      event: SquadquariumEvent;
+      attachedSquadId?: string;
+    }
+  | { kind: "replay"; serverSeq: number; events: SquadquariumEvent[] }
   | { kind: "marketplace-list"; serverSeq: number; marketplaces: MarketplaceEntry[] }
   | {
       kind: "marketplace-browse";
@@ -104,4 +123,5 @@ export type ClientFrame =
   | { kind: "ping"; clientSeq: number }
   | { kind: "marketplace-list-req"; clientSeq: number }
   | { kind: "marketplace-browse-req"; clientSeq: number; marketplace: string }
-  | { kind: "marketplace-install-req"; clientSeq: number; marketplace: string; plugin: string };
+  | { kind: "marketplace-install-req"; clientSeq: number; marketplace: string; plugin: string }
+  | { kind: "replay-request"; clientSeq: number; from?: number; to?: number };
