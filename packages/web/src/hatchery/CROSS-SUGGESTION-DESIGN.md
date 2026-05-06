@@ -1,6 +1,6 @@
 # Hatchery Cross-Suggestion Design
 
-**Status:** Design doc — not yet implemented. Lambert owns implementation in a future wave if Brady greenlights.  
+**Status:** Design doc — not yet implemented. Lambert owns implementation in a future wave if Brody greenlights.  
 **Date:** 2026-05-06T03:51:00Z  
 **Author:** Dallas (Lead)  
 **Phase:** v1 Polish Pass

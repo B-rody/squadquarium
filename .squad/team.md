@@ -23,7 +23,7 @@
 
 - **Project:** squadquarium
 - **What:** A no-click idle diorama for your AI dev team. A terminal-styled GUI wrapper around bradygaster/squad — the engine is Squad; we are the dogfood-able ambient companion that makes the team feel alive.
-- **User:** Brody Schulke (Brady) — the human. Solo developer + designer. Dev environment is **Windows-only**; cross-platform validation comes from CI.
+- **User:** Brody Schulke (Brody) — the human. Solo developer + designer. Dev environment is **Windows-only**; cross-platform validation comes from CI.
 - **Created:** 2026-05-05
 - **Casting universe:** Alien (small-crew, isolated, vigilance-coded — fits a weekend hack with one independent reviewer)
 - **Squad version pin:** 0.9.4 (alpha — pin per Squadquarium release; treat `squad upgrade` as a port window)

@@ -12,7 +12,7 @@
 ## Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brady (Brody Schulke).
+- **User:** Brody (Brody Schulke).
 - **Created:** 2026-05-05.
 
 ## What I Own

@@ -16,7 +16,7 @@
  * @TODO: When @types/vscode is not available in the registry, replace the `vscode`
  * import below with the stub interface at the bottom of this file and set
  * USE_VSCODE_STUB = true. The structure and logic are identical; only the type source
- * differs. Brady runs `vsce package` manually after ensuring @types/vscode resolves.
+ * differs. Brody runs `vsce package` manually after ensuring @types/vscode resolves.
  */
 
 // @ts-expect-error — vscode is injected by the VS Code runtime; @types/vscode provides types

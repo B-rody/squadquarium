@@ -1,7 +1,7 @@
 # Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brody Schulke (Brady). Windows-only host; cross-platform validated in GitHub Actions CI matrix (windows-latest + macos-latest + ubuntu-latest).
+- **User:** Brody Schulke (Brody). Windows-only host; cross-platform validated in GitHub Actions CI matrix (windows-latest + macos-latest + ubuntu-latest).
 - **Stack:** TypeScript 5, Node ≥ 22.5 (current host: 24.14.1), pnpm 10.33.3 workspace, `@bradygaster/squad-sdk` pinned to `0.9.4`, `node-pty` (rebuilt via `node-gyp` at install), Fastify or stdlib `http`, `ws` for the loopback WebSocket, `open` package for browser launch.
 - **My packages:** `packages/core/` (no UI; runs in Node) and `packages/cli/` (`squadquarium` / `sqq` bin entries).
 - **Created:** 2026-05-05.
@@ -82,6 +82,6 @@
 
 **Multi-attach:** `SquadStateAdapter` gains public `id` and `label` fields. `createMulti({ contexts })` is the multi-squad factory — creates adapters in parallel, filters nulls. CLI `--attach <path>` is a repeatable Commander accumulator option. Server snapshot frame gains `attachedSquads` (optional); event frames gain `attachedSquadId` (optional). Each attached adapter runs its own observer/bus subscription; events are tagged with `attachedSquadId` and forwarded over the shared `serverSeq` counter. All attached adapters are disposed in the CLI's `finally` block.
 
-**VS Code webview wrapper:** New `packages/squadquarium-vscode/` CJS package (engines.vscode `^1.85.0`). `activate()` registers `squadquarium.open`; command handler spawns `squadquarium --serve-only` on first use, creates a webview panel, and proxies WS via `acquireVsCodeApi().postMessage`. A JS shim patches `window.WebSocket` in the renderer. Built with esbuild (`format: "cjs"`, `vscode` external). `@types/vscode ^1.85.0` provides types; `@ts-expect-error` guards the `import type` line. `vsce package` is a manual Brady step.
+**VS Code webview wrapper:** New `packages/squadquarium-vscode/` CJS package (engines.vscode `^1.85.0`). `activate()` registers `squadquarium.open`; command handler spawns `squadquarium --serve-only` on first use, creates a webview panel, and proxies WS via `acquireVsCodeApi().postMessage`. A JS shim patches `window.WebSocket` in the renderer. Built with esbuild (`format: "cjs"`, `vscode` external). `@types/vscode ^1.85.0` provides types; `@ts-expect-error` guards the `import type` line. `vsce package` is a manual Brody step.
 
 **node-pty prebuilds:** `prebuildify` + `node-gyp-build` added to cli devDependencies. Script `packages/cli/scripts/prebuild-node-pty.mjs` resolves node-pty source through three fallback paths (local → hoisted → require.resolve). `.github/workflows/prebuild.yml` runs the matrix (windows/macos/ubuntu) on tag push; prebuilds uploaded as artifacts; publish step intentionally omitted. `prebuilds/` added to cli `files` array. `continue-on-error: true` on the prebuild step guards against pnpm 10 isolated nodeLinker resolution issues until validated; see `.squad/decisions/inbox/parker-prebuilds.md` for the workaround.

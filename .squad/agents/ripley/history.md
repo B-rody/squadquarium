@@ -1,7 +1,7 @@
 # Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brody Schulke (Brady). Windows-only host; cross-platform validation is **mine** via the GitHub Actions CI matrix.
+- **User:** Brody Schulke (Brody). Windows-only host; cross-platform validation is **mine** via the GitHub Actions CI matrix.
 - **Test stack:** Vitest 2.x for `packages/core/` + `packages/cli/`; Playwright 1.x for `packages/web/` (screenshot baselines + DOM/canvas assertions); GitHub Actions matrix (windows-latest + macos-latest + ubuntu-latest) for PTY install smoke.
 - **Quality gate per commit:** `pnpm lint && pnpm test && pnpm build && pnpm smoke` — all green or no commit.
 - **Created:** 2026-05-05.
@@ -75,6 +75,6 @@ Without it, the `pack-install-smoke` CI job fails at the pack step.
 
 **WisdomWing backdrop click coordinates:** `WisdomWing` renders with `position: absolute, inset: 24px` inside the main content area (below the ~36px header). Its inner panel is 520px wide and centered in the 1280px default viewport, placing it at x ≈ 380–900px. Clicking at `(10, 10)` hits the header, not the backdrop. The correct backdrop-click coordinates for chromium-1x are any `(x < 380, y > 60)` — e.g. `(50, 200)`.
 
-**Tauri scaffold on Rust-less machines:** Brady has no Rust toolchain (offline-by-policy). The `build` script in `packages/squadquarium-app/package.json` uses an inline Node.js check (`node -e "try{require('child_process').execSync('cargo --version')}catch(e){process.exit(0)}"`). If `cargo` is absent, it exits 0 silently, so `pnpm -r build` passes. Documenting this here so future agents don't "fix" the graceful skip.
+**Tauri scaffold on Rust-less machines:** Brody has no Rust toolchain (offline-by-policy). The `build` script in `packages/squadquarium-app/package.json` uses an inline Node.js check (`node -e "try{require('child_process').execSync('cargo --version')}catch(e){process.exit(0)}"`). If `cargo` is absent, it exits 0 silently, so `pnpm -r build` passes. Documenting this here so future agents don't "fix" the graceful skip.
 
 **Spec fixmes are decision artifacts:** The six new Playwright spec files each have a mix of ACTIVE tests (verified working) and `test.fixme(...)` tests (components partially landed but not UI-wired). Each fixme cluster represents a forward-looking contract, not a bug. Created five decision inbox entries pointing Lambert to the exact wiring gaps for marketplace panel, game-mode toggle, OBS mode palette command, and multi-attach URL param.

@@ -96,9 +96,9 @@ Artifacts from failing runs are available in the GitHub Actions UI for 14 days.
 
 ---
 
-## Windows-host caveats (Brady's setup)
+## Windows-host caveats (Brody's setup)
 
-Brady develops exclusively on Windows. Cross-platform validation runs in CI —
+Brody develops exclusively on Windows. Cross-platform validation runs in CI —
 do **not** assume "works on my machine" unless CI confirms all three OSes.
 
 **`node-pty` build dependency:** `pnpm install` may fail to build the native
@@ -168,7 +168,7 @@ frameless, transparent native OS window instead of a browser tab.
 
 ### Build prerequisites
 
-The Tauri wrapper requires the **Rust toolchain** — Brady's host does not have
+The Tauri wrapper requires the **Rust toolchain** — Brody's host does not have
 Rust installed by policy, so the package ships as a scaffold only. Install via:
 
 ```

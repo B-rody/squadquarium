@@ -1,9 +1,17 @@
 # Squad Decisions
 
 ## Active Decisions
+### 2026-05-06T09:31 PT — User directive: name correction (correct to Brody)
+**By:** Brody Schulke (via Copilot)
+**What:** The user's correct name is **Brody**. Fixed mechanical case-sensitive rename across every project-authored file (.squad/, README, CONTRIBUTING, CHANGELOG, plan.md, .github/CONTRIBUTING-UPSTREAM.md, .github/POCOCK-PACK.md, packages/squadquarium-{app,vscode}/README.md, packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md, packages/squadquarium-vscode/src/extension.ts). Going forward, address the user as "Brody" in chat, history files, decisions, and spawn prompts.
+**Do NOT modify:** `.github/agents/squad.agent.md` (vendored Squad governance — uses an example placeholder name; not ours to edit) or `.squad/templates/**` (vendored Squad templates that may be re-templated by `squad upgrade`).
+**Why:** User correction of a coordinator misread. Stored so future agents address the user correctly.
+
+---
+
 ### 2026-05-05T20:51 PT — User directive: continue past v0 STOP gate through all remaining phases
-**By:** Brady (Brody Schulke) (via Copilot)
-**What:** "yes, this makes sense. proceed with your plan. do not stop until you are completely finished with all remaining phases." Brady has reviewed and accepted all 8 No-Ask-Rule assumptions logged in `.squad/QUESTIONS-FOR-HUMAN.md` (casting universe, Tester strictness, web framework, node-pty fallback, default port, CI-only validation, sprite flavor, naming) plus the additional dispositions noted (top-level package private, macOS Playwright deferred, 6 fixme'd Playwright specs, esbuild over bundleDependencies). Brady has explicitly overridden the v0 STOP gate from the original task brief and instructed the coordinator to continue through Phase 5 (v1 — the polish pass) and Phase 6 (v2 — game toggle + reach) to completion under the same autonomous contract.
+**By:** Brody (Brody Schulke) (via Copilot)
+**What:** "yes, this makes sense. proceed with your plan. do not stop until you are completely finished with all remaining phases." Brody has reviewed and accepted all 8 No-Ask-Rule assumptions logged in `.squad/QUESTIONS-FOR-HUMAN.md` (casting universe, Tester strictness, web framework, node-pty fallback, default port, CI-only validation, sprite flavor, naming) plus the additional dispositions noted (top-level package private, macOS Playwright deferred, 6 fixme'd Playwright specs, esbuild over bundleDependencies). Brody has explicitly overridden the v0 STOP gate from the original task brief and instructed the coordinator to continue through Phase 5 (v1 — the polish pass) and Phase 6 (v2 — game toggle + reach) to completion under the same autonomous contract.
 **Why:** User direction. Captured for team memory and so future agents understand why the team is continuing past what plan.md called the "stop and review" gate.
 **Operating contract carried forward:** No-Ask Rule (assumptions to QUESTIONS-FOR-HUMAN.md), park-and-pivot on blockers, forward progress > correctness on first try, per-commit quality gate enforced by Ripley.
 **Items that will be parked with logged rationale (truly blocked offline / external):** (1) `npm publish` to the registry (requires the user's npm credentials); (2) opening PRs against the upstream `bradygaster/squad` repo; (3) optional native shell wrapper if it requires Rust toolchain setup not already present; (4) Pocock pack license review (requires conversation with Matt Pocock).
@@ -109,7 +117,7 @@ Gap per plan.md: per-skill usage stats and decisions.md cross-links are not yet 
 Evidence:
 - `packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md` — full design doc: detection signal (PTY phrase matching + ANSI strip + false-positive guard), Zustand state shape (`pendingScriptoriumSeeds: ScriptoriumSeed[]`), three-condition handoff trigger, toast banner spec, seed format contract.
 
-Gap: No implementation in `packages/web/src/transport/store.ts` or `HabitatPanel.tsx`. Lambert owns implementation; pending Brady greenlight.
+Gap: No implementation in `packages/web/src/transport/store.ts` or `HabitatPanel.tsx`. Lambert owns implementation; pending Brody greenlight.
 
 ---
 
@@ -118,10 +126,10 @@ Gap: No implementation in `packages/web/src/transport/store.ts` or `HabitatPanel
 **Status: [parked] — skill must prove itself in real use first**
 
 Evidence:
-- Skill is authored (`confidence: low`). Real-use evidence (Brady running thorough mode and finding it useful without being annoying) does not yet exist.
+- Skill is authored (`confidence: low`). Real-use evidence (Brody running thorough mode and finding it useful without being annoying) does not yet exist.
 - `.github/CONTRIBUTING-UPSTREAM.md` (new, this wave) documents the upstream PR prep guide with exact git commands.
 
-Brady action required: run thorough mode in a real Hatchery session; if positive, follow the guide in `.github/CONTRIBUTING-UPSTREAM.md` (a).
+Brody action required: run thorough mode in a real Hatchery session; if positive, follow the guide in `.github/CONTRIBUTING-UPSTREAM.md` (a).
 
 ---
 
@@ -153,13 +161,13 @@ Gap: Plan.md calls for "full sprite set, ambient drift rules, vocab map — brin
 
 ### 11. Optional native shell wrapper (`squadquarium-app` / Tauri)
 
-**Status: [parked] — Brady demand gate**
+**Status: [parked] — Brody demand gate**
 
 Evidence: No `squadquarium-app` package in the monorepo. No `src-tauri/` directory. No `tauri.conf.json`.
 
 Blocker: plan.md gates this on "audience demand." No demand signal exists yet. Tauri also requires a Rust toolchain; code signing requires an Apple/Microsoft developer account. Not appropriate to begin autonomously.
 
-Brady action: greenlight when demand signal appears. See `README.md → v1 + v2 added` for the documented roadmap note.
+Brody action: greenlight when demand signal appears. See `README.md → v1 + v2 added` for the documented roadmap note.
 
 ---
 
@@ -171,7 +179,7 @@ Evidence: No `prebuildify` in `package.json` scripts. No `.prebuild-install` or 
 
 Blocker: plan.md says "if v0 install friction shows up in real installs." No real-install friction reports exist yet — the spike confirmed that the current build path works. Prebuildify is v1 hardening gated on actual user reports.
 
-Brady action: if users report `node-gyp` failures, use the guide in `README.md → Install troubleshooting` as the first mitigation; escalate to prebuildify if the pattern is widespread.
+Brody action: if users report `node-gyp` failures, use the guide in `README.md → Install troubleshooting` as the first mitigation; escalate to prebuildify if the pattern is widespread.
 
 ---
 
@@ -254,7 +262,7 @@ Evidence:
 
 No `gameMode`, `xp`, `cosmeticLoot`, or `dailyStandup` in any source file. Not yet designed. Design must enforce the plan.md hard constraint: game layer is cosmetic-only and never affects agent decisions or orchestration.
 
-Brady action: greenlight design once v1 polish is stable.
+Brody action: greenlight design once v1 polish is stable.
 
 ---
 
@@ -280,7 +288,7 @@ No `--attach` flag in `packages/cli/src/argv.ts`. Single-context resolution only
 
 No VS Code extension package in the monorepo. The web bundle is designed to be embeddable (same bundle, no electron dependency). The wrapper itself is a separate package (`squadquarium-vscode` or similar), opt-in, and requires VS Code extension scaffolding.
 
-Brady action: initiate when there is VS Code user demand. The web bundle is ready to be embedded.
+Brody action: initiate when there is VS Code user demand. The web bundle is ready to be embedded.
 
 ---
 
@@ -298,7 +306,7 @@ No `obsMode` in `AppSettings` or any source file. Not yet designed.
 
 `.github/CONTRIBUTING-UPSTREAM.md` (b) documents the upstream PR guide and the naming risk (SquadOffice WS bridge, `squad rc`, `squad aspire` lane separation). The discussion thread must be opened and alignment confirmed before any code lands upstream.
 
-Brady action: open the GitHub Discussion in `bradygaster/squad-cli` per the guide.
+Brody action: open the GitHub Discussion in `bradygaster/squad-cli` per the guide.
 
 ---
 
@@ -317,13 +325,13 @@ Gap: No in-app skin browser UI. No signed-manifest pipeline. Skin authors can au
 
 ### 8. Pocock pack: co-authored curriculum with Matt Pocock
 
-**Status: [parked] — license blocker; Brady must initiate**
+**Status: [parked] — license blocker; Brody must initiate**
 
 `.github/POCOCK-PACK.md` (new, this wave) documents the full status, outreach plan, and what is safe to do autonomously (cite + link only).
 
 Blocker: `mattpocock/skills` license not confirmed permissive. No redistribution until confirmed.
 
-Brady action: open a GitHub Discussion in `mattpocock/skills` per `.github/POCOCK-PACK.md`.
+Brody action: open a GitHub Discussion in `mattpocock/skills` per `.github/POCOCK-PACK.md`.
 
 ---
 
@@ -357,7 +365,7 @@ Brady action: open a GitHub Discussion in `mattpocock/skills` per `.github/POCOC
 
 ### Mark `[parked]` in plan.md
 
-| Item | plan.md location | Brady action |
+| Item | plan.md location | Brody action |
 |---|---|---|
 | PR upstream (grill-template) | v1 line ~1188 | Run thorough mode; follow CONTRIBUTING-UPSTREAM.md (a) |
 | Tauri native wrapper | v1 line ~1199 | Greenlight on demand |
@@ -393,11 +401,11 @@ Authored `.squad/skills/squad-grill-template/SKILL.md` as Squadquarium's first S
 
 ### Why: domain set to `meta`
 
-No existing Squadquarium skills existed to establish a domain taxonomy. `meta` is the most accurate single-word descriptor for a skill about orchestrating other template-filling flows. If Brady or the team establishes a preferred domain vocabulary (e.g., `meta-orchestration`, `orchestration`, `workflow`), this is the first file to update. Squad's `parseSkillFile` is lenient on domain values — this is not a breaking choice.
+No existing Squadquarium skills existed to establish a domain taxonomy. `meta` is the most accurate single-word descriptor for a skill about orchestrating other template-filling flows. If Brody or the team establishes a preferred domain vocabulary (e.g., `meta-orchestration`, `orchestration`, `workflow`), this is the first file to update. Squad's `parseSkillFile` is lenient on domain values — this is not a breaking choice.
 
 ### Why: confidence set to `low`
 
-First observation. The skill is written from first principles, not from observed real-world use. Confidence can only increase (Squad's schema says confidence is monotonically increasing). It should bump to `medium` after Brady uses thorough mode in at least one real Hatchery or Scriptorium session without complaint. There is no ceremony needed — just a `git commit` changing `confidence: low` to `confidence: medium` in the frontmatter.
+First observation. The skill is written from first principles, not from observed real-world use. Confidence can only increase (Squad's schema says confidence is monotonically increasing). It should bump to `medium` after Brody uses thorough mode in at least one real Hatchery or Scriptorium session without complaint. There is no ceremony needed — just a `git commit` changing `confidence: low` to `confidence: medium` in the frontmatter.
 
 ### Why: scope-respect rule is Rule 1
 
@@ -482,7 +490,7 @@ The following v1 items are untouched by Dallas's wave. Parker and Lambert may ha
 | PR upstream | Blocked on `squad-grill-template` proven in real use — now unblocked in principle, not yet proposed | Future wave |
 | Plugin marketplace UX | Lambert / renderer | Not audited by Dallas |
 | Office skin polish | Lambert / renderer | Not audited by Dallas |
-| Optional native shell wrapper (`squadquarium-app`) | Brady decision gate | Future wave |
+| Optional native shell wrapper (`squadquarium-app`) | Brody decision gate | Future wave |
 | `node-pty` prebuilds | Blocked on v0 install friction confirmation | Future wave |
 | Ralph as visible night-shift creature | Lambert / renderer | Not audited by Dallas |
 | Per-agent voice-line samples | Lambert / renderer | Not audited by Dallas |
@@ -497,15 +505,15 @@ The following v1 items are untouched by Dallas's wave. Parker and Lambert may ha
 
 ### Gap 1 — `squad-grill-template` is written but not battle-tested
 
-The skill is authored (`confidence: low`) and the frontmatter is Squad-compatible. It cannot be flipped to `confidence: medium` until Brady has run thorough mode at least once in a real Hatchery or Scriptorium session and the output was useful without being annoying. That feedback loop doesn't exist yet. **No action needed now — confidence bumps organically.**
+The skill is authored (`confidence: low`) and the frontmatter is Squad-compatible. It cannot be flipped to `confidence: medium` until Brody has run thorough mode at least once in a real Hatchery or Scriptorium session and the output was useful without being annoying. That feedback loop doesn't exist yet. **No action needed now — confidence bumps organically.**
 
 ### Gap 2 — Hatchery cross-suggestion has no implementation yet
 
-The design doc is complete. Lambert needs a Brady greenlight before implementing the Zustand slice, banner UI, and PTY signal scanner. The doc explicitly names the out-of-scope items so Lambert doesn't over-build. **Recommendation:** Brady greenlight Lambert for implementation in Wave 2.
+The design doc is complete. Lambert needs a Brody greenlight before implementing the Zustand slice, banner UI, and PTY signal scanner. The doc explicitly names the out-of-scope items so Lambert doesn't over-build. **Recommendation:** Brody greenlight Lambert for implementation in Wave 2.
 
 ### Gap 3 — `squad-grill-template` domain taxonomy
 
-The skill uses `domain: meta`. No existing Squadquarium skills existed to establish a taxonomy before this wave. If Brady or future contributors establish a different preferred domain (e.g., `meta-orchestration`, `orchestration`, `workflow`), this file should be updated. **Low urgency — Squad's `parseSkillFile` is lenient on domain values.**
+The skill uses `domain: meta`. No existing Squadquarium skills existed to establish a taxonomy before this wave. If Brody or future contributors establish a different preferred domain (e.g., `meta-orchestration`, `orchestration`, `workflow`), this file should be updated. **Low urgency — Squad's `parseSkillFile` is lenient on domain values.**
 
 ### Gap 4 — Parker + Lambert wave outcomes not yet visible
 
@@ -518,8 +526,8 @@ This audit is Dallas's slice only. Once Parker and Lambert commit their wave out
 1. **Flip to `[x]`:** `squad-grill-template` skill (plan.md line ~1168)
 2. **Flip to `[x]`:** Hatchery cross-suggestion design doc (plan.md line ~1184) — design is done; Lambert implements separately
 3. **Hold:** All other v1 items pending Parker + Lambert audit
-4. **Ask Brady:** Greenlight Lambert for Hatchery cross-suggestion implementation in Wave 2?
-5. **Ask Brady:** Thorough mode toggle — should it default to the last session's setting, or always reset to off?
+4. **Ask Brody:** Greenlight Lambert for Hatchery cross-suggestion implementation in Wave 2?
+5. **Ask Brody:** Thorough mode toggle — should it default to the last session's setting, or always reset to off?
 
 
 ---
@@ -705,7 +713,7 @@ Toolchain chosen: `prebuildify` + `node-gyp-build` (industry standard; used by n
 - Script: `packages/cli/scripts/prebuild-node-pty.mjs`.
 - Prebuilds output to `packages/cli/prebuilds/` — included in npm tarball via `"files"`.
 - CI workflow: `.github/workflows/prebuild.yml` — matrix: windows-latest, macos-latest, ubuntu-latest — triggered on `v*.*.*` tag push.
-- `npm publish` intentionally omitted from CI; Brady runs it manually.
+- `npm publish` intentionally omitted from CI; Brody runs it manually.
 
 ---
 
@@ -861,11 +869,11 @@ Key design choices:
 - **`vscode` external** — never bundled; injected by the VS Code runtime. `@types/vscode ^1.85.0` provides types.
 - **WS proxy shim** — webview renderers cannot open raw TCP sockets. The extension process holds the real `ws.WebSocket` connection; a JS shim patched into `window.WebSocket` inside the renderer routes frames via `acquireVsCodeApi().postMessage`. This is the standard VS Code pattern for WS-backed webviews.
 - **Server lifecycle** — `ensureServer()` spawns `squadquarium --serve-only --port <port>` as a child process on first command activation; subsequent `squadquarium.open` calls reuse the running process. The server is killed on `deactivate()`.
-- **Asset bundling** — `webview-dist/` is copied at VSIX pack time (analogous to `web-dist/` in the CLI tarball). Not automated yet; Brady copies manually before `vsce package`.
+- **Asset bundling** — `webview-dist/` is copied at VSIX pack time (analogous to `web-dist/` in the CLI tarball). Not automated yet; Brody copies manually before `vsce package`.
 
 ## Why
 
-Brady wants the diorama accessible from VS Code without leaving the editor. The webview wrapper is the zero-infrastructure path: no new server, no sidecar — just the existing CLI server behind a webview panel.
+Brody wants the diorama accessible from VS Code without leaving the editor. The webview wrapper is the zero-infrastructure path: no new server, no sidecar — just the existing CLI server behind a webview panel.
 
 ## VSIX packaging command
 
@@ -874,7 +882,7 @@ Brady wants the diorama accessible from VS Code without leaving the editor. The 
 npx @vscode/vsce package --out squadquarium-vscode.vsix
 ```
 
-`vsce publish` is intentionally omitted from CI. Brady runs it manually.
+`vsce publish` is intentionally omitted from CI. Brody runs it manually.
 
 ## @types/vscode availability note
 
@@ -1024,11 +1032,11 @@ Four Playwright tests in `packages/web/test/e2e/obs-mode.spec.ts` are marked `te
 
 **Date:** 2026-05-06T00:00Z  
 **By:** Ripley (Tester/Reviewer)  
-**Status:** Active — opt-in, Brady has no Rust toolchain
+**Status:** Active — opt-in, Brody has no Rust toolchain
 
 ## Summary
 
-`packages/squadquarium-app/` has been scaffolded as the Tauri 2 native wrapper for Squadquarium. It is **documentation-only** for Brady's machine: the `build` script detects missing `cargo` and exits 0 gracefully, so `pnpm -r build` passes without Rust installed.
+`packages/squadquarium-app/` has been scaffolded as the Tauri 2 native wrapper for Squadquarium. It is **documentation-only** for Brody's machine: the `build` script detects missing `cargo` and exits 0 gracefully, so `pnpm -r build` passes without Rust installed.
 
 ## What was created
 
@@ -1052,7 +1060,7 @@ Four Playwright tests in `packages/web/test/e2e/obs-mode.spec.ts` are marked `te
 3. Run `pnpm tauri build` to produce the installer
 4. If bundle identifiers or window chrome need adjustment, edit `src-tauri/tauri.conf.json`
 
-## Brady-action
+## Brody-action
 
 Confirm the `com.squadquarium.app` bundle ID is acceptable (or change it before any App Store / Windows Store submission).
 
@@ -1084,7 +1092,7 @@ Logging here so the Coordinator does not close the v0 milestone without explicit
 
 #### The README decision
 
-README scope was kept to install, quick-start, what-it-does/doesn't, requirements, troubleshooting, commands, skins, architecture, PWA, contributing, dogfood, license, status. Demo placeholder (`[ ! demo gif goes here ]`) replaces the actual recording — that is Brady's job post-v0 and requires a real running session. ASCII diorama at the bottom of the README serves as a stand-in illustration.
+README scope was kept to install, quick-start, what-it-does/doesn't, requirements, troubleshooting, commands, skins, architecture, PWA, contributing, dogfood, license, status. Demo placeholder (`[ ! demo gif goes here ]`) replaces the actual recording — that is Brody's job post-v0 and requires a real running session. ASCII diorama at the bottom of the README serves as a stand-in illustration.
 
 Length landed at ~260 lines — within the 250–400 target.
 
@@ -1355,7 +1363,7 @@ to gate every push. `continue-on-error: false` since this decision lands.
 
 ### 2026-05-05T22:30Z — v0 COMPLETE
 **By:** Squad (Coordinator) — autonomous v0 build session
-**For:** Brady (Brody Schulke), offline during the build per the No-Ask Rule
+**For:** Brody (Brody Schulke), offline during the build per the No-Ask Rule
 **Status:** v0 deliverables on disk and green; ready for human review
 
 #### Summary
@@ -1421,7 +1429,7 @@ the Phase 2 CI matrix.
 - `.squad/identity/wisdom.md` populated with distilled patterns from the dogfood pact.
 - `README.md` (211 lines): tagline, quickstart, what it does / doesn't, requirements, troubleshooting, every command, skins, architecture, PWA, contributing, dogfooding, license, status.
 - `CHANGELOG.md` (Keep a Changelog conventions).
-- `CONTRIBUTING.md` (per-commit gate, reviewer-rejection lockout, baseline policy, Brady's Windows-host caveat, esbuild publish shape).
+- `CONTRIBUTING.md` (per-commit gate, reviewer-rejection lockout, baseline policy, Brody's Windows-host caveat, esbuild publish shape).
 
 #### Known gaps + handoffs
 
@@ -1429,21 +1437,21 @@ These are NOT v0 failures — they are intentional scope cuts logged for v1+:
 
 1. **Playwright deferred specs.** 6 of 12 specs ship as `test.fixme` (cell-row alignment under live render, manifest schema compliance loaded at runtime, missing-glyph dev-console warning Playwright observation). They activate as soon as the band-state visuals stabilize in v0.x maintenance — the contract is in place; the assertions are scaffolded.
 2. **macOS Playwright in CI.** Skipped in the first matrix pass to keep CI fast. Add when the win/linux passes are green and stable.
-3. **`patch-ink-rendering.mjs` real-world fidelity.** Spike 2's pipeline is wired (PTY → xterm.js); only Brady-driven Interactive mode usage will surface ink-renderer regressions worth filing as bugs against the contract.
+3. **`patch-ink-rendering.mjs` real-world fidelity.** Spike 2's pipeline is wired (PTY → xterm.js); only Brody-driven Interactive mode usage will surface ink-renderer regressions worth filing as bugs against the contract.
 4. **`squadquarium trace`, `why`, `inspect`, `diorama`** subcommands — explicit v1 items in plan.md.
 5. **`squad-grill-template` skill** — explicit v1 item.
 6. **Office skin polish.** v0 ships intentionally minimal Office to lock the schema, per plan.md "Skins" section.
 7. **PWA icon set.** Placeholder; v1 polish per the v0 deliverable note.
 8. **Top-level package.json `private: true`.** The publishable artifact is `packages/cli` renamed to `squadquarium`. Top level stays workspace-only — flip it when there's a reason (there isn't, in v0).
 
-#### Assumptions logged for Brady's review
+#### Assumptions logged for Brody's review
 
 `.squad/QUESTIONS-FOR-HUMAN.md` captures every reversible decision made
 under the No-Ask Rule (casting universe, Tester strictness, sprite
-flavor, naming, default port, `node-pty` fallback option, etc.). Brady
+flavor, naming, default port, `node-pty` fallback option, etc.). Brody
 should skim it on return.
 
-#### Recommended next actions for Brady
+#### Recommended next actions for Brody
 
 1. `git --no-pager log --oneline` to see the commit narrative.
 2. `cat .squad/QUESTIONS-FOR-HUMAN.md` to review every reversible call.
@@ -1456,7 +1464,7 @@ should skim it on return.
 
 Per the autonomy contract: this session ends here for human review
 before continuing into v1. The Coordinator does NOT proceed to v1 work
-without explicit Brady direction.
+without explicit Brody direction.
 
 ---
 
@@ -1483,7 +1491,7 @@ without explicit Brady direction.
 ### 2026-05-05T22:30Z — Spike 5: CI matrix + per-commit gate + screenshot baseline policy
 **By:** Ripley (Tester) — Spike 5 delivery  
 **What:** GitHub Actions matrix (ubuntu-latest, windows-latest, macos-latest) running `pnpm lint && pnpm test && pnpm build && pnpm test:web` (Playwright skipped on macOS in v0 for cost/speed). Per-commit gate via `pnpm smoke` (calls `node scripts/quality-gate.mjs`). Screenshot baselines per-OS in `packages/web/test/e2e/__screenshots__/`; `pnpm test:web -u` updates only from clean run; CI never auto-updates. Pixel tolerance = zero.  
-**Why:** Brady is offline; autonomous build with per-commit gate enforced by Tester is the only guard rail. macOS Playwright deferred to v1 (10× cost premium, 2–3× slower). CONTRIBUTING.md documents the gate.
+**Why:** Brody is offline; autonomous build with per-commit gate enforced by Tester is the only guard rail. macOS Playwright deferred to v1 (10× cost premium, 2–3× slower). CONTRIBUTING.md documents the gate.
 
 ### 2026-05-05T22:30Z — North star: ambient-by-default, drill-in on demand, CLI parity
 **By:** Dallas (via Coordinator) — distilled from `plan.md` "North star"
@@ -1503,7 +1511,7 @@ without explicit Brady direction.
 ### 2026-05-05T22:30Z — Pre-v0 spike order (gates, not parallel tracks)
 **By:** Dallas + Parker (via Coordinator) — distilled from `plan.md` "Pre-v0 spikes"
 **What:** Spikes run in this order (each can rescope v0):
-  1. `node-pty` cross-platform load — Win/macOS/Linux via the CI matrix (Brady is Windows-only locally).
+  1. `node-pty` cross-platform load — Win/macOS/Linux via the CI matrix (Brody is Windows-only locally).
   2. xterm.js + Squad ink TUI compatibility (highest-uncertainty technical risk; Squad ships `patch-ink-rendering.mjs`).
   3. `dist/remote-ui/` bridge investigation — confirm whether a structured channel exists; if yes, becomes a fifth event source between `bus` and `pty`.
   4. Skin manifest schema lock at `manifestVersion: 1`.
@@ -1533,16 +1541,16 @@ without explicit Brady direction.
   - **Playwright 1.x** for `packages/web` — glyph-grid invariants, palette token assertions, manifest-schema compliance, ANSI trust boundary, Interactive-mode focus toggle, screenshot baselines per skin per state per OS at 1× and 2× DPI.
   - Tester reviews engineers' PRs before commits land. Reviewer-rejection lockout is strict.
   - Goldens stored at `packages/web/test/__screenshots__/{skin}/{state}/{os}-{dpi}.png`. Updated only via explicit `pnpm test:web -u` from a clean run; CI never auto-updates.
-**Why:** Brady is offline. Without an independent verification owner with teeth, regressions accumulate silently. Tester is the autonomous-build linchpin (recorded in `team.md` already; this is the contract).
+**Why:** Brody is offline. Without an independent verification owner with teeth, regressions accumulate silently. Tester is the autonomous-build linchpin (recorded in `team.md` already; this is the contract).
 
 ### 2026-05-05T22:30Z — CI strategy
 **By:** Ripley + Parker (via Coordinator)
 **What:**
-  - **GitHub Actions matrix** — `windows-latest` (Brady's only local platform), `macos-latest`, `ubuntu-latest`. Node 22.5 + Node 24 (current host).
+  - **GitHub Actions matrix** — `windows-latest` (Brody's only local platform), `macos-latest`, `ubuntu-latest`. Node 22.5 + Node 24 (current host).
   - **Per-push job:** `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` (Vitest workspace-wide) → `pnpm build` → `pnpm test:web` (Playwright on each OS) → `pnpm smoke` (`squadquarium --headless-smoke` on each OS).
   - **Pack-and-install smoke (release-candidate trigger):** `pnpm pack` → `npm install -g <tarball>` → `squadquarium --headless-smoke` on each OS runner. This is the `node-pty` cross-platform validation.
   - All jobs upload Playwright screenshot diffs as artifacts on failure.
-**Why:** Brady develops on Windows only; cross-platform claims must be machine-verified, not asserted. Plan.md's pre-v0 spike for `node-pty` install only makes sense as a CI matrix.
+**Why:** Brody develops on Windows only; cross-platform claims must be machine-verified, not asserted. Plan.md's pre-v0 spike for `node-pty` install only makes sense as a CI matrix.
 
 ### 2026-05-05T22:30Z — Sprite/visual validation
 **By:** Ripley + Lambert (via Coordinator)
@@ -1557,7 +1565,7 @@ without explicit Brady direction.
 ### 2026-05-05T22:30Z — Quality gate per commit
 **By:** Ripley (via Coordinator)
 **What:** Every commit must satisfy `pnpm lint && pnpm test && pnpm build && pnpm smoke` green before it lands. Tester (Ripley) enforces. Reviewer-rejection lockout: rejected PR → original author cannot revise; Coordinator routes the fix to a different engineer or escalates to Dallas. Recursively applies if the revision is also rejected.
-**Why:** Autonomous build with no human gate makes the per-commit bar the only gate. "Will fix in next commit" is a failure mode we cannot afford while Brady is offline.
+**Why:** Autonomous build with no human gate makes the per-commit bar the only gate. "Will fix in next commit" is a failure mode we cannot afford while Brody is offline.
 
 ### 2026-05-05T22:30Z — `node-pty` install fallback chosen: option (a)
 **By:** Parker + Dallas (via Coordinator)
@@ -1571,7 +1579,7 @@ without explicit Brady direction.
 
 ### 2026-05-05T22:30Z — Naming: Hatchery (agents) + Scriptorium (skills) + Hatcher (sub-agent)
 **By:** Dallas (via Coordinator)
-**What:** Use these names throughout. Skin `vocab.json` handles label swaps at render time if Brady wants alternates later.
+**What:** Use these names throughout. Skin `vocab.json` handles label swaps at render time if Brody wants alternates later.
 **Why:** Plan.md uses these names throughout; alternates (Bestiary/Codex; Pond/Library; Nursery/Atelier) are speculative.
 
 ## Governance

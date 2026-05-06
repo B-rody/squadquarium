@@ -1,6 +1,6 @@
 # Pocock Pack — status and outreach plan
 
-**Status: PARKED — requires Brady to initiate.**  
+**Status: PARKED — requires Brody to initiate.**  
 **Last reviewed: 2026-05-06T03:51Z (Dallas, Phase 5 Wave 2)**
 
 ---
@@ -44,7 +44,7 @@ his work without copying any of his content.
 
 ## Outreach plan
 
-Brady initiates. Autonomous action is not appropriate here.
+Brody initiates. Autonomous action is not appropriate here.
 
 **Step 1 — open a GitHub Discussion** in `mattpocock/skills`:
 
@@ -80,12 +80,12 @@ Brady initiates. Autonomous action is not appropriate here.
 
 This item is explicitly v3+. It depends on:
 
-1. Brady initiating the conversation.
+1. Brody initiating the conversation.
 2. License or co-authoring agreement landing.
 3. Squadquarium's plugin marketplace browser shipping (v2 roadmap).
 
 Do not treat this as a v2 deliverable. Do not begin any bundling or
-redistribution work before Brady confirms the license situation.
+redistribution work before Brody confirms the license situation.
 
 ---
 
@@ -99,5 +99,5 @@ redistribution work before Brady confirms the license situation.
 
 ---
 
-*This file is a coordination artifact. Brady owns the action. Dallas owns the
+*This file is a coordination artifact. Brody owns the action. Dallas owns the
 doc. Coordinator archives once the conversation is initiated.*

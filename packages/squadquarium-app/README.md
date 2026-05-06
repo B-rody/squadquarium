@@ -17,7 +17,7 @@ Users who are happy with a browser tab do not need this package.
 
 ### 1 — Rust toolchain (required to build)
 
-Tauri 2 requires a Rust toolchain **and** the platform system dependencies. Brady's host does not
+Tauri 2 requires a Rust toolchain **and** the platform system dependencies. Brody's host does not
 have Rust installed by policy (offline), so this package is **scaffold-only** in the monorepo.
 
 Install Rust via rustup:

@@ -305,7 +305,7 @@ MIT — see [LICENSE](./LICENSE) if present, or assume standard MIT for pre-1.0.
 
 ## Status
 
-**Alpha — v0.** Pinned to Squad 0.9.4. Built fully autonomously by an offline Brady + a Squad team (Dallas, Lambert, Parker, Ripley) in one session — see the commit history for the full story. Breaking changes expected until v1.
+**Alpha — v0.** Pinned to Squad 0.9.4. Built fully autonomously by an offline Brody + a Squad team (Dallas, Lambert, Parker, Ripley) in one session — see the commit history for the full story. Breaking changes expected until v1.
 
 ```
 ╔═ squadquarium · alpha ═══════════════════════ phosphor-cyan ═╗

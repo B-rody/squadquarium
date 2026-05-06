@@ -1,7 +1,7 @@
 # Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brody Schulke (Brady). Solo dev + designer. **Windows-only host**; cross-platform validated in CI.
+- **User:** Brody Schulke (Brody). Solo dev + designer. **Windows-only host**; cross-platform validated in CI.
 - **Stack:** TypeScript everywhere, pnpm 10.33.3 workspace, React 19 + Vite 7, Canvas2D, node-pty + xterm.js, `@bradygaster/squad-sdk` pinned to `0.9.4`, Node ≥ 22.5.
 - **Repo layout:** `packages/{core,web,cli}` + `skins/{aquarium,office}` + `.squad/` (this team).
 - **Created:** 2026-05-05.
@@ -52,7 +52,7 @@
 
 - `README.md` — updated from 211 lines to reflect v1+v2 reality. New sections: expanded Commands table (trace/why/inspect/diorama/aspire), in-app command palette reference, Settings panel table (CRT/voice bubbles/mood glyphs/SFX/always-on-top), Wisdom Wing, Plugin marketplace, Game mode (cosmetic-only constraint explicit), v1+v2 added bullet list (shipped vs parked). Skins section updated with community skin packs roadmap note. No marketing fluff added; spirit of v0 README preserved.
 - `.github/CONTRIBUTING-UPSTREAM.md` — new file. Two upstream PR prep guides with copyable git commands: (a) filing `squad-grill-template` as a Squad built-in skill (fork, copy, issue, PR, body template including Pocock credit block); (b) proposing Squadquarium as `squad ui` subcommand (discussion-first approach, naming risk section for SquadOffice/squad rc collision, stub PR flow).
-- `.github/POCOCK-PACK.md` — new file. Documents the v2 Pocock pack item: what it is, why it's blocked (license not confirmed permissive), outreach plan (Brady-only action: GitHub Discussion in mattpocock/skills), v3+ flow if co-authoring lands, what is safe to do autonomously right now (cite + link only).
+- `.github/POCOCK-PACK.md` — new file. Documents the v2 Pocock pack item: what it is, why it's blocked (license not confirmed permissive), outreach plan (Brody-only action: GitHub Discussion in mattpocock/skills), v3+ flow if co-authoring lands, what is safe to do autonomously right now (cite + link only).
 - `.squad/decisions/inbox/dallas-final-v1-v2-audit.md` — final v1+v2 plan.md audit, 18 v1 items + 8 v2 items. Per-item verdict with artifact citations. Coordinator summary table: 10 items to flip `[x]`, 6 items to mark `[partial]`, 6 items to mark `[parked]`, 5 items to hold at `[ ]`. This is the master manifest for the Coordinator's plan.md checkpoint pass.
 - `.squad/identity/wisdom.md` — two patterns appended: upstream PR prep docs as deliverable (not post-ship), and `[parked]` vs `[ ]` classification discipline in audit manifests.
 
@@ -63,12 +63,12 @@ v1 shipped items confirmed: `trace`/`why`/`inspect`/`diorama`/`aspire` CLI subco
 **Decisions recorded:**
 
 - `.squad/decisions/inbox/dallas-final-v1-v2-audit.md` is the definitive checkpoint manifest.
-- `.github/CONTRIBUTING-UPSTREAM.md` and `.github/POCOCK-PACK.md` are the two new governance artifacts that unlock Brady-gated upstream actions.
+- `.github/CONTRIBUTING-UPSTREAM.md` and `.github/POCOCK-PACK.md` are the two new governance artifacts that unlock Brody-gated upstream actions.
 
 ## Learnings
 
 **Audit discipline:**
-The distinction between `[parked]` and `[ ]` proved important. Five v2 items are `[ ]` (not designed, no external blocker — just not done yet). Six items are `[parked]` (externally gated: Brady must initiate a conversation, or audience demand must appear, or a license must be confirmed). Mixing the two classifications would hide which items require Brady action and which are just in the queue.
+The distinction between `[parked]` and `[ ]` proved important. Five v2 items are `[ ]` (not designed, no external blocker — just not done yet). Six items are `[parked]` (externally gated: Brody must initiate a conversation, or audience demand must appear, or a license must be confirmed). Mixing the two classifications would hide which items require Brody action and which are just in the queue.
 
 **Upstream PR prep as a deliverable:**
 Writing CONTRIBUTING-UPSTREAM.md before the upstream PRs are filed makes the path from "working on our end" to "living upstream" concrete. The friction of forgetting the exact fork/copy/PR-body steps is higher than the cost of writing it now. This pattern should apply to any future Squadquarium feature that has a known upstream home.
@@ -79,7 +79,7 @@ The "cosmetic-only" constraint for game mode is the single most important produc
 
 **Deliverables produced:**
 - `.squad/skills/squad-grill-template/SKILL.md` — Squadquarium's first authored skill. ~340 lines. Frontmatter-complete per Squad schema. Five named patterns (scope-respect, required-field completeness, cross-template coherence, fail-closed, deep-interview toggle). Six anti-patterns named explicitly. Hatchery + Scriptorium worked examples. Pocock `grill-with-docs` cited and linked. Domain `meta`; confidence `low` (first observation; bumps with real use).
-- `packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md` — design doc for Hatchery cross-suggestion queue. Fully specced: detection signal (PTY phrase matching + ANSI strip + false-positive guard), Zustand state shape (`pendingScriptoriumSeeds: ScriptoriumSeed[]`), three-condition handoff trigger, toast banner UI spec, seed format contract (single clean line), out-of-scope exclusions. Lambert-ready for Wave 2 implementation pending Brady greenlight.
+- `packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md` — design doc for Hatchery cross-suggestion queue. Fully specced: detection signal (PTY phrase matching + ANSI strip + false-positive guard), Zustand state shape (`pendingScriptoriumSeeds: ScriptoriumSeed[]`), three-condition handoff trigger, toast banner UI spec, seed format contract (single clean line), out-of-scope exclusions. Lambert-ready for Wave 2 implementation pending Brody greenlight.
 - `.squad/decisions/inbox/dallas-v1-wave1-audit.md` — post-wave v1 checklist audit. Dallas's two items confirmed landed; 16 others deferred to Parker/Lambert audit or future waves.
 - `.squad/identity/wisdom.md` — appended: "Skills that walk template placeholders must include a fail-closed clause."
 

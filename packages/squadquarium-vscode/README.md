@@ -35,7 +35,7 @@ To package as a `.vsix` for local install or marketplace upload:
 npx @vscode/vsce package --out squadquarium-vscode.vsix
 ```
 
-> **Note:** Brady runs `vsce package` and `vsce publish` manually with marketplace credentials. The CI pipeline intentionally omits the publish step.
+> **Note:** Brody runs `vsce package` and `vsce publish` manually with marketplace credentials. The CI pipeline intentionally omits the publish step.
 
 ## Bundling the Web Assets
 

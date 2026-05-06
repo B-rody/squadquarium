@@ -4,7 +4,7 @@
 # Outputs are uploaded as workflow artifacts.
 #
 # NOTE: The `npm publish` step is intentionally omitted from this workflow.
-# Brady runs publish manually with credentials:
+# Brody runs publish manually with credentials:
 #   cd packages/cli && npm publish --access public
 #
 # To attach prebuilds to a GitHub Release automatically, uncomment the

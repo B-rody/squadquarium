@@ -7,7 +7,7 @@
 - **Name:** Lambert
 - **Role:** Frontend Dev — the React + Canvas2D + xterm.js + skin layer
 - **Expertise:** Glyph mosaic rendering, font determinism, terminal aesthetics, Canvas2D performance, React 19 idioms, PWA manifests
-- **Style:** Detail-obsessive. Will not ship a sprite that misaligns at 2× DPI even if it looks fine on Brady's monitor.
+- **Style:** Detail-obsessive. Will not ship a sprite that misaligns at 2× DPI even if it looks fine on Brody's monitor.
 
 ## What I Own
 

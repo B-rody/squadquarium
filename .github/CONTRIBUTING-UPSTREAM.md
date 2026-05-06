@@ -89,7 +89,7 @@ EOF
 ### After the PR lands
 
 Bump `squad-grill-template`'s confidence from `low` to `medium` in your local
-`.squad/skills/squad-grill-template/SKILL.md` once Brady has run thorough mode
+`.squad/skills/squad-grill-template/SKILL.md` once Brody has run thorough mode
 in at least one real Hatchery session and reported it useful.
 
 ---

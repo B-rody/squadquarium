@@ -1,7 +1,7 @@
 # Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brady (Brody Schulke).
+- **User:** Brody (Brody Schulke).
 - **Created:** 2026-05-05.
 - **Stack:** TypeScript / pnpm 10.33.3 workspace / `packages/{core,web,cli}` + `skins/{aquarium,office}` / Squad SDK pin 0.9.4 / Node ≥ 22.5.
 

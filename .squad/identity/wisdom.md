@@ -66,7 +66,7 @@ The Squadquarium v0 build was the most demanding stress test the Squad CLI / SDK
 
 **Pattern:** Upstream PR prep docs with copyable git commands are a deliverable, not a post-ship task. Write them when the code lands so the path from "it works here" to "it lives upstream" is never blocked on memory. **Context:** any project with an explicit upstream-PR roadmap item (skill filing, squad ui subcommand, Tauri wrapper, etc.).
 
-**Pattern:** Classify externally-blocked roadmap items as `[parked]` (not `[ ]`) in audit manifests. `[ ]` implies "someone on the team can unblock this." `[parked]` makes the Brady-action explicit. **Context:** any audit pass over plan.md items that depend on license confirmation, external repo maintainer response, or code-signing infrastructure.
+**Pattern:** Classify externally-blocked roadmap items as `[parked]` (not `[ ]`) in audit manifests. `[ ]` implies "someone on the team can unblock this." `[parked]` makes the Brody-action explicit. **Context:** any audit pass over plan.md items that depend on license confirmation, external repo maintainer response, or code-signing infrastructure.
 
 **Pattern:** VS Code webview extensions cannot open raw TCP sockets from the renderer. Route WS frames through cquireVsCodeApi().postMessage with a window.WebSocket shim injected into the webview HTML. The extension process holds the real ws.WebSocket and relays frames in both directions. **Context:** Any VS Code extension wrapping a WS-backed web UI.
 

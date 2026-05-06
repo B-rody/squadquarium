@@ -66,7 +66,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 
 ## [0.1.0] — 2026-05-05 · v0 + v1 — "Weekend Hack"
 
-> Alpha. Pinned to Squad 0.9.4. Built fully autonomously by Brady + the Squad team
+> Alpha. Pinned to Squad 0.9.4. Built fully autonomously by Brody + the Squad team
 > (Dallas, Lambert, Parker, Ripley) in one offline session.
 
 ### Added — Phase 1: Roster, charters, decisions, plan.md

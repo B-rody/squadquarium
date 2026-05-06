@@ -1,7 +1,7 @@
 # Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brody Schulke (Brady). Windows-only host; cross-platform via CI.
+- **User:** Brody Schulke (Brody). Windows-only host; cross-platform via CI.
 - **Stack:** React 19 + Vite 7 + TypeScript 5; Canvas2D for glyph rendering; xterm.js + `@xterm/addon-fit` + `@xterm/addon-web-links` (links **off** by default); JetBrains Mono woff2 bundled; PWA manifest + service worker; CSS-only CRT effects (bloom, scanlines, optional barrel distortion).
 - **My package:** `packages/web/`. Talks to `packages/core/` over a single loopback WebSocket on `127.0.0.1`.
 - **Created:** 2026-05-05.

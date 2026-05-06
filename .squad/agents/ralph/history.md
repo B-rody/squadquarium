@@ -1,7 +1,7 @@
 # Project Context
 
 - **Project:** Squadquarium — terminal-styled idle diorama wrapping bradygaster/squad.
-- **User:** Brady (Brody Schulke).
+- **User:** Brody (Brody Schulke).
 - **Created:** 2026-05-05.
 - **My status in v0: dormant.** The Coordinator does not spawn me during the autonomous v0 build.
 

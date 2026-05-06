@@ -1,9 +1,9 @@
-# Questions for Brady
+# Questions for Brody
 
 > Append-only log of decisions made under the **No-Ask Rule** during the autonomous v0 build (kickoff: 2026-05-05T22:30Z).
 >
 > Format per entry: question / chosen assumption / rationale / reversibility.
-> If Brady disagrees later, the choice is reversible because it was logged here and in `.squad/decisions.md`.
+> If Brody disagrees later, the choice is reversible because it was logged here and in `.squad/decisions.md`.
 
 ---
 
@@ -25,7 +25,7 @@
 
 **Chosen assumption:** **Strict.** Ripley enforces the per-commit quality gate (lint + test + build + launch-smoke green) and exercises the reviewer-rejection lockout when an engineer's PR fails. No commit lands without sign-off.
 
-**Rationale:** Brady is offline; the only safety net for "is this actually working?" is the Tester. Soft Tester → silent regressions accumulate while Brady can't catch them. Better to over-rotate on rigor while autonomous.
+**Rationale:** Brody is offline; the only safety net for "is this actually working?" is the Tester. Soft Tester → silent regressions accumulate while Brody can't catch them. Better to over-rotate on rigor while autonomous.
 
 **Reversibility:** Lower the bar in v1 if it slows shipping; the gate logic is in CI, easy to relax.
 
@@ -69,11 +69,11 @@
 
 ## 2026-05-05T22:30Z — `node-pty` install fallback (CI-only validation gap)
 
-**Question:** Brady dev's only on Windows. macOS / Linux validation only happens in CI — does that satisfy the "load spike" gate?
+**Question:** Brody dev's only on Windows. macOS / Linux validation only happens in CI — does that satisfy the "load spike" gate?
 
-**Chosen assumption:** **Yes.** The CI matrix (Windows + macOS + Linux runners on GitHub Actions) running the `npm pack` + `npm install -g <tarball>` smoke counts as the cross-platform spike. We do not require Brady to procure mac/linux test hosts.
+**Chosen assumption:** **Yes.** The CI matrix (Windows + macOS + Linux runners on GitHub Actions) running the `npm pack` + `npm install -g <tarball>` smoke counts as the cross-platform spike. We do not require Brody to procure mac/linux test hosts.
 
-**Rationale:** Brady can't validate offline, and CI is the canonical multi-platform check anyway.
+**Rationale:** Brody can't validate offline, and CI is the canonical multi-platform check anyway.
 
 **Reversibility:** None needed — this is the standard pattern.
 
@@ -97,7 +97,7 @@
 
 **Chosen assumption:** **Hatchery + Scriptorium + Hatcher**. Plan.md uses these names throughout; alternates are speculative.
 
-**Rationale:** Consistency with plan.md prose. Renaming inside skin vocab maps is cheap if Brady prefers an alternate later.
+**Rationale:** Consistency with plan.md prose. Renaming inside skin vocab maps is cheap if Brody prefers an alternate later.
 
 **Reversibility:** `vocab.json` per skin handles label swaps at render time; identifier rename is one find/replace pass.
 

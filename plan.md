@@ -424,7 +424,7 @@ Coordinator reads `.squad-templates/charter.md`, `roster.md`,
 the `{Name}`, `{Role}`, `{user name}`, `{domain}` placeholders, and
 writes the filled-in files into `.squad/`. **There is no parser**
 anywhere in Squad's source — confirmed by code search; the LLM does
-the elicitation. Brady already authored the curriculum.
+the elicitation. Brody already authored the curriculum.
 
 So **v0's "Hatcher" is just Squad's Coordinator** with a seeded prompt
 and a visualization layer. The Hatchery and Scriptorium UI surfaces
@@ -455,7 +455,7 @@ not adversarial drill-down:
   *and* `routing.md` (a row) *and* `roster.md` (an entry). This is
   mechanical and high-value, and the Coordinator does it inconsistently
   today.
-- **Inspectable.** Unlike `squad.agent.md` (93 KB, only Brady edits),
+- **Inspectable.** Unlike `squad.agent.md` (93 KB, only Brody edits),
   this is a forkable SKILL.md anyone can read and improve.
 
 Parameterized by template set — Hatchery hands it agent templates,
@@ -483,7 +483,7 @@ one-click "promote to full Squad frontmatter" flow.
 ## Hatchery — adding a new teammate
 
 A side-room (a clutch of warm eggs in the Aquarium skin; a hiring booth in
-the Office skin) where new teammates are born. Brady fully specifies the
+the Office skin) where new teammates are born. Brody fully specifies the
 on-disk shape — this is a thin, opinionated UI on top of his canonical
 artifacts.
 
@@ -828,7 +828,7 @@ quality gate is non-negotiable.
 
 ### CI strategy
 
-- **GitHub Actions matrix** — `windows-latest` (Brady's only local platform), `macos-latest`, `ubuntu-latest`. Node ≥ 22.5 (the minimum Squad requires).
+- **GitHub Actions matrix** — `windows-latest` (Brody's only local platform), `macos-latest`, `ubuntu-latest`. Node ≥ 22.5 (the minimum Squad requires).
 - **Per-push job** — `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test` (Vitest workspace-wide) → `pnpm build` → `pnpm test:web` (Playwright on each OS) → `pnpm smoke` (`squadquarium --headless-smoke` on each OS). Playwright screenshot diffs uploaded as artifacts on failure.
 - **Pack-and-install smoke (release-candidate trigger)** — `pnpm pack` → `npm install -g <tarball>` → `squadquarium --headless-smoke` on each OS runner. Failures here block the release candidate.
 - **Branch protection (when GitHub remote exists):** all matrix jobs required green before merge to `main`.
@@ -993,7 +993,7 @@ plan, so they happen after bootstrap and before any UI work.
       via PTY in `packages/core/src/spikes/pty-load/`).
       macOS / Linux validation deferred to the GitHub Actions CI
       matrix (`pack-install-smoke` job in `.github/workflows/ci.yml`)
-      — Brady is Windows-only locally per testing-strategy decision.
+      — Brody is Windows-only locally per testing-strategy decision.
 - [x] **xterm.js + Squad ink TUI compatibility spike.** Run
       `squad watch` and the Coordinator flow through `node-pty` into
       `xterm.js`. Verify resize behavior, alt-screen mode, cursor
@@ -1007,7 +1007,7 @@ plan, so they happen after bootstrap and before any UI work.
       the browser via the `LogPanel` Interactive mode. Cursor +
       title OSC are allowed; clipboard / bell / system-color OSC
       blocked. Real-world ink-renderer fidelity (alt-screen, wide
-      chars, resize) is verified incrementally as Brady drives the
+      chars, resize) is verified incrementally as Brody drives the
       Interactive mode in the demo; if a regression surfaces, it's
       a bug to file against this contract — the contract itself
       ships in v0.)*
@@ -1147,7 +1147,7 @@ Everything that smells like "would be cool" lives in v1.
       `## Voice` charter line via new `AgentSummary.charterVoice` field.)*
 - [x] README with install / launch / `--personal` / PWA-install
       instructions; recorded demo placeholder (the actual recording is
-      Brady's job post-v0 — the ASCII diorama in the README serves as
+      Brody's job post-v0 — the ASCII diorama in the README serves as
       stand-in until then).
       *(Done — Dallas, Wave 2. Full README.md at repo root: title + tagline, quick start, what it does/doesn't, requirements, troubleshooting, commands, skins, architecture, PWA, contributing, dogfood, license, status.)*
 
@@ -1177,7 +1177,7 @@ button; OBS mode; non-loopback hosting.
 - [partial] **Hatchery cross-suggestion**
       *(Design only: `packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md` ships full design — PTY phrase detection, Zustand state shape, three-condition handoff, toast banner spec, seed contract. Implementation pending.)*
 - [parked] **PR upstream**: `squad-grill-template` as a Squad built-in
-      *(`.github/CONTRIBUTING-UPSTREAM.md (a)` documents the upstream PR prep with copyable git commands. Brady action: run thorough mode in real Hatchery use first; if positive, follow the guide.)*
+      *(`.github/CONTRIBUTING-UPSTREAM.md (a)` documents the upstream PR prep with copyable git commands. Brody action: run thorough mode in real Hatchery use first; if positive, follow the guide.)*
 - [x] **Plugin marketplace UX**: detect, browse, install, and cite
       plugins from configured Squad marketplaces
       *(Shipped: backend at `packages/core/src/plugins/marketplace.ts` (list/browse/install) + `MarketplacePanel` UI accessible via `:marketplace`; plugins show source-citation tags in Wisdom Wing. Empty state with copyable `squad plugin marketplace add` hint.)*
@@ -1185,9 +1185,9 @@ button; OBS mode; non-loopback hosting.
       vocab map — bring it to Aquarium parity
       *(Shipped Wave 1: 4 roles × 4 states × 2 frames; `\¤/` celebrate, slumped `[_]` blocked; `node skins/validate.mjs` clean.)*
 - [partial] **Optional native shell wrapper** (`squadquarium-app`): Tauri
-      *(Scaffold shipped at `packages/squadquarium-app/` — package.json + tauri.conf.json + Cargo.toml + src-tauri/src/main.rs + README documenting Rust toolchain prereq. Actual `tauri build` requires Rust install — Brady action when desired.)*
+      *(Scaffold shipped at `packages/squadquarium-app/` — package.json + tauri.conf.json + Cargo.toml + src-tauri/src/main.rs + README documenting Rust toolchain prereq. Actual `tauri build` requires Rust install — Brody action when desired.)*
 - [partial] **`node-pty` prebuilds** (`prebuildify` / `node-gyp-build`)
-      *(Config shipped: `prebuildify` + `node-gyp-build` added to cli devDeps; `packages/cli/scripts/prebuild-node-pty.mjs`; `.github/workflows/prebuild.yml` matrix runs on tag push and uploads prebuilds as artifacts. Actual prebuild publishing intentionally manual — Brady runs `npm publish` with credentials.)*
+      *(Config shipped: `prebuildify` + `node-gyp-build` added to cli devDeps; `packages/cli/scripts/prebuild-node-pty.mjs`; `.github/workflows/prebuild.yml` matrix runs on tag push and uploads prebuilds as artifacts. Actual prebuild publishing intentionally manual — Brody runs `npm publish` with credentials.)*
 - [x] Ralph as visible night-shift creature when watch daemon is
       running; start/stop daemon from UI
       *(Shipped: `<:O>` flashlight figure in deep-trench band when active; PTY-spawn auto-detection; `:ralph start/stop` palette commands; `setRalphActive()` debug hook.)*
@@ -1212,18 +1212,18 @@ button; OBS mode; non-loopback hosting.
       shown as side-by-side habitats in the same window
       *(Shipped: backend `SquadStateAdapter.createMulti({ contexts })` + `--attach <path>` repeatable CLI flag + per-adapter `id`/`label`; events tagged with `attachedSquadId`; snapshot extension `attachedSquads?: { id; label; snapshot }[]`. Frontend behind `enableMultiAttach` settings flag — horizontal split with per-squad labels; log-panel tabs.)*
 - [partial] VS Code webview wrapper of the same web bundle
-      *(Package skeleton shipped at `packages/squadquarium-vscode/` — CJS extension, `squadquarium.open` command, child-process server + WS proxy shim, esbuild bundler, `.vscodeignore`, README. Actual `vsce package` requires the `vsce` CLI run by Brady against a publisher account.)*
+      *(Package skeleton shipped at `packages/squadquarium-vscode/` — CJS extension, `squadquarium.open` command, child-process server + WS proxy shim, esbuild bundler, `.vscodeignore`, README. Actual `vsce package` requires the `vsce` CLI run by Brody against a publisher account.)*
 - [x] OBS-friendly transparent / chroma-key mode for streamers
       *(Shipped: `obsMode` setting `off`/`transparent`/`chroma-green`/`chroma-magenta`; `:obs <mode>` palette command; body background applied inline; 7 vitest cases.)*
 - [parked] Explore PR upstream as `squad ui` subcommand
-      *(`.github/CONTRIBUTING-UPSTREAM.md (b)` documents the upstream PR guide and the SquadOffice/`squad rc`/`squad aspire` lane-separation risk. Brady action: open a discussion in `bradygaster/squad-cli` to align on scope before any code lands.)*
+      *(`.github/CONTRIBUTING-UPSTREAM.md (b)` documents the upstream PR guide and the SquadOffice/`squad rc`/`squad aspire` lane-separation risk. Brody action: open a discussion in `bradygaster/squad-cli` to align on scope before any code lands.)*
 - [x] **Community skin packs**: open the manifest format to
       contributors (deep trench, cottage village, space station,
       fungus colony); skin browser inside Squadquarium; signed manifests
       *(Shipped: `<SkinBrowser />` via `:skins` lists local + 4 community-pack stubs marked `[available v2.x]` with copyable `squad plugin install community/skin-{name}` install hints. Manifest schema extended with typed `x-signature` patternProperty; `AUTHOR-CONTRACT.md` documents the future Ed25519 signing contract (canonical JSON, v3+ verification implementation).)*
 - [parked] **Pocock pack**: explore co-authoring a flagship Hatcher
       curriculum with Matt Pocock
-      *(`.github/POCOCK-PACK.md` documents the full status, outreach plan, and what is safe to do autonomously (cite + link only). Blocker: `mattpocock/skills` license not confirmed permissive. Brady action: open a GitHub Discussion in `mattpocock/skills`.)*
+      *(`.github/POCOCK-PACK.md` documents the full status, outreach plan, and what is safe to do autonomously (cite + link only). Blocker: `mattpocock/skills` license not confirmed permissive. Brody action: open a GitHub Discussion in `mattpocock/skills`.)*
 
 ## Risks / things to watch
 
@@ -1334,7 +1334,7 @@ button; OBS mode; non-loopback hosting.
   Squadside, Pocket Squad, Standup, After Hours. Ship under one,
   rename freely while pre-1.0.
 - Build under personal GitHub or a project org? Personal is fine for v0.
-- Talk to Brady early or after v0 demo? Lean toward "after v0" — show, don't pitch.
+- Talk to Brody early or after v0 demo? Lean toward "after v0" — show, don't pitch.
 - Naming: confirm **Hatchery** (agents) + **Scriptorium** (skills) +
   **Hatcher** (sub-agent). Alternates: Bestiary/Codex; Pond/Library;
   Nursery/Atelier.
