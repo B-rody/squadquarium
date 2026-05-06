@@ -1,22 +1,60 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import HabitatPanel from "./HabitatPanel.js";
 import LogPanel from "./LogPanel.js";
 import InteractiveOverlay from "./InteractiveOverlay.js";
 import DrillIn from "./DrillIn.js";
 import CommandPalette from "./CommandPalette.js";
+import TimeScrubberPanel from "./TimeScrubberPanel.js";
+import WisdomWing, { type SkillChip } from "./WisdomWing.js";
+import SettingsPanel from "./SettingsPanel.js";
 import { useStore, useIsSelfPortrait } from "../transport/store.js";
 import { useWsClient } from "../transport/wsClient.js";
+import { loadSettings, saveSettings, type AppSettings } from "../settings/store.js";
 import type { SkinAssets } from "../skin/loader.js";
 import type { AgentSummary } from "../transport/protocol.js";
+
+type CrtMode = "off" | "scanlines" | "bloom" | "all";
 
 interface Props {
   skinAssets: SkinAssets;
   availableSkins: string[];
   activeSkin: string;
   setActiveSkin: (name: string) => void;
-  crtMode: "off" | "scanlines" | "bloom" | "all";
-  setCrtMode: (m: "off" | "scanlines" | "bloom" | "all") => void;
+  crtMode: CrtMode;
+  setCrtMode: (m: CrtMode) => void;
+}
+
+const WISDOM_PLACEHOLDER = `# Team Wisdom
+
+**Pattern:** Keep canvas animation and CSS camera motion in separate layers. **Context:** Canvas2D glyph renderers with band-local overlays and viewport panning.
+
+**Pattern:** Parse command palette verbs as data before dispatching effects. **Context:** Vim-style UI commands that need unit tests without a full browser harness.
+`;
+
+function settingsToCrtMode(settings: AppSettings): CrtMode {
+  if (settings.crtBloom && settings.crtScanlines) return "all";
+  if (settings.crtBloom) return "bloom";
+  if (settings.crtScanlines) return "scanlines";
+  return "off";
+}
+
+function crtModeToSettings(settings: AppSettings, mode: CrtMode): AppSettings {
+  return {
+    ...settings,
+    crtBloom: mode === "bloom" || mode === "all",
+    crtScanlines: mode === "scanlines" || mode === "all",
+  };
+}
+
+function nextCrtMode(mode: CrtMode): CrtMode {
+  return mode === "off"
+    ? "scanlines"
+    : mode === "scanlines"
+      ? "bloom"
+      : mode === "bloom"
+        ? "all"
+        : "off";
 }
 
 export default function AppShell({
@@ -30,6 +68,7 @@ export default function AppShell({
   const { connection, snapshot } = useStore();
   const { send, on } = useWsClient();
   const isSelfPortrait = useIsSelfPortrait();
+  const pendingRalphWatchRef = useRef(false);
 
   // Build role→castName map for self-portrait band labels.
   const roleCastMap = useMemo(() => {
@@ -40,17 +79,31 @@ export default function AppShell({
     return map;
   }, [snapshot]);
 
+  const [settings, setSettings] = useState<AppSettings>(() => loadSettings());
   const [ptyId, setPtyId] = useState<string | null>(null);
   const [interactive, setInteractive] = useState(false);
   const [drillAgent, setDrillAgent] = useState<AgentSummary | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [scrubberOpen, setScrubberOpen] = useState(false);
+  const [wisdomOpen, setWisdomOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ralphActive, setRalphActive] = useState(false);
+
+  useEffect(() => {
+    const initialMode = settingsToCrtMode(settings);
+    setCrtMode(initialMode);
+  }, []);
 
   useEffect(() => {
     return on("pty-spawned", (frame) => {
       setPtyId(frame.ptyId);
       setInteractive(true);
+      if (pendingRalphWatchRef.current) {
+        setRalphActive(true);
+        pendingRalphWatchRef.current = false;
+      }
     });
   }, [on]);
 
@@ -58,11 +111,32 @@ export default function AppShell({
     document.body.dataset.crt = crtMode === "off" ? "" : crtMode;
   }, [crtMode]);
 
+  const applySettings = useCallback(
+    (next: AppSettings) => {
+      setSettings(next);
+      saveSettings(next);
+      setCrtMode(settingsToCrtMode(next));
+    },
+    [setCrtMode],
+  );
+
+  const cycleCrt = useCallback(() => {
+    const nextMode = nextCrtMode(crtMode);
+    const nextSettings = crtModeToSettings(settings, nextMode);
+    setSettings(nextSettings);
+    saveSettings(nextSettings);
+    setCrtMode(nextMode);
+  }, [crtMode, settings, setCrtMode]);
+
   const openInteractive = useCallback(
     (cmd: string, args: string[], seed?: string) => {
       void seed;
       const cols = 80;
       const rows = 24;
+      if (cmd === "squad" && args[0] === "watch") {
+        pendingRalphWatchRef.current = true;
+        setRalphActive(true);
+      }
       send({ kind: "pty-spawn", clientSeq: 0, cmd, args, cols, rows });
     },
     [send],
@@ -72,6 +146,16 @@ export default function AppShell({
     if (ptyId) send({ kind: "pty-kill", clientSeq: 0, ptyId });
     setPtyId(null);
     setInteractive(false);
+  }, [ptyId, send]);
+
+  const stopRalph = useCallback(() => {
+    setRalphActive(false);
+    pendingRalphWatchRef.current = false;
+    if (ptyId) {
+      send({ kind: "pty-kill", clientSeq: 0, ptyId });
+      setPtyId(null);
+      setInteractive(false);
+    }
   }, [ptyId, send]);
 
   useEffect(() => {
@@ -95,6 +179,15 @@ export default function AppShell({
     [snapshot],
   );
 
+  const skillChips: SkillChip[] = useMemo(
+    () => [
+      { name: "frontend-polish", confidence: "medium" },
+      { name: "skin-metrics", confidence: "high" },
+    ],
+    [],
+  );
+
+  const agentNames = useMemo(() => (snapshot?.agents ?? []).map((agent) => agent.name), [snapshot]);
   const isEmptyState = connection.mode === "empty-state";
 
   const statusColor =
@@ -167,19 +260,12 @@ export default function AppShell({
             </button>
           </>
         )}
+        <button className="shell-btn" onClick={() => setSettingsOpen(true)} style={btnStyle}>
+          [⚙]
+        </button>
         <button
           className="shell-btn"
-          onClick={() =>
-            setCrtMode(
-              crtMode === "off"
-                ? "scanlines"
-                : crtMode === "scanlines"
-                  ? "bloom"
-                  : crtMode === "bloom"
-                    ? "all"
-                    : "off",
-            )
-          }
+          onClick={cycleCrt}
           style={{ ...btnStyle, color: "var(--skin-dim, #004d40)" }}
         >
           [CRT:{crtMode}]
@@ -195,12 +281,33 @@ export default function AppShell({
             roleCastMap={roleCastMap}
           />
         )}
+        {scrubberOpen && <TimeScrubberPanel onClose={() => setScrubberOpen(false)} />}
+        {wisdomOpen && (
+          <WisdomWing
+            markdown={WISDOM_PLACEHOLDER}
+            skills={skillChips}
+            onClose={() => setWisdomOpen(false)}
+          />
+        )}
+        {settingsOpen && (
+          <SettingsPanel
+            settings={settings}
+            onChange={applySettings}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
         <PanelGroup direction="horizontal">
           {!leftCollapsed && (
             <>
               <Panel defaultSize={55} minSize={20}>
                 <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                  <HabitatPanel skinAssets={skinAssets} onAgentClick={handleAgentClick} />
+                  <HabitatPanel
+                    skinAssets={skinAssets}
+                    onAgentClick={handleAgentClick}
+                    voiceBubbles={settings.voiceBubbles}
+                    moodGlyphs={settings.moodGlyphs}
+                    ralphActive={ralphActive}
+                  />
                   <button
                     onClick={() => setLeftCollapsed(true)}
                     style={{
@@ -308,6 +415,7 @@ export default function AppShell({
             </option>
           ))}
         </select>
+        {ralphActive && <span style={{ color: "var(--skin-accent, #80cbc4)" }}>ralph=watch</span>}
         {interactive && <span style={{ color: "var(--skin-alert, #ff5252)" }}>ESC=exit</span>}
         <span style={{ color: "var(--skin-dim, #004d40)" }}>: = cmd</span>
       </div>
@@ -318,6 +426,12 @@ export default function AppShell({
         onClose={() => setPaletteOpen(false)}
         onSkinChange={setActiveSkin}
         onInteractive={openInteractive}
+        onOpenScrubber={() => setScrubberOpen(true)}
+        onOpenWisdom={() => setWisdomOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onRalphStop={stopRalph}
+        availableSkins={availableSkins}
+        agentNames={agentNames}
       />
     </div>
   );

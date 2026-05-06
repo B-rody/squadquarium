@@ -20,6 +20,16 @@ export interface ParsedArgs {
 }
 
 const ALLOWED_HOSTS = ["127.0.0.1", "localhost"];
+const DIRECT_SUBCOMMANDS = ["trace", "why", "inspect", "diorama", "aspire"] as const;
+
+export type DirectSubcommand = (typeof DIRECT_SUBCOMMANDS)[number];
+
+export function checkDirectSubcommand(argv: string[] = process.argv): DirectSubcommand | null {
+  const command = argv[2];
+  return DIRECT_SUBCOMMANDS.includes(command as DirectSubcommand)
+    ? (command as DirectSubcommand)
+    : null;
+}
 
 export function parseArgs(argv: string[] = process.argv): ParsedArgs {
   let subcommand: "doctor" | "status" | null = null;

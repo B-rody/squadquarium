@@ -54,7 +54,11 @@
     "○",
     "▲",
     "▼",
-    "▢"
+    "▢",
+    "O",
+    ":",
+    "?",
+    "z"
   ],
   "capabilities": ["bands", "drift", "scanlines", "bloom"],
   "fallbacks": {

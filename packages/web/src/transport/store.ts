@@ -14,17 +14,42 @@ export interface ConnectionState {
   squadquariumVersion: string | null;
 }
 
+export interface ApprovalPendingSignal {
+  agentName: string;
+  fileName: string;
+  detectedAt: number;
+}
+
 export interface AppStore {
   snapshot: Snapshot | null;
   events: SquadquariumEvent[];
   entityState: Map<string, unknown>;
   connection: ConnectionState;
   logLines: LogEntry[];
+  approvalPending: ApprovalPendingSignal[];
 
   setSnapshot: (s: Snapshot) => void;
   appendEvent: (e: SquadquariumEvent) => void;
   setConnection: (c: Partial<ConnectionState>) => void;
   appendLogLine: (l: LogEntry) => void;
+  addApprovalSignal: (s: ApprovalPendingSignal) => void;
+}
+
+function detectApprovalPendingSignal(event: SquadquariumEvent): ApprovalPendingSignal | null {
+  const match = /\.squad[/\\]decisions[/\\]inbox[/\\]([^/\\]+)$/i.exec(event.entityKey);
+  if (!match) return null;
+
+  let payload = "";
+  try {
+    payload = JSON.stringify(event.payload ?? "").toLowerCase();
+  } catch {
+    payload = String(event.payload ?? "").toLowerCase();
+  }
+  if (!payload.includes("approval") && !payload.includes("review")) return null;
+
+  const fileName = match[1] ?? "approval.md";
+  const agentName = fileName.replace(/\.[^.]+$/, "").split(/[-_]/)[0] || "unknown";
+  return { agentName, fileName, detectedAt: event.observedAt };
 }
 
 export const useStore = create<AppStore>((set) => ({
@@ -39,6 +64,7 @@ export const useStore = create<AppStore>((set) => ({
     squadquariumVersion: null,
   },
   logLines: [],
+  approvalPending: [],
 
   setSnapshot: (snapshot) =>
     set((s) => ({
@@ -52,12 +78,19 @@ export const useStore = create<AppStore>((set) => ({
       const events = [...s.events, event].slice(-MAX_EVENTS);
       const entityState = new Map(s.entityState);
       entityState.set(event.entityKey, event.payload);
-      return { events, entityState };
+      const approvalSignal = detectApprovalPendingSignal(event);
+      const approvalPending = approvalSignal
+        ? [...s.approvalPending, approvalSignal].slice(-20)
+        : s.approvalPending;
+      return { events, entityState, approvalPending };
     }),
 
   setConnection: (c) => set((s) => ({ connection: { ...s.connection, ...c } })),
 
   appendLogLine: (l) => set((s) => ({ logLines: [...s.logLines, l].slice(-500) })),
+
+  addApprovalSignal: (signal) =>
+    set((s) => ({ approvalPending: [...s.approvalPending, signal].slice(-20) })),
 }));
 
 // ── Ritual Events ────────────────────────────────────────────────────────────

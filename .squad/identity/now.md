@@ -1,18 +1,14 @@
 ---
-updated_at: 2026-05-05T22:30:00Z
-focus_area: ✅ v0 COMPLETE. Ready for Brady's review. STOP gate honored.
+updated_at: 2026-05-06T03:51:00Z
+focus_area: Phase 5 (v1 polish) + Phase 6 (v2 reach) — Brady accepted v0 closeout and asked to continue past STOP gate.
 active_issues: []
 ---
 
 # What We're Focused On
 
-**v0 is done.** All v0 checkboxes in plan.md are `[x]`, verified against on-disk artifacts. Quality gate (`pnpm lint && pnpm -r build && pnpm -r test && pnpm test:web && pnpm smoke`) is green on the Windows dev host. CI matrix queues automatically on the first push.
+Brady reviewed the QUESTIONS file and confirmed all 8 assumptions on return; he then explicitly overrode the v0 STOP gate and asked us to continue through Phase 5 (v1 — the polish pass) and Phase 6 (v2 — game toggle + reach) to completion. We continue under the same autonomous contract: No-Ask Rule, park-and-pivot, forward progress > correctness on first try, per-commit quality gate enforced.
 
-Per the autonomy contract, this session ends here for human review before continuing into v1. The Coordinator does NOT proceed without explicit Brady direction.
+Items that will be parked with logged rationale (genuinely blocked while Brady is hands-off): npm publish to the registry, upstream PRs against bradygaster/squad, Tauri toolchain setup if not already present, Pocock license review.
 
-When Brady returns:
-- See `.squad/decisions/inbox/v0-complete.md` (will be merged into `decisions.md` after Scribe runs).
-- Skim `.squad/QUESTIONS-FOR-HUMAN.md` for every reversible call made under the No-Ask Rule.
-- Run the gate locally: `pnpm install && pnpm lint && pnpm -r build && pnpm -r test && pnpm test:web && pnpm smoke`.
-- Launch the diorama: `node packages/cli/dist/index.js` (or `pnpm pack-all && npm install -g packages/cli/squadquarium-*.tgz && squadquarium`).
+When fully done: STOP, leave a final summary.
 

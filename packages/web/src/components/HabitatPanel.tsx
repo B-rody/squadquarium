@@ -7,19 +7,36 @@ import type { SkinAssets } from "../skin/loader.js";
 
 const FONT_SIZE = 14;
 
+type SquadquariumWindow = Window & {
+  __squadquarium__?: {
+    __triggerApprovalQueue?: (name: string) => void;
+    setRalphActive?: (active: boolean) => void;
+    [key: string]: unknown;
+  };
+};
+
 interface Props {
   skinAssets: SkinAssets;
   onAgentClick?: (agentName: string) => void;
+  voiceBubbles?: boolean;
+  moodGlyphs?: boolean;
+  ralphActive?: boolean;
 }
 
-export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
+export default function HabitatPanel({
+  skinAssets,
+  onAgentClick,
+  voiceBubbles = true,
+  moodGlyphs = true,
+  ralphActive = false,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<HabitatRenderer | null>(null);
   const [renderTick, setRenderTick] = useState(0);
   const [cameraPanPx, setCameraPanPx] = useState(0);
   const metrics = useCellMetrics(FONT_SIZE);
-  const { snapshot, events } = useStore();
+  const { snapshot, events, approvalPending, addApprovalSignal } = useStore();
   const rituals = useRitualEvents();
   const processedRitualsRef = useRef(0);
 
@@ -34,6 +51,14 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
     return roles;
   }, [snapshot]);
 
+  const agentVoices = useMemo(() => {
+    const voices: Record<string, string> = {};
+    for (const agent of snapshot?.agents ?? []) {
+      if (agent.charterVoice) voices[agent.name] = agent.charterVoice;
+    }
+    return voices;
+  }, [snapshot]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -45,6 +70,9 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
     gc.resize(cols, rows);
 
     const renderer = new HabitatRenderer(gc, skinAssets, cols);
+    renderer.voiceBubblesEnabled = voiceBubbles;
+    renderer.moodGlyphsEnabled = moodGlyphs;
+    renderer.setRalphActive(ralphActive);
     rendererRef.current = renderer;
 
     // Camera pan: CSS translateY on the container, then return.
@@ -60,7 +88,33 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
       renderer.stop();
       rendererRef.current = null;
     };
-  }, [skinAssets, metrics, resolveColor]);
+  }, [skinAssets, metrics, resolveColor, voiceBubbles, moodGlyphs, ralphActive]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    renderer.voiceBubblesEnabled = voiceBubbles;
+    renderer.moodGlyphsEnabled = moodGlyphs;
+    renderer.setRalphActive(ralphActive);
+  }, [voiceBubbles, moodGlyphs, ralphActive]);
+
+  useEffect(() => {
+    const sqWindow = window as SquadquariumWindow;
+    const sq = sqWindow.__squadquarium__ ?? {};
+    sq.__triggerApprovalQueue = (name: string) => {
+      addApprovalSignal({
+        agentName: name,
+        fileName: "playwright-approval.md",
+        detectedAt: Date.now(),
+      });
+    };
+    sq.setRalphActive = (active: boolean) => rendererRef.current?.setRalphActive(active);
+    sqWindow.__squadquarium__ = sq;
+    return () => {
+      delete sq.__triggerApprovalQueue;
+      delete sq.setRalphActive;
+    };
+  }, [addApprovalSignal]);
 
   // Forward new ritual events to the renderer.
   useEffect(() => {
@@ -77,8 +131,13 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer) return;
-    renderer.render({ agentRoles, recentEvents: events.slice(-20) });
-  }, [renderTick, agentRoles, events]);
+    renderer.render({
+      agentRoles,
+      recentEvents: events.slice(-50),
+      approvalPending,
+      agentVoices,
+    });
+  }, [renderTick, agentRoles, events, approvalPending, agentVoices]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {

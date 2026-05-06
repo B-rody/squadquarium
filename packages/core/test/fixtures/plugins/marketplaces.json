@@ -1,0 +1,9 @@
+{
+  "marketplaces": [
+    {
+      "name": "internal-tools",
+      "url": "https://example.invalid/internal-tools",
+      "description": "Internal fixture marketplace"
+    }
+  ]
+}

@@ -87,3 +87,11 @@
 - `pnpm -r build`
 - `pnpm -r test`
 - `pnpm lint`
+
+### 2026-05-06T03:51:00Z — Phase 5 Wave 1 frontend polish
+
+- Added mood derivation and care glyphs as renderer-owned state so skins remain data-only and agent status logic stays testable.
+- Added approval queue hand-off, voice bubbles, and Ralph overlays as timed renderer layers; direct overlay glyphs must be reflected in skin allowlists even when sprites already validate.
+- Shipped Time Scrubber as an explicit UI stub pending a Parker-owned replay server frame.
+- Added settings persistence before deeper native integration; browser-only settings (ambient SFX, always-on-top) are intentionally saved but not yet wired to host APIs.
+- Command palette growth is easier to test when parsing/completion helpers are pure exports and side effects stay in the React dispatch switch.

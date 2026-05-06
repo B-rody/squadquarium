@@ -3,12 +3,17 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { SquadStateAdapter } from "@squadquarium/core";
-import { parseArgs } from "./argv.js";
+import { runAspire } from "./aspire.js";
+import { checkDirectSubcommand, parseArgs } from "./argv.js";
 import { resolveContext } from "./context.js";
+import { runDiorama } from "./diorama.js";
 import { formatDoctor, runDoctor } from "./doctor.js";
 import { runHeadlessSmoke } from "./headless-smoke.js";
+import { runInspect } from "./inspect.js";
 import { startServer, type ServerInstance } from "./server.js";
 import { printStatus } from "./status.js";
+import { runTrace } from "./trace.js";
+import { runWhy } from "./why.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -19,6 +24,28 @@ async function main(): Promise<void> {
   let adapter: SquadStateAdapter | null = null;
 
   try {
+    const directSub = checkDirectSubcommand();
+    if (directSub === "trace") {
+      await runTrace(process.argv.slice(3));
+      return;
+    }
+    if (directSub === "why") {
+      await runWhy(process.argv.slice(3));
+      return;
+    }
+    if (directSub === "inspect") {
+      await runInspect(process.argv.slice(3));
+      return;
+    }
+    if (directSub === "diorama") {
+      await runDiorama(process.argv.slice(3));
+      return;
+    }
+    if (directSub === "aspire") {
+      await runAspire(process.argv.slice(3));
+      return;
+    }
+
     const args = parseArgs();
     const cwd = path.resolve(args.path);
 

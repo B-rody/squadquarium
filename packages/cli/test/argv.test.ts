@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseArgs } from "../src/argv.js";
+import { checkDirectSubcommand, parseArgs } from "../src/argv.js";
 
 describe("parseArgs", () => {
   it("parses server options", () => {
@@ -30,5 +30,10 @@ describe("parseArgs", () => {
   it("parses doctor and status subcommands", () => {
     expect(parseArgs(["node", "squadquarium", "doctor"]).subcommand).toBe("doctor");
     expect(parseArgs(["node", "squadquarium", "status"]).subcommand).toBe("status");
+  });
+
+  it("detects standalone direct subcommands before Commander parsing", () => {
+    expect(checkDirectSubcommand(["node", "squadquarium", "trace", "Parker"])).toBe("trace");
+    expect(checkDirectSubcommand(["node", "squadquarium", "serve"])).toBeNull();
   });
 });

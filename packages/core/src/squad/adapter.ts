@@ -21,6 +21,7 @@ interface CreateOptions {
 }
 
 type Unsubscribe = () => void;
+type PreHookRegistrar = (handler: (event: unknown) => void) => Unsubscribe | void;
 
 export class SquadStateAdapter {
   private readonly reconciler = new EventReconciler();
@@ -29,7 +30,11 @@ export class SquadStateAdapter {
   private readonly sessionId = createSessionId();
   private seq = 0;
   private unsubscribeBus: Unsubscribe | null = null;
+  private unsubscribeToolPreHook: Unsubscribe | null = null;
   private logWatchersStarted = false;
+  private toolPreHookRegistered = false;
+  private toolCallPoller: NodeJS.Timeout | null = null;
+  private readonly knownToolLogFiles = new Set<string>();
 
   private constructor(
     private readonly squadDir: string,
@@ -96,6 +101,20 @@ export class SquadStateAdapter {
       // Non-fatal during shutdown.
     }
     this.unsubscribeBus = null;
+
+    try {
+      this.unsubscribeToolPreHook?.();
+    } catch {
+      // Non-fatal during shutdown.
+    }
+    this.unsubscribeToolPreHook = null;
+    this.toolPreHookRegistered = false;
+
+    if (this.toolCallPoller) {
+      clearInterval(this.toolCallPoller);
+      this.toolCallPoller = null;
+    }
+    this.knownToolLogFiles.clear();
 
     for (const watcher of this.logWatchers.splice(0)) {
       try {
@@ -241,6 +260,8 @@ export class SquadStateAdapter {
       this.watchLogDirectory("log");
       this.watchLogDirectory("orchestration-log");
     }
+
+    this.startToolCallHooks();
   }
 
   private handleBusEvent(event: SquadEvent): void {
@@ -300,6 +321,62 @@ export class SquadStateAdapter {
     }
   }
 
+  private startToolCallHooks(): void {
+    if (this.toolPreHookRegistered || this.toolCallPoller) return;
+
+    const registrar = findPreHookRegistrar(this.bus);
+    if (registrar) {
+      this.toolPreHookRegistered = true;
+      const unsubscribe = registrar((event) => {
+        const toolName = extractToolName(event);
+        this.emitSyntheticToolStart(toolName, `pre-hook:${toolName}:${this.nextSeq()}`, undefined);
+      });
+      if (typeof unsubscribe === "function") this.unsubscribeToolPreHook = unsubscribe;
+      return;
+    }
+
+    this.startToolCallPoller();
+  }
+
+  private startToolCallPoller(): void {
+    const dir = path.join(this.squadDir, "orchestration-log");
+    if (!fs.existsSync(dir)) return;
+
+    for (const file of readDirectoryFiles(dir)) this.knownToolLogFiles.add(file);
+
+    this.toolCallPoller = setInterval(() => {
+      for (const file of readDirectoryFiles(dir)) {
+        if (this.knownToolLogFiles.has(file)) continue;
+        this.knownToolLogFiles.add(file);
+        this.emitSyntheticToolStart(
+          mapToolNameFromFilename(file),
+          `tool:start:${file}`,
+          path.join(dir, file),
+        );
+      }
+    }, 200);
+  }
+
+  private emitSyntheticToolStart(
+    toolName: string,
+    entityKey: string,
+    filePath: string | undefined,
+  ): void {
+    this.emitIfAccepted({
+      sessionId: this.sessionId,
+      source: "fs",
+      seq: this.nextSeq(),
+      entityKey,
+      observedAt: Date.now(),
+      payload: {
+        action: "tool_start",
+        kind: mapToolKind(toolName),
+        tool: toolName,
+        path: filePath,
+      },
+    });
+  }
+
   private emitIfAccepted(event: SquadquariumEvent): void {
     const result = this.reconciler.ingest(event);
     if (!result.accepted) return;
@@ -329,6 +406,52 @@ function createSessionId(): string {
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function findPreHookRegistrar(bus: RuntimeEventBus): PreHookRegistrar | null {
+  const record = bus as unknown as Record<string, unknown>;
+  for (const key of ["registerPreHook", "registerToolPreHook", "onPreToolCall"]) {
+    const candidate = record[key];
+    if (typeof candidate === "function") return candidate.bind(bus) as PreHookRegistrar;
+  }
+  return null;
+}
+
+function extractToolName(event: unknown): string {
+  const record = asRecord(event);
+  const payload = asRecord(record?.payload);
+  const name =
+    record?.tool ?? record?.toolName ?? record?.name ?? payload?.tool ?? payload?.toolName;
+  return typeof name === "string" ? name : "misc";
+}
+
+function mapToolNameFromFilename(file: string): string {
+  const lower = file.toLowerCase();
+  if (/\b(edit|create)\b/.test(lower)) return lower.includes("create") ? "create" : "edit";
+  if (/\b(view|grep|glob)\b/.test(lower))
+    return lower.includes("grep") ? "grep" : lower.includes("glob") ? "glob" : "view";
+  if (/\b(bash|shell|powershell)\b/.test(lower))
+    return lower.includes("powershell") ? "powershell" : "bash";
+  return "misc";
+}
+
+function mapToolKind(toolName: string): "browse" | "edit" | "shell" | "misc" {
+  const lower = toolName.toLowerCase();
+  if (["view", "grep", "glob"].includes(lower)) return "browse";
+  if (["edit", "create"].includes(lower)) return "edit";
+  if (["bash", "powershell"].includes(lower)) return "shell";
+  return "misc";
+}
+
+function readDirectoryFiles(dir: string): string[] {
+  try {
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((dirent) => dirent.isFile())
+      .map((dirent) => dirent.name);
+  } catch {
+    return [];
+  }
 }
 
 /** Maps raw team.md status strings ("✅ Active", "💤 Dormant (v1+)") to clean labels. */

@@ -86,6 +86,7 @@ export function drawSprite(
   originCol: number,
   glyphAllowlist: string[],
   fallbacks: SkinFallbacks = {},
+  fgOverride?: string,
 ): void {
   const roleData = getRoleData(spritesJson, role);
   if (!roleData) return;
@@ -111,7 +112,8 @@ export function drawSprite(
       const cell = row[c];
       if (!cell) continue;
       const safeGlyph = enforceAllowlist(cell.glyph, glyphAllowlist);
-      glyphCanvas.drawCell(originRow + r, originCol + c, safeGlyph, cell.fg, cell.bg, cell.blink);
+      const fg = fgOverride && cell.fg === "fg" ? fgOverride : cell.fg;
+      glyphCanvas.drawCell(originRow + r, originCol + c, safeGlyph, fg, cell.bg, cell.blink);
     }
   }
 }

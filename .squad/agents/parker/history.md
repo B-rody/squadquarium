@@ -67,3 +67,11 @@
 
 **Static serving:** packages/web/dist/ is resolved relative to import.meta.url of server.ts using path.resolve. Falls back gracefully when web bundle doesn't exist yet (404 for static assets; WS path still works).
 
+
+### 2026-05-06T03:51Z — Phase 5 Wave 1 backend slice
+
+**CLI diagnostics:** Added direct pre-Commander subcommands for trace/why/inspect/diorama/aspire. The key compatibility point is to call `checkDirectSubcommand()` before `parseArgs()` so legacy Commander strict argument handling does not reject the new standalone command argv shapes.
+
+**HookPipeline fallback:** Squad SDK 0.9.4 does not expose a HookPipeline API in this adapter surface. The safe v1 fallback is to seed existing orchestration-log filenames, poll `.squad/orchestration-log/` every 200ms, and emit synthetic `tool:start` events only for new files using filename keyword mapping to browse/edit/shell/misc.
+
+**Marketplace backend:** Core marketplace support is intentionally filesystem-first: defaults merge with `.squad/plugins/marketplaces.json`, browse reads `.squad/plugins/{marketplace}/index.json`, and install delegates to `squad plugin install` via child_process spawn.

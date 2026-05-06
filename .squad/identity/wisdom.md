@@ -53,3 +53,13 @@ The Squadquarium v0 build was the most demanding stress test the Squad CLI / SDK
 
 **Pattern:** A Tester role with strict reviewer-rejection lockout (rejected author may NOT self-revise) is the ONLY safety mechanism that keeps an autonomous build honest when the human is offline. Without it, the Coordinator silently re-routes a failure back to the same agent who shipped the bug. With it, the Coordinator MUST find a different specialist or escalate, which surfaces the friction visibly. **Context:** any autonomous Squad build longer than a single agent turn.
 
+**Pattern:** Skills that walk template placeholders must include a fail-closed clause: never write a file with an invented, inferred, or blank `{placeholder}` value — surface the gap explicitly and offer (fill now / TODO stub / abandon). **Context:** any Squad skill that interviews the user to populate template files (Hatchery, Scriptorium, Ceremonies, Casting, MCP, Plugin marketplace).
+
+
+**Pattern:** New CLI subcommands that do not share the server launch option model should dispatch before Commander parses legacy args. **Context:** Commander is configured with `allowExcessArguments(false)`, so standalone commands like trace/why/inspect/diorama/aspire need `checkDirectSubcommand()` before `parseArgs()`.
+
+**Pattern:** For alpha SDK hooks, probe for the real API first and keep the fallback observable, bounded, and de-duplicated. **Context:** SDK 0.9.4 lacks HookPipeline pre-hooks; Squadquarium polls `.squad/orchestration-log/`, seeds existing filenames, and emits synthetic fs-sourced `tool:start` events only for newly appearing files.
+
+**Pattern:** Keep renderer overlay lifecycle keyed by stable signal identity, not by array index. **Context:** Canvas2D animations driven by append-only event/store arrays where React re-renders can reorder or truncate inputs.
+
+**Pattern:** Export pure command parsing and completion helpers before adding modal keyboard behavior. **Context:** Vim-style command palettes that need Vitest coverage without depending on full Playwright interaction tests.

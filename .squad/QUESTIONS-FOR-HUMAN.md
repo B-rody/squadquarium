@@ -100,3 +100,15 @@
 **Rationale:** Consistency with plan.md prose. Renaming inside skin vocab maps is cheap if Brady prefers an alternate later.
 
 **Reversibility:** `vocab.json` per skin handles label swaps at render time; identifier rename is one find/replace pass.
+
+---
+
+## 2026-05-06T03:51:00Z — Phase 5 frontend polish defaults
+
+**Question:** Should browser-visible toggles for Ambient SFX and Always-on-top call host/native APIs in Wave 1?
+
+**Chosen assumption:** No. Persist the toggles now, but leave host/native behavior for a later bridge because the current web package has no trusted API for audio or window pinning.
+
+**Rationale:** The user asked for settings UI and persistence; wiring native effects without an existing protocol would expand scope outside `packages/web`.
+
+**Reversibility:** Add server/electron/tauri bridge handlers later and consume the already-persisted settings keys.

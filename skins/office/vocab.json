@@ -12,5 +12,12 @@
   "idle": "idle",
   "working": "working",
   "blocked": "blocked",
-  "celebrate": "celebrate"
+  "celebrate": "celebrate",
+  "lighthousePerch": "corner office",
+  "engineReef": "engine room",
+  "testTank": "lab mezzanine",
+  "sunkenLibrary": "library wing",
+  "lobbyReef": "lobby",
+  "deepTrench": "basement",
+  "visitorCave": "garage"
 }
