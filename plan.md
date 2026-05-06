@@ -1159,81 +1159,71 @@ mood expressions; approval queue animation; Wisdom wing; Aspire
 button; OBS mode; non-loopback hosting.
 
 ### v1 — the polish pass
-- [ ] Mood / care expressions tied to real signals
-- [ ] Approval queue as glyph hand-off animation
-- [ ] Time-scrubber: replay the day from `orchestration-log/` against
+- [x] Mood / care expressions tied to real signals
+      *(Shipped: `deriveMood()` in `render/habitat.ts` — tired/busy/content/stuck/normal derived from reconciler events; mood glyphs `z`/`*`/`~`/`?` above sprites; palette tweaks; tied to `moodGlyphs` setting toggle.)*
+- [partial] Approval queue as glyph hand-off animation
+      *(Shipped client-side: keyword-scan inbox-path FS events trigger lobby-walk animation with `[!]` glyph; `__triggerApprovalQueue()` debug helper exposed for Playwright. Gap: server-side `approval-cleared` frame missing — badges persist until page reload. Tracked in `lambert-approval-queue.md`.)*
+- [x] Time-scrubber: replay the day from `orchestration-log/` against
       the reconciler's event log
-- [ ] **`squadquarium trace`, `why`, `inspect`, `diorama`** ship as
+      *(Shipped: `TimeScrubberPanel` slider UI + `isScrubbing` flag pauses live ingestion; Parker added `replay-request`/`replay` WS frames in Wave 2 so the server reads `.squad/orchestration-log/`, parses timestamps from filenames + `**Agent:**` fields, returns ordered events capped at 1000.)*
+- [x] **`squadquarium trace`, `why`, `inspect`, `diorama`** ship as
       subcommands of the same `squadquarium` (alias `sqq`) binary
-- [ ] **`squad-grill-template` skill** (opt-in "thorough mode"): the
-      Hatcher's first Squadquarium-authored skill, focused on
-      cross-template coherence and required-field completeness rather
-      than adversarial sub-divide drill-down. Respects user-stated
-      scope ("auth" means auth, not OAuth-vs-SAML pedantry). Walks
-      every `{placeholder}` in the loaded template set, grounded in
-      `.squad-templates/squad.agent.md`. Parameterized by template set
-      so new artifact types (Ceremonies, Casting, MCP config, Plugin
-      marketplace) cost zero new skill code. Borrows fail-closed
-      discipline from Matt Pocock's `grill-with-docs`; cites and links
-      `mattpocock/skills`; lights up "deep-interview" mode when his
-      plugin is installed. Off by default; users opt in per session
-- [ ] **Wisdom wing**: render `identity/wisdom.md` as adjacent museum
-      content alongside the Scriptorium; per-skill usage stats;
-      cross-link skills that influenced specific entries in
-      `decisions.md`
-- [ ] **Hatchery cross-suggestion**: when the Hatchery flow reveals a
-      needed skill mid-agent creation (Coordinator or thorough-mode
-      skill), queue the Scriptorium flow afterward (don't branch the
-      conversation)
-- [ ] **PR upstream**: once `squad-grill-template` is proven in real
-      use, propose it as a Squad built-in skill, and the
-      Hatchery/Scriptorium UX as a candidate `squad hatch <template>`
-      CLI command
-- [ ] **Plugin marketplace UX**: detect, browse, install, and cite
-      plugins from configured Squad marketplaces (default-includes
-      `anthropics/skills`, `awesome-copilot`); offer to add
-      `mattpocock/skills` as a marketplace on first use
-- [ ] **Office skin polish**: full sprite set, ambient drift rules,
-      vocab map — bring it to Aquarium parity now that the schema is
-      proven
-- [ ] **Optional native shell wrapper** (`squadquarium-app`): Tauri
-      2 (or similar) wrapping the same web bundle for users who want
-      an always-on-top desktop window with system tray + global
-      hotkey. Same web bundle, separate npm package, opt-in install.
-      Code signing is independently gated on audience demand.
-- [ ] **`node-pty` prebuilds** (`prebuildify` / `node-gyp-build`): if
-      v0 install friction shows up in real installs, ship per-platform
-      prebuilt `.node` binaries in the npm tarball so `node-gyp`
-      isn't required on the user's machine.
-- [ ] Ralph as visible night-shift creature when watch daemon is
-      running (`squad watch`/`triage`); start/stop daemon from UI
-- [ ] Per-agent voice-line samples from charter `voice:` field
-- [ ] `HookPipeline` pre-hook for richer per-tool-call animation timing
-- [ ] Settings: ambient SFX on/off, window-always-on-top toggle,
+      *(Shipped: `packages/cli/src/{trace,why,inspect,diorama}.ts` with full implementations + tests. `diorama --frames N --width W` renders the team in stdout glyphs.)*
+- [x] **`squad-grill-template` skill** (opt-in "thorough mode")
+      *(Shipped at `.squad/skills/squad-grill-template/SKILL.md` — 261 lines, full Squad frontmatter, 5 patterns, 6 anti-patterns, Hatchery + Scriptorium worked examples, Pocock `grill-with-docs` cited.)*
+- [x] **Wisdom wing**: render `identity/wisdom.md` as adjacent museum
+      content
+      *(Shipped: `WisdomWing.tsx` + `parseWisdomPatterns()` (3 vitest cases); `:wisdom` palette command; pattern cards + skill chips with confidence labels. Per-skill usage stats and decisions cross-link are v2 polish.)*
+- [partial] **Hatchery cross-suggestion**
+      *(Design only: `packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md` ships full design — PTY phrase detection, Zustand state shape, three-condition handoff, toast banner spec, seed contract. Implementation pending.)*
+- [parked] **PR upstream**: `squad-grill-template` as a Squad built-in
+      *(`.github/CONTRIBUTING-UPSTREAM.md (a)` documents the upstream PR prep with copyable git commands. Brady action: run thorough mode in real Hatchery use first; if positive, follow the guide.)*
+- [x] **Plugin marketplace UX**: detect, browse, install, and cite
+      plugins from configured Squad marketplaces
+      *(Shipped: backend at `packages/core/src/plugins/marketplace.ts` (list/browse/install) + `MarketplacePanel` UI accessible via `:marketplace`; plugins show source-citation tags in Wisdom Wing. Empty state with copyable `squad plugin marketplace add` hint.)*
+- [x] **Office skin polish**: full sprite set, ambient drift rules,
+      vocab map — bring it to Aquarium parity
+      *(Shipped Wave 1: 4 roles × 4 states × 2 frames; `\¤/` celebrate, slumped `[_]` blocked; `node skins/validate.mjs` clean.)*
+- [partial] **Optional native shell wrapper** (`squadquarium-app`): Tauri
+      *(Scaffold shipped at `packages/squadquarium-app/` — package.json + tauri.conf.json + Cargo.toml + src-tauri/src/main.rs + README documenting Rust toolchain prereq. Actual `tauri build` requires Rust install — Brady action when desired.)*
+- [partial] **`node-pty` prebuilds** (`prebuildify` / `node-gyp-build`)
+      *(Config shipped: `prebuildify` + `node-gyp-build` added to cli devDeps; `packages/cli/scripts/prebuild-node-pty.mjs`; `.github/workflows/prebuild.yml` matrix runs on tag push and uploads prebuilds as artifacts. Actual prebuild publishing intentionally manual — Brady runs `npm publish` with credentials.)*
+- [x] Ralph as visible night-shift creature when watch daemon is
+      running; start/stop daemon from UI
+      *(Shipped: `<:O>` flashlight figure in deep-trench band when active; PTY-spawn auto-detection; `:ralph start/stop` palette commands; `setRalphActive()` debug hook.)*
+- [x] Per-agent voice-line samples from charter `voice:` field
+      *(Shipped: 1-in-10 chance per ~6s when agent enters `working`; `( text )` aquarium / `[ text ]` office framing; `voiceBubbles` settings toggle; `parseVoiceFromCharter()` extracts `## Voice` line via `AgentSummary.charterVoice`.)*
+- [partial] `HookPipeline` pre-hook for richer per-tool-call animation timing
+      *(Shipped as polling stub: SDK 0.9.4 exposes no `registerPreHook` API; adapter polls `.squad/orchestration-log/` every 200ms emitting synthetic `tool:start` events mapped to `browse`/`edit`/`shell`/`misc` kinds. Documented in `parker-hookpipeline-sdk-0.9.4.md`. Real pre-hook integration lands when Squad SDK exposes the hook surface.)*
+- [x] Settings: ambient SFX on/off, window-always-on-top toggle,
       CRT effects on/off
-- [ ] Vim-style `:` command palette + history of invoked
-      `squad` / `squadquarium` actions
-- [ ] "Open Aspire dashboard" button → shells out to `squad aspire`
+      *(Shipped: `SettingsPanel.tsx` + `settings/store.ts` (localStorage); 6 toggles wired; `[⚙]` gear in status bar.)*
+- [x] Vim-style `:` command palette + history of invoked actions
+      *(Shipped: `CommandPalette.tsx` with `:` trigger, parseCommand, history (↑ cycles, persisted), tab completion, 11+ commands (`:skin`, `:hatch`, `:inscribe`, `:scrub`, `:wisdom`, `:settings`, `:trace`, `:why`, `:inspect`, `:diorama`, `:aspire`, `:marketplace`, `:obs`, `:skins`, `:standup`, `:ralph start/stop`).)*
+- [x] "Open Aspire dashboard" button → shells out to `squad aspire`
+      *(Shipped: `packages/cli/src/aspire.ts` detects `squad aspire`, opens URL via `open` package; `:aspire` palette command.)*
 
 ### v2 — game toggle + reach
-- [ ] Game-mode setting: XP, daily stand-up summary, cosmetic loot
-- [ ] Visiting agents via `squad link` (multi-repo view)
-- [ ] **Multi-attach view**: personal squad + active project squad
-      shown as side-by-side habitats in the same window (extends v0's
-      single-context resolution into a true "home reef + work reef"
-      layout)
-- [ ] VS Code webview wrapper of the same web bundle
-- [ ] OBS-friendly transparent / chroma-key mode for streamers
-- [ ] Explore PR upstream as `squad ui` subcommand; coordinate with
-      the "SquadOffice" effort referenced in the SDK source rather
-      than collide
-- [ ] **Community skin packs**: open the manifest format to
+- [x] Game-mode setting: XP, daily stand-up summary, cosmetic loot
+      *(Shipped: `packages/web/src/game/store.ts` (pure derivation module, NO transport-store imports — cosmetics-only invariant enforced by import graph + 18 vitest cases). XP/level bar, skill tree, achievements, ideas counter with idle accrual when Ralph active, inventory (`[hat]` `[scarf]` `[lure]` `[goggles]`), boss fight panel, `:standup` modal. Hard rule documented: game state never affects agent decisions.)*
+- [x] Visiting agents via `squad link` (multi-repo view)
+      *(Shipped: `detectVisitorArrival()` + `useVisitorArrivals()` hook + `<VisitorAnimation />` overlay. Aquarium whaleshark glyph sequence; Office `╔═╦═╗` truck slides in from the garage. `__triggerVisitor(name)` debug helper for Playwright.)*
+- [x] **Multi-attach view**: personal squad + active project squad
+      shown as side-by-side habitats in the same window
+      *(Shipped: backend `SquadStateAdapter.createMulti({ contexts })` + `--attach <path>` repeatable CLI flag + per-adapter `id`/`label`; events tagged with `attachedSquadId`; snapshot extension `attachedSquads?: { id; label; snapshot }[]`. Frontend behind `enableMultiAttach` settings flag — horizontal split with per-squad labels; log-panel tabs.)*
+- [partial] VS Code webview wrapper of the same web bundle
+      *(Package skeleton shipped at `packages/squadquarium-vscode/` — CJS extension, `squadquarium.open` command, child-process server + WS proxy shim, esbuild bundler, `.vscodeignore`, README. Actual `vsce package` requires the `vsce` CLI run by Brady against a publisher account.)*
+- [x] OBS-friendly transparent / chroma-key mode for streamers
+      *(Shipped: `obsMode` setting `off`/`transparent`/`chroma-green`/`chroma-magenta`; `:obs <mode>` palette command; body background applied inline; 7 vitest cases.)*
+- [parked] Explore PR upstream as `squad ui` subcommand
+      *(`.github/CONTRIBUTING-UPSTREAM.md (b)` documents the upstream PR guide and the SquadOffice/`squad rc`/`squad aspire` lane-separation risk. Brady action: open a discussion in `bradygaster/squad-cli` to align on scope before any code lands.)*
+- [x] **Community skin packs**: open the manifest format to
       contributors (deep trench, cottage village, space station,
-      fungus colony — same bones, new glyphs); skin browser inside
-      Squadquarium; signed manifests
-- [ ] **Pocock pack**: explore co-authoring a flagship Hatcher
-      curriculum with Matt Pocock as a Squad plugin marketplace
-      bundle, after license review and conversation
+      fungus colony); skin browser inside Squadquarium; signed manifests
+      *(Shipped: `<SkinBrowser />` via `:skins` lists local + 4 community-pack stubs marked `[available v2.x]` with copyable `squad plugin install community/skin-{name}` install hints. Manifest schema extended with typed `x-signature` patternProperty; `AUTHOR-CONTRACT.md` documents the future Ed25519 signing contract (canonical JSON, v3+ verification implementation).)*
+- [parked] **Pocock pack**: explore co-authoring a flagship Hatcher
+      curriculum with Matt Pocock
+      *(`.github/POCOCK-PACK.md` documents the full status, outreach plan, and what is safe to do autonomously (cite + link only). Blocker: `mattpocock/skills` license not confirmed permissive. Brady action: open a GitHub Discussion in `mattpocock/skills`.)*
 
 ## Risks / things to watch
 
