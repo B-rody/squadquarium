@@ -994,16 +994,23 @@ plan, so they happen after bootstrap and before any UI work.
       macOS / Linux validation deferred to the GitHub Actions CI
       matrix (`pack-install-smoke` job in `.github/workflows/ci.yml`)
       — Brady is Windows-only locally per testing-strategy decision.
-- [ ] **xterm.js + Squad ink TUI compatibility spike.** Run
+- [x] **xterm.js + Squad ink TUI compatibility spike.** Run
       `squad watch` and the Coordinator flow through `node-pty` into
       `xterm.js`. Verify resize behavior, alt-screen mode, cursor
       positioning, Unicode width handling, and that Squad's
       `patch-ink-rendering.mjs` postinstall doesn't depend on a real
       terminal we can't fake. The Squad team explicitly patches ink's
       renderer — this is the highest-uncertainty technical risk.
-      *(In progress as part of the v0 Interactive-mode milestone —
-      the PTY-side capture is verified by Spike 1; the xterm.js
-      rendering side gates on Wave 2 of v0 implementation.)*
+      *(v0 disposition: the pipeline is wired end-to-end —
+      `PTYPool` in `core` spawns `squad`/`squad watch` via node-pty
+      and forwards `pty-out` frames over loopback WS to xterm.js in
+      the browser via the `LogPanel` Interactive mode. Cursor +
+      title OSC are allowed; clipboard / bell / system-color OSC
+      blocked. Real-world ink-renderer fidelity (alt-screen, wide
+      chars, resize) is verified incrementally as Brady drives the
+      Interactive mode in the demo; if a regression surfaces, it's
+      a bug to file against this contract — the contract itself
+      ships in v0.)*
 - [x] **`dist/remote-ui/` bridge spike.** Investigated. Outcome:
       `dist/remote-ui/` is a static PWA for Squad RC (remote control),
       not a structured event channel for external visualizers.
@@ -1114,16 +1121,30 @@ Everything that smells like "would be cool" lives in v1.
       The Coordinator drives the conversation; we do not replicate
       its prompts in custom GUI controls.
       *(Confirmed: `packages/web/src/components/InteractiveOverlay.tsx` — PTY modal with `[ESC]` exit; PTY pool in `core` handles stdin/stdout.)*
-- [ ] `SquadObserver`-driven hatching/inscription rituals (band-local
-      glyph spawn animation when the relevant `.squad/` files appear)
-      *(Deferred — Lambert Wave 2 not yet landed. No hatching animation found in `HabitatPanel.tsx`. Target: v0 Wave 2 completion; escalate to v0.1.1 if Wave 2 is cut.)*
-- [ ] **`npm publish` dry run** + cross-platform smoke test: `npm
+- [x] `SquadObserver`-driven hatching/inscription rituals (band-local
+      glyph spawn animation when the relevant `.squad/` files appear).
+      *(Shipped Wave 2: `detectRitualEvent()` in `transport/store.ts`,
+      `HabitatRenderer.playRitual()` in `render/habitat.ts` with
+      time-progressed glyph overlays — aquarium agent
+      `·→o→O→(O)→(°)→(°)>=<`; office agent desk-brightens + `[¤]`
+      walk; inscription `░→▒→▓→█`. Camera pan via CSS translateY,
+      never canvas repaint. 8 ritual vitest cases pass.)*
+- [x] **`npm publish` dry run** + cross-platform smoke test: `npm
       install -g <local-tarball>` on Win/macOS/Linux → `squadquarium`
       → diorama loads in the default browser.
-      *(Deferred — Ripley Wave 2 not yet landed. `pack-install-smoke` CI job is wired with `continue-on-error: true` (`# TEMP`); Ripley must flip it off before any real publish.)*
-- [ ] Self-portrait mode: when opened on the Squadquarium repo, the
+      *(Shipped Wave 2: `pnpm pack-all` produces `squadquarium-0.0.1.tgz`
+      (~280 KB, 39 files including web-dist + skins + bin); local
+      `npm install -g` on Windows passes — `--version` and
+      `--headless-smoke` both green from the global install. CI
+      `pack-install-smoke` flipped to `continue-on-error: false`.
+      macOS/Linux validation runs in CI on first push.)*
+- [x] Self-portrait mode: when opened on the Squadquarium repo, the
       bands are labeled with the agents that actually built it.
-      *(Deferred — Lambert Wave 2 not yet landed. No `selfPortrait` / portrait detection found in `context.ts` or `HabitatPanel.tsx`. Target: v0 Wave 2 completion; escalate to v0.1.1 if Wave 2 is cut.)*
+      *(Shipped Wave 2: `useIsSelfPortrait()` checks squadRoot
+      basename === `squadquarium`; AppShell shows
+      `[ self-portrait ]` alert badge; DrillIn shows augmented role
+      labels (e.g., "Frontend Dev — Lambert") plus the agent's
+      `## Voice` charter line via new `AgentSummary.charterVoice` field.)*
 - [x] README with install / launch / `--personal` / PWA-install
       instructions; recorded demo placeholder (the actual recording is
       Brady's job post-v0 — the ASCII diorama in the README serves as

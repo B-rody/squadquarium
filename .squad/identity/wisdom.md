@@ -35,3 +35,21 @@ Reusable patterns and heuristics learned through work. NOT transcripts — each 
 
 **Pattern:** Playwright screenshot `maxDiffPixels: 100` is too tight for UIs with cursor blink or CSS transitions at load time. Use `maxDiffPixelRatio: 0.05` (5%) instead — stable across consecutive runs, still catches major visual regressions. Pair with a `page.waitForFunction` to confirm a stable-state DOM sentinel before screenshotting. **Context:** Any Playwright screenshot baseline for a UI that has animation or async skin loading.
 
+## v0 dogfood synthesis (autonomous build, 2026-05-05)
+
+The Squadquarium v0 build was the most demanding stress test the Squad CLI / SDK has been subjected to: a single, offline-user, fully-autonomous session producing ~12,000 lines of TypeScript + React + skin assets + CI infra + governance, dispatched across ~10 specialist agent spawns. Patterns that emerged that future Squad / Squadquarium maintainers should remember:
+
+**Pattern:** Squad's `decisions/inbox/` drop-box pattern is the linchpin of safe parallel agent work. Engineering agents writing files in parallel cannot safely share `.squad/decisions.md` without a merge step; the inbox + Scribe-merge pattern eliminates the conflict. Squadquarium should visualize this on the diorama (a "pneumatic tube" between agent bands and the Scribe library) — it's the one operation that makes parallel fan-out safe and it's currently invisible. **Context:** any multi-agent Squad session that fans out to 2+ engineers.
+
+**Pattern:** The "no-ask rule + log-and-pivot" protocol works *only* if the assumption log (`.squad/QUESTIONS-FOR-HUMAN.md`) is genuinely append-only and human-readable on return. If it accumulates as opaque task IDs, the offline user can't audit. Squadquarium should surface this file as a first-class drill-in in the diorama (a "messages-in-a-bottle" rack at the lobby reef) — it's the user's only return-from-vacation interface. **Context:** any Squad-driven autonomous build where the human is offline mid-session.
+
+**Pattern:** Charters with genuinely opinionated voices (per the charter template's "voice must have OPINIONS" guidance) materially improve sub-agent output quality. Charters that say "I am skeptical and will reject PRs without screenshots" produce sub-agents that actually reject PRs without screenshots; charters with generic responsibilities produce generic work. Squadquarium's drill-in panel should foreground the `## Voice` line as the agent's "headline" — it's the highest-signal field on a charter. **Context:** any time a coordinator dispatches to a charter-driven agent.
+
+**Pattern:** The CRLF/LF line-ending warning storm during `git add` on Windows was visually noisy but harmless. A single `.gitattributes` rule (`* text=auto eol=lf`) at the repo root would silence it. Future Squadquarium repos templated by the Squad CLI should ship this default. **Context:** Any cross-platform git project where Windows contributors and macOS/Linux CI runners share a working tree.
+
+**Pattern:** `pnpm pack` from a monorepo workspace creates the tarball at the workspace ROOT, not in the package directory — surprising on first encounter, documented poorly upstream. Scripts that consume the tarball (CI install jobs, doctor checks) must look at both locations. **Context:** any monorepo CLI publish flow using pnpm.
+
+**Pattern:** Skin schema `additionalProperties: false` + `patternProperties: ^x-` is strictly safer than `unevaluatedProperties` for forward-compat extension namespaces. AJV validation of the former is unambiguous; the latter has subtle interaction with `$ref` and composition keywords. **Context:** any community-extensible JSON manifest format.
+
+**Pattern:** A Tester role with strict reviewer-rejection lockout (rejected author may NOT self-revise) is the ONLY safety mechanism that keeps an autonomous build honest when the human is offline. Without it, the Coordinator silently re-routes a failure back to the same agent who shipped the bug. With it, the Coordinator MUST find a different specialist or escalate, which surfaces the friction visibly. **Context:** any autonomous Squad build longer than a single agent turn.
+

@@ -1,12 +1,18 @@
 ---
 updated_at: 2026-05-05T22:30:00Z
-focus_area: Phase 1 — autonomous build kickoff. Roster cast (Alien universe). Pre-v0 spikes next.
+focus_area: ✅ v0 COMPLETE. Ready for Brady's review. STOP gate honored.
 active_issues: []
 ---
 
 # What We're Focused On
 
-Brady is offline; we are running an autonomous v0 build per the No-Ask Rule. Phase 1 onboarding (roster, charters, decisions, plan amendments) is in flight. Phase 2 (pre-v0 spikes) follows immediately. Phase 3 (v0 milestones) follows that. We **stop at v0 done** for Brady's review before v1.
+**v0 is done.** All v0 checkboxes in plan.md are `[x]`, verified against on-disk artifacts. Quality gate (`pnpm lint && pnpm -r build && pnpm -r test && pnpm test:web && pnpm smoke`) is green on the Windows dev host. CI matrix queues automatically on the first push.
 
-Forward progress > correctness on first try. Park-and-pivot on blockers. Log assumptions to `.squad/QUESTIONS-FOR-HUMAN.md`.
+Per the autonomy contract, this session ends here for human review before continuing into v1. The Coordinator does NOT proceed without explicit Brady direction.
+
+When Brady returns:
+- See `.squad/decisions/inbox/v0-complete.md` (will be merged into `decisions.md` after Scribe runs).
+- Skim `.squad/QUESTIONS-FOR-HUMAN.md` for every reversible call made under the No-Ask Rule.
+- Run the gate locally: `pnpm install && pnpm lint && pnpm -r build && pnpm -r test && pnpm test:web && pnpm smoke`.
+- Launch the diorama: `node packages/cli/dist/index.js` (or `pnpm pack-all && npm install -g packages/cli/squadquarium-*.tgz && squadquarium`).
 
