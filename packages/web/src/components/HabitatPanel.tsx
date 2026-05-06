@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { GlyphCanvas } from "../render/canvas.js";
 import { HabitatRenderer } from "../render/habitat.js";
 import { useCellMetrics } from "../render/cellMetrics.js";
-import { useStore } from "../transport/store.js";
+import { useStore, useRitualEvents } from "../transport/store.js";
 import type { SkinAssets } from "../skin/loader.js";
 
 const FONT_SIZE = 14;
@@ -14,10 +14,14 @@ interface Props {
 
 export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<HabitatRenderer | null>(null);
   const [renderTick, setRenderTick] = useState(0);
+  const [cameraPanPx, setCameraPanPx] = useState(0);
   const metrics = useCellMetrics(FONT_SIZE);
   const { snapshot, events } = useStore();
+  const rituals = useRitualEvents();
+  const processedRitualsRef = useRef(0);
 
   const palette = skinAssets.manifest.palette;
   const resolveColor = useCallback((token: string) => palette[token] ?? token, [palette]);
@@ -43,6 +47,13 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
     const renderer = new HabitatRenderer(gc, skinAssets, cols);
     rendererRef.current = renderer;
 
+    // Camera pan: CSS translateY on the container, then return.
+    renderer.onCameraPan = (bandRow, duration) => {
+      const offsetPx = bandRow * metrics.cellH;
+      setCameraPanPx(-offsetPx);
+      setTimeout(() => setCameraPanPx(0), duration + 300);
+    };
+
     renderer.start(() => setRenderTick((t) => t + 1));
 
     return () => {
@@ -50,6 +61,18 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
       rendererRef.current = null;
     };
   }, [skinAssets, metrics, resolveColor]);
+
+  // Forward new ritual events to the renderer.
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer) return;
+    const newRituals = rituals.slice(processedRitualsRef.current);
+    if (newRituals.length === 0) return;
+    processedRitualsRef.current = rituals.length;
+    for (const r of newRituals) {
+      renderer.playRitual(r);
+    }
+  }, [rituals]);
 
   useEffect(() => {
     const renderer = rendererRef.current;
@@ -84,7 +107,16 @@ export default function HabitatPanel({ skinAssets, onAgentClick }: Props) {
   );
 
   return (
-    <div className="habitat-panel" style={{ position: "relative", overflow: "hidden" }}>
+    <div
+      ref={containerRef}
+      className="habitat-panel"
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        transform: `translateY(${cameraPanPx}px)`,
+        transition: "transform 600ms ease-in-out",
+      }}
+    >
       <canvas
         ref={canvasRef}
         className="glyph-canvas"

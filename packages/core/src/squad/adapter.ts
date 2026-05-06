@@ -139,9 +139,10 @@ export class SquadStateAdapter {
           return {
             name,
             role: member?.role ?? parseRoleFromCharter(charter) ?? "",
-            status: member?.status ?? "unknown",
+            status: parseAgentStatus(member?.status),
             charterPath,
             historyPath,
+            charterVoice: parseVoiceFromCharter(charter) ?? undefined,
           };
         }),
       );
@@ -328,6 +329,28 @@ function createSessionId(): string {
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+/** Maps raw team.md status strings ("✅ Active", "💤 Dormant (v1+)") to clean labels. */
+export function parseAgentStatus(raw: string | undefined): string {
+  if (!raw) return "unknown";
+  const lower = raw.toLowerCase();
+  if (lower.includes("active")) return "active";
+  if (lower.includes("dormant")) return "dormant";
+  if (lower.includes("retired")) return "retired";
+  return "unknown";
+}
+
+/** Extracts the first meaningful line from the `## Voice` section of a charter. */
+export function parseVoiceFromCharter(charter: string): string | null {
+  const match = /^##\s+Voice\s*\n([\s\S]*?)(?=\n##|$)/m.exec(charter);
+  if (!match) return null;
+  const voiceBlock = match[1] ?? "";
+  const firstLine = voiceBlock
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => l.length > 0 && !l.startsWith("#"));
+  return firstLine ?? null;
 }
 
 function parseRoleFromCharter(charter: string): string | null {

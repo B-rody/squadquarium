@@ -6,6 +6,7 @@ export interface AgentSummary {
   status: string;
   charterPath: string;
   historyPath: string;
+  charterVoice?: string;
 }
 
 export interface DecisionEntry {

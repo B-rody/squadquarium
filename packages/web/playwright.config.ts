@@ -1,12 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/**
- * Playwright configuration for packages/web.
- *
- * webServer note: "serve-only" mode is a v0 milestone Parker will wire into the
- * CLI. It boots the HTTP server without opening a browser, so Playwright can
- * drive it. Once Parker lands the flag, remove this comment.
- */
 export default defineConfig({
   testDir: "test/e2e",
   fullyParallel: true,
@@ -38,9 +31,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    // "serve-only" boots the HTTP/WS server without opening the browser.
-    // This is a placeholder mode Parker wires in the v0 milestone.
-    command: "pnpm --filter @squadquarium/cli start --headless-smoke=serve-only --port=6280",
+    // --serve-only: boot the HTTP/WS server without running smoke or opening a browser.
+    // Both packages must be built before Playwright runs (pnpm -r build).
+    command: "node ../cli/dist/index.js --serve-only --port=6280",
     url: "http://127.0.0.1:6280",
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

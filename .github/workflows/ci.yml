@@ -74,8 +74,8 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: pack → install from tarball → headless smoke (PTY cross-platform gate)
   # v0 published artifact: `squadquarium` from packages/cli.
-  # packages/cli bundles core's dist + web's dist via bundleDependencies/files —
-  # Parker handles that wiring; this job only shells the workflow.
+  # packages/cli uses esbuild to bundle @squadquarium/core inline; web assets are
+  # copied by the prepack script; only runtime deps (node-pty, ws, etc.) install.
   # ─────────────────────────────────────────────────────────────────────────────
   pack-install-smoke:
     name: pack-install-smoke (${{ matrix.os }})
@@ -83,7 +83,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # TEMP: continue-on-error until cli is wired up; Ripley flips this off in
     # the v0 milestone "publish dry run" task.
-    continue-on-error: true
+    continue-on-error: false
     strategy:
       fail-fast: false
       matrix:

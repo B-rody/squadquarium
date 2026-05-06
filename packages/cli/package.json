@@ -1,29 +1,42 @@
 {
-  "name": "@squadquarium/cli",
-  "private": true,
+  "name": "squadquarium",
   "type": "module",
   "version": "0.0.1",
+  "description": "Ambient terminal diorama for squad agent status",
   "main": "dist/index.js",
   "bin": {
     "squadquarium": "./bin/squadquarium.js",
     "sqq": "./bin/squadquarium.js"
   },
+  "files": [
+    "bin/",
+    "dist/",
+    "web-dist/",
+    "skins/",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --noEmit && node scripts/bundle.mjs",
+    "prepack": "node scripts/prepack.mjs",
     "test": "vitest run",
     "lint": "eslint src"
   },
   "dependencies": {
     "@bradygaster/squad-sdk": "^0.9.4",
-    "@squadquarium/core": "workspace:*",
     "commander": "^13.0.0",
+    "node-pty": "^1.0.0",
     "open": "^10.0.0",
     "ws": "^8.0.0"
   },
   "devDependencies": {
+    "@squadquarium/core": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.0",
+    "esbuild": "^0.25.0",
     "typescript": "~5.6.0",
     "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   }
 }

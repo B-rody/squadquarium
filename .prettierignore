@@ -1,7 +1,12 @@
 # Third-party and generated
 node_modules
 **/dist
+**/web-dist
 pnpm-lock.yaml
+
+# Playwright output
+packages/web/playwright-report
+packages/web/test-results
 
 # Squad internal files — not formatted by Squadquarium tooling
 .squad

@@ -29,8 +29,8 @@ export async function runDoctor(): Promise<DoctorResult> {
     ok: squadVersion.status === 0,
     detail:
       squadVersion.status === 0
-        ? squadVersion.stdout.trim()
-        : squadVersion.stderr.trim() || "squad not found on PATH",
+        ? (squadVersion.stdout ?? "").trim()
+        : (squadVersion.stderr ?? "").trim() || "squad not found on PATH",
   });
 
   checks.push(await checkNodePty());
@@ -47,8 +47,8 @@ export async function runDoctor(): Promise<DoctorResult> {
     ok: squadDoctor.status === 0,
     detail:
       squadDoctor.status === 0
-        ? firstLine(squadDoctor.stdout) || "squad doctor passed"
-        : firstLine(squadDoctor.stderr) || "squad doctor failed or is unavailable",
+        ? firstLine(squadDoctor.stdout ?? "") || "squad doctor passed"
+        : firstLine(squadDoctor.stderr ?? "") || "squad doctor failed or is unavailable",
   });
 
   return { ok: checks.every((check) => check.ok), checks };

@@ -1,5 +1,7 @@
 import open from "open";
 import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import { SquadStateAdapter } from "@squadquarium/core";
 import { parseArgs } from "./argv.js";
 import { resolveContext } from "./context.js";
@@ -7,6 +9,8 @@ import { formatDoctor, runDoctor } from "./doctor.js";
 import { runHeadlessSmoke } from "./headless-smoke.js";
 import { startServer, type ServerInstance } from "./server.js";
 import { printStatus } from "./status.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 void main();
 
@@ -17,7 +21,17 @@ async function main(): Promise<void> {
   try {
     const args = parseArgs();
     const cwd = path.resolve(args.path);
-    const skinsDir = path.resolve(process.cwd(), "skins");
+
+    // Resolve skins dir: prefer bundled web-dist/skins/ (prod global install),
+    // fall back to monorepo root skins/ (dev), then cwd/skins.
+    const webDistSkins = path.resolve(__dirname, "..", "web-dist", "skins");
+    const monoSkins = path.resolve(__dirname, "..", "..", "..", "skins");
+    const cwdSkins = path.resolve(process.cwd(), "skins");
+    const skinsDir = fs.existsSync(webDistSkins)
+      ? webDistSkins
+      : fs.existsSync(monoSkins)
+        ? monoSkins
+        : cwdSkins;
 
     if (args.subcommand === "doctor") {
       const result = await runDoctor();
@@ -52,14 +66,14 @@ async function main(): Promise<void> {
       skinsDir,
     });
 
-    if (args.headlessSmoke) {
+    if (args.headlessSmoke && !args.serveOnly) {
       const result = await runHeadlessSmoke({ url: server.url, squadRoot });
       console.log(JSON.stringify(result));
       return;
     }
 
     console.log(`squadquarium: listening at ${server.url}`);
-    if (args.open) {
+    if (args.open && !args.serveOnly) {
       await open(server.url).catch(() => undefined);
     }
 

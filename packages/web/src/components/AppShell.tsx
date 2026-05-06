@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import HabitatPanel from "./HabitatPanel.js";
 import LogPanel from "./LogPanel.js";
 import InteractiveOverlay from "./InteractiveOverlay.js";
 import DrillIn from "./DrillIn.js";
 import CommandPalette from "./CommandPalette.js";
-import { useStore } from "../transport/store.js";
+import { useStore, useIsSelfPortrait } from "../transport/store.js";
 import { useWsClient } from "../transport/wsClient.js";
 import type { SkinAssets } from "../skin/loader.js";
 import type { AgentSummary } from "../transport/protocol.js";
@@ -29,6 +29,16 @@ export default function AppShell({
 }: Props) {
   const { connection, snapshot } = useStore();
   const { send, on } = useWsClient();
+  const isSelfPortrait = useIsSelfPortrait();
+
+  // Build role→castName map for self-portrait band labels.
+  const roleCastMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const agent of snapshot?.agents ?? []) {
+      map[agent.role] = agent.name;
+    }
+    return map;
+  }, [snapshot]);
 
   const [ptyId, setPtyId] = useState<string | null>(null);
   const [interactive, setInteractive] = useState(false);
@@ -119,6 +129,18 @@ export default function AppShell({
         }}
       >
         <span style={{ color: "var(--skin-accent, #80cbc4)" }}>╔══ squadquarium ══╗</span>
+        {isSelfPortrait && (
+          <span
+            style={{
+              color: "var(--skin-alert, #ff5252)",
+              border: "1px solid var(--skin-alert, #ff5252)",
+              padding: "0 4px",
+              fontSize: "11px",
+            }}
+          >
+            [ self-portrait ]
+          </span>
+        )}
         <span style={{ flex: 1 }} />
         {isEmptyState && (
           <>
@@ -165,7 +187,14 @@ export default function AppShell({
       </div>
 
       <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-        {drillAgent && <DrillIn agent={drillAgent} onClose={() => setDrillAgent(null)} />}
+        {drillAgent && (
+          <DrillIn
+            agent={drillAgent}
+            onClose={() => setDrillAgent(null)}
+            isSelfPortrait={isSelfPortrait}
+            roleCastMap={roleCastMap}
+          />
+        )}
         <PanelGroup direction="horizontal">
           {!leftCollapsed && (
             <>

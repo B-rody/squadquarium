@@ -46,9 +46,30 @@
 **Parker's placeholder files:**
 - Parker created manifest.json placeholders that were already valid against my schema (schema was designed to accept them). I updated both manifests to add: complete glyphAllowlist covering all sprite/habitat glyphs, proper fallbacks, author URL, font.asset, version bump 0.0.1→0.1.0, and x-skin-notes extension.
 - sprites.json, habitat.json, vocab.json, tokens.css were empty `{}` / empty CSS — replaced entirely with full content.
+
 
+### 2026-05-05T22:30Z — Phase 3 Wave 2: Ritual layer, self-portrait, status fix
 
-### 2026-05-05T23:31Z — Phase 3 wave 1: Web v0 bundle
+**Ritual layer design:**
+- Extracted `detectRitualEvent(event, knownAgents, knownSkills)` as a pure function from the store so it can be unit-tested without a React rendering harness. The hook `useRitualEvents()` wraps it with snapshot-seeded baseline sets and `processedCountRef` to process only newly-arrived events each effect run.
+- `HabitatRenderer.playRitual(ritual)` adds `ActiveRitual` objects tracked by `Date.now()`. Each render frame, expired rituals are pruned and active ones draw a time-progressed glyph overlay in `renderRitualOverlay()`. Camera pan uses an `onCameraPan` callback that HabitatPanel maps to a CSS `translateY` transition on the container div — zero canvas repaint.
+- Aquarium sequence: `·` → `o` → `O` → `(O)` → `(°)` → `(°)>=<` (6-step, accent → alert). Office agent-hatched: desk `╔═╗` brightens + `[¤]` walks on. Inscription: `░` → `▒` → `▓` → `█` (aquarium) / `▄▄▄` → `███` (office).
+- Graceful no-op when no band matches the ritual's role.
+
+**Self-portrait detection:**
+- `useIsSelfPortrait()` splits `connection.squadRoot` on `/` and `\`, takes `parts[parts.length - 2]` (the repo dirname, parent of `.squad`), and compares case-insensitively to `"squadquarium"`. Zero ambiguity on this repo.
+- Added `charterVoice?: string` to `AgentSummary` in the protocol and transport layer. `parseVoiceFromCharter()` in the adapter finds the first non-empty, non-heading line in the `## Voice` section. DrillIn shows it as italic accent text under "about this agent".
+
+**Status display fix:**
+- `parseAgentStatus(raw)` maps emoji-prefixed team.md status column values to `"active"` / `"dormant"` / `"retired"` / `"unknown"`. Exported from `@squadquarium/core` so CLI and test code can use it. Existing adapter.test.ts updated to use real-format status values.
+- `parseVoiceFromCharter()` also exported — enables future tooling that wants to extract agent voice lines without loading a full charter.
+
+**Validation:**
+- `pnpm lint` — clean
+- `pnpm -r build` — clean
+- `pnpm -r test` — all 3 packages pass (core: 15+2 skipped, cli: 10 new status tests pass, web: 24 including 8 new ritual tests)
+- HTTP smoke (`curl http://127.0.0.1:6280/`) — HTML contains "squadquarium"
+- `--headless-smoke` — `{"ok":true}` exit 0
 
 **Implementation decisions:**
 

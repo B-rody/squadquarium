@@ -3,7 +3,16 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/*.js", "bin/**", "skins/**"],
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/*.js",
+      "**/*.mjs",
+      "bin/**",
+      "skins/**",
+      "**/skins/**",
+      "**/web-dist/**",
+    ],
   },
   tseslint.configs.recommended,
   eslintConfigPrettier,

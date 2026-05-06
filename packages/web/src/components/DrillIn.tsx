@@ -3,10 +3,16 @@ import type { AgentSummary } from "../transport/protocol.js";
 interface Props {
   agent: AgentSummary | null;
   onClose: () => void;
+  isSelfPortrait?: boolean;
+  roleCastMap?: Record<string, string>;
 }
 
-export default function DrillIn({ agent, onClose }: Props) {
+export default function DrillIn({ agent, onClose, isSelfPortrait, roleCastMap }: Props) {
   if (!agent) return null;
+
+  // In self-portrait mode, augment the displayed role with the cast name.
+  const castName = roleCastMap?.[agent.role];
+  const displayRole = isSelfPortrait && castName ? `${agent.role} — ${castName}` : agent.role;
 
   return (
     <div
@@ -52,7 +58,7 @@ export default function DrillIn({ agent, onClose }: Props) {
       </div>
       <div style={{ marginBottom: "4px" }}>
         <span style={{ color: "var(--skin-dim, #004d40)" }}>role: </span>
-        {agent.role}
+        {displayRole}
       </div>
       <div style={{ marginBottom: "4px" }}>
         <span style={{ color: "var(--skin-dim, #004d40)" }}>status: </span>
@@ -69,6 +75,29 @@ export default function DrillIn({ agent, onClose }: Props) {
           {agent.status}
         </span>
       </div>
+      {isSelfPortrait && agent.charterVoice && (
+        <div
+          style={{
+            marginTop: "12px",
+            borderTop: "1px solid var(--skin-dim, #004d40)",
+            paddingTop: "8px",
+          }}
+        >
+          <div style={{ color: "var(--skin-dim, #004d40)", fontSize: "11px", marginBottom: "4px" }}>
+            about this agent
+          </div>
+          <div
+            style={{
+              color: "var(--skin-accent, #80cbc4)",
+              fontStyle: "italic",
+              fontSize: "12px",
+              lineHeight: "1.4",
+            }}
+          >
+            {agent.charterVoice}
+          </div>
+        </div>
+      )}
       <div style={{ marginTop: "8px", color: "var(--skin-dim, #004d40)", fontSize: "12px" }}>
         charter: {agent.charterPath}
       </div>

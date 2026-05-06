@@ -44,12 +44,12 @@ importers:
       '@bradygaster/squad-sdk':
         specifier: ^0.9.4
         version: 0.9.4
-      '@squadquarium/core':
-        specifier: workspace:*
-        version: link:../core
       commander:
         specifier: ^13.0.0
         version: 13.1.0
+      node-pty:
+        specifier: ^1.0.0
+        version: 1.1.0
       open:
         specifier: ^10.0.0
         version: 10.2.0
@@ -57,12 +57,18 @@ importers:
         specifier: ^8.0.0
         version: 8.20.0
     devDependencies:
+      '@squadquarium/core':
+        specifier: workspace:*
+        version: link:../core
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.17
       '@types/ws':
         specifier: ^8.5.0
         version: 8.18.1
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
       typescript:
         specifier: ~5.6.0
         version: 5.6.3

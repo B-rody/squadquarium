@@ -32,7 +32,7 @@ vi.mock("@bradygaster/squad-sdk", () => ({
         team: {
           get: async () => ({
             projectContext: "fixture",
-            members: [{ name: "dallas", role: "Lead", status: "idle" }],
+            members: [{ name: "dallas", role: "Lead", status: "✅ Active" }],
           }),
         },
         decisions: {
@@ -78,11 +78,11 @@ describe("SquadStateAdapter", () => {
 
     const snapshot = await adapter!.getSnapshot();
 
-    expect(snapshot.agents).toEqual([
+    expect(snapshot.agents).toMatchObject([
       {
         name: "dallas",
         role: "Lead",
-        status: "idle",
+        status: "active",
         charterPath: path.join(sdkMock.fixtureSquadDir, "agents", "dallas", "charter.md"),
         historyPath: path.join(sdkMock.fixtureSquadDir, "agents", "dallas", "history.md"),
       },

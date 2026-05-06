@@ -206,8 +206,16 @@ async function handleClientFrame(
   }
 }
 
+function resolveWebDist(): string {
+  // Prod: web-dist/ is staged by the prepack script alongside dist/.
+  const prodDir = path.resolve(__dirname, "..", "web-dist");
+  if (fs.existsSync(prodDir)) return prodDir;
+  // Dev: monorepo layout — packages/cli/dist → packages/web/dist
+  return path.resolve(__dirname, "..", "..", "web", "dist");
+}
+
 function serveStatic(req: http.IncomingMessage, res: http.ServerResponse): void {
-  const distDir = path.resolve(__dirname, "..", "..", "web", "dist");
+  const distDir = resolveWebDist();
   const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://127.0.0.1").pathname);
   const relativePath = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
   const target = path.resolve(distDir, relativePath);

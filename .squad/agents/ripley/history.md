@@ -24,6 +24,39 @@
 
 ## Learnings
 
+### 2026-05-07T17:00Z — Phase 3 Wave 2: ship readiness
+
+**esbuild bundling for private monorepo deps:** pnpm 10's `bundleDependencies`
+field is incompatible with `nodeLinker: isolated` (the default). The correct
+approach for publishing a CLI that depends on a private workspace package is to
+use esbuild to inline the dependency at build time, marking all genuine runtime
+deps as external. This is cleaner than `bundleDependencies` anyway — no
+tarball-level `node_modules/` complexity.
+
+**ESLint + prepack-copied directories:** `prepack` scripts that copy directories
+into the package dir (e.g., `web-dist/`, `skins/`) will be linted unless explicitly
+excluded. Add both `**/web-dist/**` and `**/skins/**` to ESLint ignores, and add
+`**/web-dist` to `.prettierignore`. Playwright output dirs (`playwright-report/`,
+`test-results/`) also need `.prettierignore` entries.
+
+**Playwright screenshot flakiness:** `maxDiffPixels: 100` is too tight for a
+UI with cursor blink / animation at load time. `maxDiffPixelRatio: 0.05` (5%)
+is stable across consecutive runs and still catches major visual regressions.
+The stabilisation wait (`waitForFunction` on `#skin-tokens` being non-empty)
+is necessary but not sufficient on its own.
+
+**doctor.ts null-safety on Windows:** `spawnSync` returns `{ stdout: null,
+stderr: null }` when the command is not found. Always guard with
+`(stdout ?? "").trim()` before calling string methods on spawn output.
+
+**`--serve-only` for Playwright webServer:** The cleanest way to hold the CLI
+server up for Playwright is a dedicated flag that skips smoke burst + auto-open.
+Avoid overloading `--headless-smoke` with extra semantics.
+
+**`pnpm pack-all` root script:** CI references `pnpm pack-all`. This must be
+wired in root `package.json` as `"pack-all": "pnpm --filter squadquarium pack"`.
+Without it, the `pack-install-smoke` CI job fails at the pack step.
+
 ### 2026-05-05T22:30Z — Spike 5: CI matrix + screenshot baseline scaffold
 
 **CI matrix shape:** Three OSes (ubuntu-latest, windows-latest, macos-latest) × Node 22.5.0. Single node version for v0; multi-version grows in v1 per plan.md "CI strategy". macOS Playwright is intentionally skipped in the first pass — macOS runners are slowest and billed at 10× the minute rate; win + linux catch the overwhelming majority of Playwright regressions. macOS Playwright is added once those two are green (v1 milestone).

@@ -14,6 +14,7 @@ export interface ParsedArgs {
   host: string;
   open: boolean;
   headlessSmoke: boolean;
+  serveOnly: boolean;
   subcommand: "doctor" | "status" | null;
   version: boolean;
 }
@@ -40,6 +41,7 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     .option("--host <host>", "bind host (loopback only in v0)", "127.0.0.1")
     .option("--no-open", "do not auto-open browser")
     .option("--headless-smoke", "boot, run synthetic smoke, then exit 0", false)
+    .option("--serve-only", "boot server and keep it running (no smoke, no browser open)", false)
     .allowExcessArguments(false)
     .addHelpText(
       "after",
@@ -59,6 +61,7 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     host: string;
     open: boolean;
     headlessSmoke: boolean;
+    serveOnly: boolean;
   }>();
 
   if (!ALLOWED_HOSTS.includes(opts.host)) {
@@ -75,6 +78,7 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     host: opts.host,
     open: opts.open !== false,
     headlessSmoke: opts.headlessSmoke,
+    serveOnly: opts.serveOnly,
     subcommand,
     version: false,
   };

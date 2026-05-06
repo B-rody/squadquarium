@@ -23,10 +23,11 @@ every push and PR; local enforcement is the engineer's responsibility.
 
 | Step | Command | What it validates |
 |------|---------|-------------------|
-| Lint | `pnpm lint` | ESLint + TypeScript type-check across all packages |
-| Test | `pnpm -r test` | Vitest unit + integration suite (packages/core, packages/cli) |
-| Build | `pnpm -r build` | TypeScript compilation + Vite bundle for all packages |
-| Smoke | `pnpm -r test:web` | Playwright e2e suite (packages/web) on local Chromium |
+| Lint | `pnpm lint` | ESLint + Prettier check across all packages |
+| Test | `pnpm -r test` | Vitest unit + integration suite (packages/core, packages/cli, packages/web) |
+| Build | `pnpm -r build` | TypeScript type-check + esbuild bundle (CLI) + Vite bundle (web) |
+| e2e | `pnpm test:web` | Playwright e2e suite (packages/web) on local Chromium |
+| Smoke | `pnpm smoke` | Headless smoke: `node packages/cli/dist/index.js --headless-smoke` |
 
 CI additionally runs the full three-OS matrix and the pack-install smoke
 (pack → `npm install -g <tarball>` → `squadquarium --headless-smoke`).
@@ -87,9 +88,9 @@ GitHub Actions runs three jobs on every push to `main` and on every PR:
 ### `pack-install-smoke`
 - **Depends on:** `lint-build-test`
 - **Matrix:** same three OSes
-- Packs `packages/cli` → installs globally from the tarball → runs
+- Runs `pnpm pack-all` (packs `packages/cli`) → installs globally from the tarball → runs
   `squadquarium --headless-smoke` on each OS runner
-- `continue-on-error: true` until the CLI pack target is wired (v0 milestone)
+- `continue-on-error: false` — wired and required since v0 milestone
 
 Artifacts from failing runs are available in the GitHub Actions UI for 14 days.
 
@@ -125,5 +126,16 @@ build tools.
 | `@squadquarium/web` | `packages/web/` | Lambert | No (bundled via CLI) |
 | `squadquarium` (CLI) | `packages/cli/` | Parker | **Yes** — npm |
 
-The CLI is the only published artifact. It bundles `core`'s dist and `web`'s
-dist via `bundleDependencies` / `files`. See `packages/cli/README.md`.
+The CLI is the only published artifact. It uses **esbuild** to bundle
+`@squadquarium/core` inline at build time; `@squadquarium/web`'s Vite bundle is
+copied into `web-dist/` by the `prepack` script. See `packages/cli/README.md`.
+
+### Serve-only mode
+
+The CLI supports a `--serve-only` flag that boots the HTTP/WS server without
+running the headless smoke burst or opening a browser — used by Playwright's
+`webServer` to hold the server up during e2e tests:
+
+```bash
+node packages/cli/dist/index.js --serve-only --port=6280
+```

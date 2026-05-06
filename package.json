@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "test": "pnpm -r test",
     "test:web": "pnpm --filter @squadquarium/web test:e2e",
-    "smoke": "squadquarium --headless-smoke",
+    "smoke": "node packages/cli/dist/index.js --headless-smoke",
+    "pack-all": "pnpm --filter squadquarium pack",
     "clean": "rimraf packages/*/dist packages/*/node_modules node_modules"
   },
   "pnpm": {

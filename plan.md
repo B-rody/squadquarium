@@ -1035,10 +1035,11 @@ plan, so they happen after bootstrap and before any UI work.
       tested green in `packages/core/test/events.test.ts`. Wiring
       to actual sources (SquadObserver, EventBus, log tail, PTY)
       follows in v0 Wave 1.
-- [ ] **Event reconciler design + invariants.** Implement
+- [x] **Event reconciler design + invariants.** Implement
       `packages/core/events.ts` with the envelope, source precedence,
       watermark, and dedupe rules **before** any UI work. Test with
       synthetic out-of-order multi-source streams.
+      *(Duplicate entry — implementation confirmed by the `[x]` block above.)*
 
 ### v0 — weekend hack (the demo)
 
@@ -1053,65 +1054,81 @@ Everything that smells like "would be cool" lives in v1.
       published artifact as `squadquarium`. *(Top-level kept private
       while v0 is in flight; flipped to publishable when the v0
       `npm publish` dry run runs.)*
-- [ ] **CLI scaffold** (`packages/cli`): `squadquarium` (alias `sqq`)
+- [x] **CLI scaffold** (`packages/cli`): `squadquarium` (alias `sqq`)
       Node binary that parses args, resolves squad context (cwd →
       walk up → personal → empty-state), starts a local
       HTTP/WebSocket server on `127.0.0.1` (auto-pick port starting
       at 6280), opens the user's default browser via the `open`
-      package. Rejects `--host 0.0.0.0` with a clear error
-      *(Stub argv parser shipped in Phase 2; full server + browser
-      launch lands in v0 Wave 1.)*
+      package. Rejects `--host 0.0.0.0` with a clear error.
+      *(Full server + browser launch confirmed: `packages/cli/src/{server,context,argv,index}.ts`. Windows absolute-path fix and clean-shutdown also landed in Wave 1.)*
 - [x] **Test infrastructure**: Vitest 2 wired into `packages/core` and `packages/cli`; Playwright 1 wired into `packages/web` with screenshot baseline directory `packages/web/test/__screenshots__/`; root `pnpm lint` (eslint + prettier check) + `pnpm test` (workspace-wide vitest) + `pnpm test:web` (Playwright) + `pnpm smoke` (`squadquarium --headless-smoke`); GitHub Actions workflow `.github/workflows/ci.yml` running the matrix (windows-latest + macos-latest + ubuntu-latest) on push and PR
-- [ ] **`squadquarium --headless-smoke`**: boots the server, waits for `core` ready, fires a synthetic event burst at the WS endpoint, asserts the `web` bundle responds, exits 0 / non-zero. The contract Ripley enforces in CI on every OS
-- [ ] **Web bundle** (`packages/web`): React 19 + Vite served as
+- [x] **`squadquarium --headless-smoke`**: boots the server, waits for `core` ready, fires a synthetic event burst at the WS endpoint, asserts the `web` bundle responds, exits 0 / non-zero. The contract Ripley enforces in CI on every OS.
+      *(Confirmed: `packages/cli/src/headless-smoke.ts` — `hello` + `snapshot` + fs-event roundtrip + `pong` verified.)*
+- [x] **Web bundle** (`packages/web`): React 19 + Vite served as
       static assets by the CLI's HTTP server in production; Vite dev
-      server with HMR proxied through the CLI in development
-- [ ] **Loopback transport**: a single WebSocket between `web` and
+      server with HMR proxied through the CLI in development.
+      *(Confirmed: `packages/web/src/{App.tsx,main.tsx,components/,render/,skin/,transport/}` all present.)*
+- [x] **Loopback transport**: a single WebSocket between `web` and
       `core`; framed messages with sequence numbers; auto-reconnect
-      on transient drops
-- [ ] `squadquarium doctor`: detect Node ≥ 22.5, detect `squad` on
+      on transient drops.
+      *(Confirmed: `packages/web/src/transport/{wsClient.ts,protocol.ts,store.ts}` + `packages/core/src/transport/protocol.ts`.)*
+- [x] `squadquarium doctor`: detect Node ≥ 22.5, detect `squad` on
       PATH (or fall back to `npx @bradygaster/squad-cli`), check
       `node-pty` loaded, check port availability, call into
-      `squad doctor` for squad-side checks, surface combined results
-- [ ] **Context resolution** in `cli`: cwd walk-up via
+      `squad doctor` for squad-side checks, surface combined results.
+      *(Confirmed: `packages/cli/src/doctor.ts`.)*
+- [x] **Context resolution** in `cli`: cwd walk-up via
       `resolveSquad()`, `--personal` flag against Squad's standard
       personal location, explicit `<path>` arg, empty-state
       "Bootstrap Squad here" CTA. Last-opened path remembered in
       `~/.squadquarium/state.json`.
-- [ ] **Event reconciler in `core`** — bus + fs + log sources wired,
+      *(Confirmed: `packages/cli/src/context.ts` — full resolution chain + `STATE_FILE` persistence.)*
+- [x] **Event reconciler in `core`** — bus + fs + log sources wired,
       pty source stub. Source precedence and watermark from day one.
-- [ ] **Habitat panel**: Canvas2D glyph renderer with 3–4 bands (Lead,
+      *(Confirmed: `packages/core/src/events.ts` fully wired; PTY pool in `packages/core/src/pty/`; SDK adapter in `packages/core/src/squad/`.)*
+- [x] **Habitat panel**: Canvas2D glyph renderer with 3–4 bands (Lead,
       Frontend, Backend, Scribe), three states (idle / working /
       blocked) inferred from reconciled events, ambient drift.
-- [ ] **Log panel**: real `squad watch` PTY → xterm.js (PTY in
+      *(Confirmed: `packages/web/src/components/HabitatPanel.tsx` + `packages/web/src/render/{canvas.ts,habitat.ts,sprite.ts,cellMetrics.ts}`.)*
+- [x] **Log panel**: real `squad watch` PTY → xterm.js (PTY in
       `core`, streamed over loopback WebSocket), read-only Ambient
       mode. ANSI trust boundary applied (links off, OSC allowlist).
-- [ ] **c′ split layout**: resizable habitat / log panels in
+      *(Confirmed: `packages/web/src/components/LogPanel.tsx` — no WebLinksAddon, OSC allowlist.)*
+- [x] **c′ split layout**: resizable habitat / log panels in
       terminal-styled chrome. Click-to-pan + drill-in panel.
-- [ ] **Aquarium skin** (default, polished) + **Office skin**
+      *(Confirmed: `packages/web/src/components/AppShell.tsx` + `DrillIn.tsx` + `CommandPalette.tsx`.)*
+- [x] **Aquarium skin** (default, polished) + **Office skin**
       (intentionally minimal — palette + 4 sprite variants — to prove
       schema, not polish). Restart-free toggle.
-- [ ] Bundled monospace font (JetBrains Mono woff2). Glyph allowlist
+      *(Confirmed: `skins/{aquarium,office}/manifest.json` both validate against `skins/manifest.schema.json`; skin loader in `packages/web/src/skin/`; `:skin <name>` in CommandPalette.)*
+- [x] Bundled monospace font (JetBrains Mono woff2). Glyph allowlist
       enforced; missing glyphs render as `▢` with dev-console warning.
-- [ ] **PWA manifest + service worker** so users can install
+      *(Confirmed: `font-feature-settings: "liga" 0` in `packages/web/src/styles/font.css`; woff2 vendored; allowlist fallback to `▢` in canvas renderer.)*
+- [x] **PWA manifest + service worker** so users can install
       Squadquarium as a standalone-window app from supported
       browsers. Icons can be placeholders for v0; the affordance
       shipping is what matters.
-- [ ] **Interactive mode**: Hatch / Inscribe / Bootstrap buttons
+      *(Confirmed: `packages/web/public/manifest.webmanifest` + `packages/web/public/sw.js`.)*
+- [x] **Interactive mode**: Hatch / Inscribe / Bootstrap buttons
       switch the log panel into PTY + Coordinator focus. ESC returns.
       The Coordinator drives the conversation; we do not replicate
       its prompts in custom GUI controls.
+      *(Confirmed: `packages/web/src/components/InteractiveOverlay.tsx` — PTY modal with `[ESC]` exit; PTY pool in `core` handles stdin/stdout.)*
 - [ ] `SquadObserver`-driven hatching/inscription rituals (band-local
       glyph spawn animation when the relevant `.squad/` files appear)
+      *(Deferred — Lambert Wave 2 not yet landed. No hatching animation found in `HabitatPanel.tsx`. Target: v0 Wave 2 completion; escalate to v0.1.1 if Wave 2 is cut.)*
 - [ ] **`npm publish` dry run** + cross-platform smoke test: `npm
       install -g <local-tarball>` on Win/macOS/Linux → `squadquarium`
-      → diorama loads in the default browser
+      → diorama loads in the default browser.
+      *(Deferred — Ripley Wave 2 not yet landed. `pack-install-smoke` CI job is wired with `continue-on-error: true` (`# TEMP`); Ripley must flip it off before any real publish.)*
 - [ ] Self-portrait mode: when opened on the Squadquarium repo, the
-      bands are labeled with the agents that actually built it
-- [ ] README with install / launch / `--personal` / PWA-install
-      instructions; recorded demo (the demo is the Squad team
-      building the next Squadquarium feature, observed through
-      Squadquarium)
+      bands are labeled with the agents that actually built it.
+      *(Deferred — Lambert Wave 2 not yet landed. No `selfPortrait` / portrait detection found in `context.ts` or `HabitatPanel.tsx`. Target: v0 Wave 2 completion; escalate to v0.1.1 if Wave 2 is cut.)*
+- [x] README with install / launch / `--personal` / PWA-install
+      instructions; recorded demo placeholder (the actual recording is
+      Brady's job post-v0 — the ASCII diorama in the README serves as
+      stand-in until then).
+      *(Done — Dallas, Wave 2. Full README.md at repo root: title + tagline, quick start, what it does/doesn't, requirements, troubleshooting, commands, skins, architecture, PWA, contributing, dogfood, license, status.)*
 
 Explicit non-goals for v0: native shell wrapper (Tauri/Electron) —
 browser is the GUI; per-band sound; parallax background art;
