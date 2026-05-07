@@ -19,6 +19,17 @@
 
 ---
 
+### 2026-05-06T17:02:22 PT — Ripley audit: README install instructions are premature
+
+**By:** Ripley (Auditor)  
+**What:** The top-level `README.md` (line 14), `packages/cli/README.md` (line 8), and `packages/squadquarium-vscode/README.md` (line 15) all instruct users to run `npm install -g squadquarium`, but `npm view squadquarium version` returns E404 — the package is not published (per decisions.md:716, "Brody runs it manually"). Additionally, `packages/cli/dist/` does not exist; no build has been run; the dogfooding section and the root `smoke` script both silently fail without a prior `pnpm -r build`.
+
+**Action (Dallas/docs):** Update the three READMEs: (1) Root README "Quick start" — replace `npm install -g squadquarium` with a "from source" flow: `git clone`, `pnpm install`, `pnpm -r build`, then `node packages/cli/dist/index.js`. Add caveat: "An npm release is coming." (2) Root README "Dogfooding" — add `pnpm install && pnpm -r build` before `squadquarium .`. (3) `packages/cli/README.md` and `packages/squadquarium-vscode/README.md` — same caveat on the `npm install -g` line. Docs-only change; no code change required.
+
+**Why:** Misleading for new contributors; not blocking CI. Stored to ensure correctness before v1 release.
+
+---
+
 # Dallas — Final v1 + v2 Plan.md Audit
 
 **Date:** 2026-05-06T03:51:00Z  

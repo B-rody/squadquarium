@@ -85,3 +85,8 @@
 **VS Code webview wrapper:** New `packages/squadquarium-vscode/` CJS package (engines.vscode `^1.85.0`). `activate()` registers `squadquarium.open`; command handler spawns `squadquarium --serve-only` on first use, creates a webview panel, and proxies WS via `acquireVsCodeApi().postMessage`. A JS shim patches `window.WebSocket` in the renderer. Built with esbuild (`format: "cjs"`, `vscode` external). `@types/vscode ^1.85.0` provides types; `@ts-expect-error` guards the `import type` line. `vsce package` is a manual Brody step.
 
 **node-pty prebuilds:** `prebuildify` + `node-gyp-build` added to cli devDependencies. Script `packages/cli/scripts/prebuild-node-pty.mjs` resolves node-pty source through three fallback paths (local → hoisted → require.resolve). `.github/workflows/prebuild.yml` runs the matrix (windows/macos/ubuntu) on tag push; prebuilds uploaded as artifacts; publish step intentionally omitted. `prebuilds/` added to cli `files` array. `continue-on-error: true` on the prebuild step guards against pnpm 10 isolated nodeLinker resolution issues until validated; see `.squad/decisions/inbox/parker-prebuilds.md` for the workaround.
+
+### 2026-05-06T17:02:22Z — Ripley audit finding: trace command README missing --task flag
+
+**Ripley audit identified:** `squadquarium trace` supports `--task <name>` filter for narrowing history to a specific agent task. README example shows only `--since`; the `--task` flag is not documented. Action: Update README trace example to show `squadquarium trace --since 2h --task diorama` (or similar example with both filters).
+

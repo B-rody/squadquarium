@@ -92,4 +92,10 @@ The scope-respect rule is the load-bearing rule. The entire risk of a "thorough 
 The key design insight is that the queue is Squadquarium-only Zustand state — the Coordinator knows nothing about it. This respects the "Squadquarium observes; mutations go through Squad CLI via PTY" boundary. The banner is a toast (not a modal) because modals block the diorama, and the diorama is the product. The seed format as a single clean line is critical: if the seed pre-fills template fields, it defeats the Scriptorium interview, which is the value of the Scriptorium flow.
 
 **Audit findings:**
-Dallas's two items landed. Parker + Lambert items cannot be audited from Dallas's context — they're in disjoint files. The Coordinator must do a second pass after their commits. The two items I can confirm as `[x]`-ready are the skill and the design doc. "Hatchery cross-suggestion" is `[x]`-able for the design phase; Lambert's implementation is a separate future checkbox.
+Dallas's two items landed. Parker + Lambert items cannot be audited from Dallas's context — they're in disjoint files. The Coordinator must do a second pass after their commits. The two items I can confirm as `[x]`-ready are the skill and the design doc. "Hatchery cross-suggestion" is `[x]`-able for the design phase; Lambert's implementation is a separate future checkpoint.
+
+### 2026-05-06T17:02:22Z — Ripley audit finding: README install instructions need update
+
+**Ripley audit identified:** Three READMEs (root, cli, vscode) instruct `npm install -g squadquarium`, but the package is not published. Additionally, dogfooding example assumes `packages/cli/dist/` exists — it doesn't without `pnpm -r build`. Merged to decisions.md as action item for Dallas.
+
+**Action:** Update root README "Quick start" with a "from source" flow (git clone → pnpm install → pnpm -r build → node dist/index.js). Add caveat: "npm publish coming soon." Same caveat for cli + vscode READMEs. Add build steps to "Dogfooding" section. Docs-only; no code change. Ripley confirmed zero Squad duplication in CLI commands.
