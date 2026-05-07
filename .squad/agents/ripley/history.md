@@ -115,3 +115,7 @@ Not a violation. All other FS writes are to `~/.squadquarium/state.json` (user h
 **Spec fixmes are decision artifacts:** The six new Playwright spec files each have a mix of ACTIVE tests (verified working) and `test.fixme(...)` tests (components partially landed but not UI-wired). Each fixme cluster represents a forward-looking contract, not a bug. Created five decision inbox entries pointing Lambert to the exact wiring gaps for marketplace panel, game-mode toggle, OBS mode palette command, and multi-attach URL param.
 
 **2026-05-06T17:21Z — Audit findings actioned:** Top 3 README audit items landed (Dallas + Parker). Install docs now pre-publish-accurate; build deps fixed; trace --task documented; cmd-allowlist deferred-to-v1 with TODO comment. Audit loop closed.
+
+### 2026-05-07T00:55Z — Husky pre-push gate deployed
+
+**Note for next push:** Pre-push hook now exists at `.husky/pre-push` running `pnpm lint && pnpm -r build && pnpm -r test` on all local pushes. Bypass with `git push --no-verify` if needed.

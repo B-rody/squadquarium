@@ -94,3 +94,6 @@
 
 **Known v1 hardening gap:** `packages/cli/src/server.ts` `pty-spawn` handler does `pool.spawn(frame.cmd, frame.args, ...)` without validating that `frame.cmd` is in an allowlist. The "all mutations route through the squad CLI" invariant is currently enforced only by the web UI, not the server. Loopback-only binding (`127.0.0.1`) is the v0 mitigation. A TODO comment was planted at the spawn call site (see Ripley audit 2026-05-06). v1 work: add an allowlist check (minimum: assert `frame.cmd === "squad"`) before dispatching to the PTY pool.
 
+### 2026-05-07T00:55Z — Husky pre-push gate deployed
+
+**Note for next push:** Pre-push hook now exists at `.husky/pre-push` running `pnpm lint && pnpm -r build && pnpm -r test` on all local pushes. Bypass with `git push --no-verify` if needed.
