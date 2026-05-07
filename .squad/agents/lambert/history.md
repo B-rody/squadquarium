@@ -17,6 +17,8 @@
 
 ## Recent Updates
 
+📌 2026-05-06 — **Repo is now public.** Coordinator made visibility change via `gh repo edit`. Three-layer safety defence adopted (husky + agent docs pre-push gate + CI). Dallas authored `.github/copilot-instructions.md` with Pre-Push Validation Gate section; remember to run `pnpm lint && pnpm -r build && pnpm -r test` before pushing from cloud environments.
+
 📌 2026-05-05 — Team cast (Alien universe). Phase 1 onboarding underway. Skin manifest schema lock is on my plate as a pre-v0 spike.
 
 ## Learnings

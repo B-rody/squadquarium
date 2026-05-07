@@ -18,6 +18,8 @@
 
 ## Recent Updates
 
+📌 2026-05-06 — **Repo is now public.** Coordinator made visibility change via `gh repo edit`. Three-layer safety defence adopted (husky + agent docs pre-push gate + CI). Dallas authored `.github/copilot-instructions.md` with Pre-Push Validation Gate section; you're covered by both husky (local) and docs gate (cloud agent).
+
 📌 2026-05-05 — Team cast (Alien universe). Phase 1 onboarding underway. Pre-v0 spikes are mine to lead: `node-pty` cross-platform install, xterm + ink TUI compatibility, `dist/remote-ui/` bridge investigation, event reconciler design.
 
 ## Learnings

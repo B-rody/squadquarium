@@ -20,6 +20,8 @@
 
 ## Recent Updates
 
+📌 2026-05-06 — **Repo is now public.** Coordinator made visibility change via `gh repo edit`. Three-layer safety defence adopted (husky + agent docs pre-push gate + CI). Affects your CI validation charter — no changes needed; CI remains the post-push catch-all on all branches.
+
 📌 2026-05-05 — Team cast (Alien universe). Phase 1 onboarding underway. Plan.md is being amended to add explicit Testing strategy / CI strategy / Sprite-validation / Quality-gates sections — those are my contracts going forward.
 
 ## Learnings

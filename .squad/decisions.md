@@ -1,6 +1,51 @@
 # Squad Decisions
 
 ## Active Decisions
+### 2026-05-06T18:09:58 PT — Skip Server-Side Branch Protection; Use Doc-Gate for AI Agents
+
+**Date:** 2026-05-06T18:09:58-07:00  
+**Author:** Dallas (Lead)  
+**Status:** Accepted
+
+## Context
+
+Squadquarium is a solo-dev project (Brody Schulke). After fixing the README install flow and adding a Husky v9 pre-push gate, the team explored adding GitHub server-side branch protection on `main` to require all 6 CI status checks before merge.
+
+Both approaches failed with HTTP 403:
+- Classic branch protection (`PUT /repos/{owner}/{repo}/branches/main/protection`)
+- Rulesets API (`POST /repos/{owner}/{repo}/rulesets`)
+
+Root cause: both APIs are gated behind **GitHub Pro** for private repositories.
+
+## Decision
+
+**Do not add server-side branch protection rulesets.** The repo was made public (removing the private-repo Pro gate), but Brody explicitly chose not to add branch protection anyway — the overhead is not justified for a solo project.
+
+## Mechanical Safety Layers (Accepted)
+
+| Layer | What it covers | Gaps |
+|-------|---------------|------|
+| Husky pre-push (`.husky/pre-push`) | Human contributors on cloned repos | Not installed in cloud/AI agent environments |
+| `.github/copilot-instructions.md` Pre-Push Validation Gate | AI agents (GitHub Copilot coding agent, etc.) | Docs-based; not enforced by the platform |
+| CI on `main` (`.github/workflows/ci.yml`) | Every push to main, all PRs | Catches failures post-push; doesn't prevent the push |
+
+## Rationale
+
+Solo dev. The three-layer defence (husky + agent docs + CI) provides enough mechanical safety:
+- Husky covers the human contributor path.
+- The Pre-Push Validation Gate section in `.github/copilot-instructions.md` makes the rule explicit and prominent for AI agents that bypass husky.
+- CI on main catches any slip-through.
+
+Acceptable risk for the current project scale. Revisit if the team grows or the repo moves to an org with Pro/Team plan.
+
+## Artifacts Produced
+
+- `.github/copilot-instructions.md` — Pre-Push Validation Gate section (new)
+- `AGENTS.md` — pointer file for agents that look for AGENTS.md at repo root
+- `.squad/skills/agent-docs-pre-push-gate/SKILL.md` — reusable pattern for other repos
+
+---
+
 ### 2026-05-06T17:37:39 PT — Husky v9 pre-push validation gate
 
 **Date:** 2026-05-06T17:37:39-07:00  
