@@ -118,6 +118,29 @@ Not a violation. All other FS writes are to `~/.squadquarium/state.json` (user h
 
 **2026-05-06T17:21Z — Audit findings actioned:** Top 3 README audit items landed (Dallas + Parker). Install docs now pre-publish-accurate; build deps fixed; trace --task documented; cmd-allowlist deferred-to-v1 with TODO comment. Audit loop closed.
 
-### 2026-05-07T00:55Z — Husky pre-push gate deployed
+### 2026-05-06T18:40:37-07:00 — README dogfood run (full fresh-clone smoke)
 
-**Note for next push:** Pre-push hook now exists at `.husky/pre-push` running `pnpm lint && pnpm -r build && pnpm -r test` on all local pushes. Bypass with `git push --no-verify` if needed.
+**Sandbox:** `C:\workspaces\sandbox\sqq-testing` (clean clone, no prior state).
+
+**Test script:** followed README Quick-start literally, step by step.
+
+**Results summary:**
+
+| Step | Command | Exit | Notes |
+|------|---------|------|-------|
+| clone | `git clone https://github.com/B-rody/squadquarium` | 0 | clean |
+| install | `pnpm install` | 0 | husky prepare ran; native deps pre-approved via `onlyBuiltDependencies` |
+| build | `pnpm -r build` | 0 | Tauri gracefully skipped (no Rust toolchain, expected) |
+| test | `pnpm -r test` | 0 | 27 test files, 116 tests, 3 intentionally skipped |
+| headless-smoke (via node) | `node packages/cli/dist/index.js --headless-smoke` | 0 | `{"ok":true,"durationMs":391}` |
+| pack-all | `pnpm pack-all` | 0 | tarball at REPO ROOT, not `packages/cli/` |
+| global install | `npm install -g .\squadquarium-0.0.1.tgz` | 0 | 107 packages |
+| sqq version | `squadquarium --version` | 0 | `0.0.1` |
+| sqq headless-smoke | `squadquarium --headless-smoke` | 0 | `{"ok":true,"durationMs":402}` |
+| doctor | `node packages/cli/dist/index.js doctor` | 1 | expected — squad not on PATH; all other checks green |
+| server | `node packages/cli/dist/index.js .` | - | HTTP 200 on `http://127.0.0.1:6280` |
+
+**Bug found:** README says `npm install -g packages/cli/squadquarium-0.0.1.tgz`; tarball actually lands at repo root. Also affects `copilot-instructions.md` `Get-ChildItem -Path packages/cli` line. Filed as decision inbox entry `ripley-readme-dogfood-tarball-path.md`. Wisdom pact triggered — appended one-liner to `wisdom.md`.
+
+**Demo option chosen:** Option A (point at cloned repo's own `.squad/` directory). Confirmed real squad history with all five agents (Dallas, Lambert, Parker, Ripley, Scribe) visible via `diorama --frames 1`. Server confirmed responsive at `http://127.0.0.1:6280`.
+
