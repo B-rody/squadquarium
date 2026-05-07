@@ -67,6 +67,41 @@ Without it, the `pack-install-smoke` CI job fails at the pack step.
 
 **Windows glob caveat:** `bash`-style glob expansion fails in PowerShell. The Windows tarball-install step uses `pwsh` + `Get-ChildItem` to resolve the `.tgz` path explicitly. Linux/macOS steps use native `bash` glob. This is a reusable pattern for any future workflow step that needs to install a packed artifact on Windows.
 
+### 2026-05-06T17:02Z — README vs Reality audit (requested by Brody)
+
+**Audit method used:** (1) read all READMEs + per-package READMEs; (2) cross-check every claim
+against package.json / pnpm-workspace.yaml / source files; (3) run `npm view <package> version`
+to confirm publish status; (4) `glob packages/*/dist/**` to confirm whether a build exists;
+(5) grep for `writeFile|writeFileSync` across src to verify the "read-only .squad/" invariant.
+
+**npm install — definitive broken**: `npm view squadquarium version` → E404. Package not on
+the registry. decisions.md:716 confirms intentional; Brody must publish manually. The main README,
+packages/cli/README.md, and packages/squadquarium-vscode/README.md all have `npm install -g
+squadquarium` as if it works today. Misleading for anyone who clones the repo before Brody publishes.
+
+**No build output exists**: `packages/cli/dist/` and `packages/web/dist/` do not exist. The
+`smoke` root script (`node packages/cli/dist/index.js --headless-smoke`) and the dogfooding
+section (`squadquarium .` after `git clone`) both require a prior `pnpm -r build`. README
+does not document this prerequisite at all.
+
+**--task flag undocumented**: `trace.ts:187` + `parseTraceArgs` support `--task id` but the
+README commands table only shows `--since`. Minor omission, but worth a patch.
+
+**pty-spawn has no server-side allowlist**: `server.ts` accepts `pty-spawn` frames with arbitrary
+`cmd`/`args`. The "all mutations route through squad CLI via PTY" rule is enforced by the web UI
+layer, not by the server. Not a duplication finding, but a trust boundary gap for v1 hardening.
+
+**`SquadquariumLock` writes to `.squad/.scratch/`**: This is explicitly sanctioned by team.md.
+Not a violation. All other FS writes are to `~/.squadquarium/state.json` (user home, not .squad/).
+
+**Reusable audit checklist for doc-vs-reality on any monorepo CLI package:**
+- `npm view <name> version` → registry confirmation
+- `glob packages/*/dist/**` → build output confirmation
+- grep `writeFile|writeFileSync` in src → mutation surface
+- Compare README command table against argv.ts DIRECT_SUBCOMMANDS + Commander config
+- Check per-package READMEs repeat the same install claim as the root README
+- Cross-check engines field against team.md runtime spec
+
 ### 2026-05-06T00:00Z — Phase 5/6 Wave 2: Playwright e2e + Tauri scaffold
 
 **Stale `cli/web-dist/` blocks Playwright tests:** The CLI's `startServer()` prefers `packages/cli/web-dist/` (prod location) over `packages/web/dist/` (dev build). When the `prepack` script has been run even once, `web-dist/` exists and is served exclusively — even if `pnpm -r build` has since produced a fresher `web/dist/`. The symptom is that active Playwright tests pass SKIN_READY (the old bundle serves OK) but then time out on locators for components that only exist in the new build (e.g., `[⚙]` settings button). **Fix:** after any `pnpm -r build` that touches the web package, re-run `node packages/cli/scripts/prepack.mjs` to propagate the new bundle to `web-dist/` before executing Playwright.
@@ -78,3 +113,5 @@ Without it, the `pack-install-smoke` CI job fails at the pack step.
 **Tauri scaffold on Rust-less machines:** Brody has no Rust toolchain (offline-by-policy). The `build` script in `packages/squadquarium-app/package.json` uses an inline Node.js check (`node -e "try{require('child_process').execSync('cargo --version')}catch(e){process.exit(0)}"`). If `cargo` is absent, it exits 0 silently, so `pnpm -r build` passes. Documenting this here so future agents don't "fix" the graceful skip.
 
 **Spec fixmes are decision artifacts:** The six new Playwright spec files each have a mix of ACTIVE tests (verified working) and `test.fixme(...)` tests (components partially landed but not UI-wired). Each fixme cluster represents a forward-looking contract, not a bug. Created five decision inbox entries pointing Lambert to the exact wiring gaps for marketplace panel, game-mode toggle, OBS mode palette command, and multi-attach URL param.
+
+**2026-05-06T17:21Z — Audit findings actioned:** Top 3 README audit items landed (Dallas + Parker). Install docs now pre-publish-accurate; build deps fixed; trace --task documented; cmd-allowlist deferred-to-v1 with TODO comment. Audit loop closed.

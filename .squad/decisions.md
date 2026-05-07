@@ -1,6 +1,97 @@
 # Squad Decisions
 
 ## Active Decisions
+### 2026-05-06T17:19:47 PT — README install instructions reflect pre-publish reality
+
+**Date:** 2026-05-06T17:19:47-07:00
+**Author:** Dallas (Lead)
+**Status:** Active
+
+## Decision
+
+README install instructions now reflect pre-publish reality. All three
+READMEs (root, `packages/cli`, `packages/squadquarium-vscode`) have been
+updated to remove the bare `npm install -g squadquarium` call-site and
+replace it with:
+
+1. A "not yet on npm" caveat at the point of use.
+2. A build-from-source flow: `git clone → pnpm install → pnpm -r build →
+   node packages/cli/dist/index.js [path]`.
+3. An optional tarball path for a real global bin: `pnpm pack-all &&
+   npm install -g packages/cli/squadquarium-0.0.1.tgz`.
+
+## Rationale
+
+`npm view squadquarium version` returns 404. The package is not on npmjs.org.
+Brody confirmed (2026-05-06 session): we are NOT publishing yet. The Ripley
+audit surfaced that the existing docs told a future-state truth that would
+fail immediately for any new user who ran the documented command.
+
+## Reversal condition
+
+Flip ALL THREE READMEs back to the clean one-liner **only after** Brody
+confirms the package is live on npmjs.org:
+
+```bash
+npm install -g squadquarium
+```
+
+Do not flip partial — if the package is published, all three READMEs must
+be updated in the same commit. Check with `npm view squadquarium version`
+before reverting.
+
+## Files changed
+
+- `README.md` — Quick Start + Dogfooding sections
+- `packages/cli/README.md` — opening paragraph
+- `packages/squadquarium-vscode/README.md` — Requirements bullet
+
+
+---
+
+### 2026-05-06T17:19:47 PT — server.ts cmd-allowlist deferred to v1
+
+**Date:** 2026-05-06T17:19:47-07:00  
+**Author:** Parker  
+**Status:** deferred
+
+## Context
+
+Ripley's audit (2026-05-06) flagged that the `pty-spawn` WebSocket handler in
+`packages/cli/src/server.ts` calls `pool.spawn(frame.cmd, frame.args, ...)` without
+validating that `frame.cmd` is in an allowlist. The stated invariant — "all mutations
+route through the squad CLI" — is enforced by the web UI today, not by the server.
+
+## Decision
+
+**Defer allowlist enforcement to v1.** The v0 mitigation is loopback-only binding
+(`127.0.0.1`). A misbehaving browser tab on 127.0.0.1 could theoretically spawn
+arbitrary processes, but the attack surface is limited to the local machine and requires
+the user to have a malicious page open while the server is running.
+
+A `// TODO(v1 hardening)` comment has been planted directly above the `pool.spawn()`
+call in `server.ts` (see Ripley audit 2026-05-06) so this does not get lost.
+
+## v1 Action
+
+Add an allowlist check before dispatching to the PTY pool. Minimum enforcement:
+```ts
+if (frame.cmd !== "squad") {
+  sendError("cmd not in allowlist", "cmd-not-allowed");
+  return;
+}
+```
+Extend the allowlist only via an explicit decision.
+
+## Rationale
+
+- v0 scope: loopback-only is the documented and accepted mitigation.
+- Brody explicitly declined to implement the fix now.
+- The TODO ensures v1 picks this up without a separate audit pass.
+
+
+---
+
 ### 2026-05-06T09:31 PT — User directive: name correction (correct to Brody)
 **By:** Brody Schulke (via Copilot)
 **What:** The user's correct name is **Brody**. Fixed mechanical case-sensitive rename across every project-authored file (.squad/, README, CONTRIBUTING, CHANGELOG, plan.md, .github/CONTRIBUTING-UPSTREAM.md, .github/POCOCK-PACK.md, packages/squadquarium-{app,vscode}/README.md, packages/web/src/hatchery/CROSS-SUGGESTION-DESIGN.md, packages/squadquarium-vscode/src/extension.ts). Going forward, address the user as "Brody" in chat, history files, decisions, and spawn prompts.
