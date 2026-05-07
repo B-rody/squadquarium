@@ -99,3 +99,18 @@ Dallas's two items landed. Parker + Lambert items cannot be audited from Dallas'
 **Ripley audit identified:** Three READMEs (root, cli, vscode) instruct `npm install -g squadquarium`, but the package is not published. Additionally, dogfooding example assumes `packages/cli/dist/` exists — it doesn't without `pnpm -r build`. Merged to decisions.md as action item for Dallas.
 
 **Action:** Update root README "Quick start" with a "from source" flow (git clone → pnpm install → pnpm -r build → node dist/index.js). Add caveat: "npm publish coming soon." Same caveat for cli + vscode READMEs. Add build steps to "Dogfooding" section. Docs-only; no code change. Ripley confirmed zero Squad duplication in CLI commands.
+
+### 2026-05-06T17:19:47-07:00 — README pre-publish doc fix (audit-driven)
+
+**Deliverables produced:**
+- `README.md` Quick Start replaced: from `npm install -g squadquarium` to full build-from-source flow (`pnpm install → pnpm -r build → node packages/cli/dist/index.js` or `pnpm pack-all && npm install -g ...tgz`). "Not yet on npm" caveat added.
+- `README.md` Dogfooding section updated: `pnpm install && pnpm -r build` + optional tarball install step required before `squadquarium .` invocation. Explicit "you must build first" note added.
+- `packages/cli/README.md` intro updated: "only published artifact" claim removed, replaced with "not yet published" caveat + build-from-source block.
+- `packages/squadquarium-vscode/README.md` Requirements updated: bare `npm install -g squadquarium` replaced with not-yet-published caveat + full build + tarball install flow.
+
+**Decision filed:** `.squad/decisions/inbox/dallas-readme-pre-publish-install.md`
+
+## Learnings
+
+**Audit-driven doc fix pattern:**
+READMEs written optimistically during build can encode a future-state truth (`npm install -g squadquarium`) that is false at ship time. The correct fix is a "not yet on npm" caveat at the call-site — not a footnote, not a separate section — so the reader who runs the command sees the blocker immediately. Flip back to the clean one-liner ONLY after the package is confirmed live on npmjs.org. This pattern will recur for any package that is designed-to-publish but hasn't crossed the publish gate yet.

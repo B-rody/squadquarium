@@ -10,10 +10,24 @@ Watch your [Squad](https://github.com/bradygaster/squad) team work — in real t
 
 ## Quick start
 
+> **Squadquarium is not yet published to npm. `npm install -g squadquarium` will be the install path once Brody publishes it; until then, build from source.**
+
+**Build from source:**
+
 ```bash
-npm install -g squadquarium
-cd /path/to/your/squad/project
-squadquarium
+git clone https://github.com/B-rody/squadquarium
+cd squadquarium
+pnpm install
+pnpm -r build
+node packages/cli/dist/index.js [path]
+```
+
+For a real `squadquarium` / `sqq` bin on PATH:
+
+```bash
+pnpm pack-all
+npm install -g packages/cli/squadquarium-0.0.1.tgz
+squadquarium [path]
 ```
 
 Open your personal/global squad:
@@ -99,7 +113,7 @@ If `node-pty` still fails to build, Squadquarium falls back to **no-PTY log-tail
 | `squadquarium --personal`                           | Force open the personal/global squad regardless of cwd.                                                                                                                                  |
 | `squadquarium doctor`                               | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                             |
 | `squadquarium status`                               | Concise one-screen status snapshot (agents, last decision, last bus event). No browser required.                                                                                         |
-| `squadquarium trace <agent> [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--since` limits the window.                                          |
+| `squadquarium trace <agent> [--task <id>] [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--task` narrows to a specific task; `--since` limits the window. |
 | `squadquarium why <decision-id>`                    | Expand a `decisions.md` entry: nearest orchestration log entries (±1 hour), matched skills, related decisions. Accepts index number, timestamp prefix, or title keyword.                 |
 | `squadquarium inspect <agent>`                      | Compact agent card: charter role + voice line, recent history, skills matched by role, files touched in `orchestration-log/`. Good for quick context without opening the browser.        |
 | `squadquarium diorama [--frames N] [--width N]`     | Render the current team's glyph sprites to stdout using the aquarium skin. Animates `N` frames in-place (TTY) or newline-separated (pipe). Smoke-tests skin asset loading.               |
@@ -282,8 +296,18 @@ This repo is itself a Squad project. The team that builds Squadquarium is the te
 ```bash
 git clone https://github.com/B-rody/squadquarium
 cd squadquarium
+pnpm install
+pnpm -r build
+# For a global bin (optional):
+pnpm pack-all
+npm install -g packages/cli/squadquarium-0.0.1.tgz
+# Then run:
 squadquarium .
+# Or without installing globally:
+node packages/cli/dist/index.js .
 ```
+
+> **You must build first.** `packages/cli/dist/` does not exist until `pnpm -r build` runs.
 
 The fish in the aquarium are the agents writing the aquarium. `decisions.md`, `orchestration-log/`, and per-agent `history.md` produced while building Squadquarium are the most authentic possible demo recording — see the commit history for receipts.
 

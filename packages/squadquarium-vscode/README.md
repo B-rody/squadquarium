@@ -12,7 +12,15 @@ Ambient terminal diorama for your AI dev team — right inside VS Code.
 
 - VS Code `^1.85.0`
 - Node.js `>=22.5.0` on `PATH`
-- The `squadquarium` CLI installed globally (`npm install -g squadquarium`) **or** the monorepo dev layout with `packages/cli/dist/index.js` built.
+- The `squadquarium` CLI installed globally — **Squadquarium is not yet published to npm**; build from source first:
+  ```bash
+  git clone https://github.com/B-rody/squadquarium
+  cd squadquarium
+  pnpm install && pnpm -r build
+  pnpm pack-all
+  npm install -g packages/cli/squadquarium-0.0.1.tgz
+  ```
+  `npm install -g squadquarium` will be the install path once Brody publishes it. Until then the tarball install above is required. Alternatively, use the monorepo dev layout with `packages/cli/dist/index.js` built.
 
 ## Usage
 

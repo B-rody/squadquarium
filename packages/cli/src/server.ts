@@ -194,6 +194,11 @@ async function handleClientFrame(
   try {
     switch (frame.kind) {
       case "pty-spawn": {
+        // TODO(v1 hardening): validate frame.cmd is in an allowlist (currently
+        // only "squad"). The "all mutations route through the squad CLI"
+        // invariant is enforced by the web UI today, not the server. Loopback
+        // binding mitigates risk, but a misbehaving browser tab on 127.0.0.1
+        // could spawn arbitrary processes. See Ripley audit 2026-05-06.
         const { ptyId } = await pool.spawn(frame.cmd, frame.args, {
           cwd: frame.cwd,
           cols: frame.cols,
