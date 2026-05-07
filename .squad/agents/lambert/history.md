@@ -38,3 +38,8 @@ ame, ersion, ngineVersion, license (SPDX, required), uthor, ont (with option
 - Sixel and other image protocols are useful optional enhancements, but Squadquarium should treat them as capability-gated flourishes, not as the foundation of the aquarium renderer.
 
 **Archive note:** Earlier learning entries (Spike 4: skin manifest, Phase 3 Wave 2: ritual/status, Phase 5/6 Wave 2: reach slice) are preserved in history-archive.md due to size threshold.
+### 2026-05-06T19:17:29-07:00 — Aquarium renderer and animation engine
+
+- Built `packages/tui` sprite plumbing around the locked skin format: validated sprite-sheet loading, palette token resolution, actor state/drift timing, and an `Aquarium` renderer that paints the aquarium skin onto `terminal-kit` `ScreenBufferHD` buffers.
+- Wired the TUI app to the new aquarium scene so the headless smoke path and package tests now render real aquarium actors instead of placeholder strings; clicks hit-test actors and kick them into `celebrate`.
+- Kept chrome and layout terminal-native: Unicode borders/separators, inverse status bar copy, and a tested 60/40-ish pane geometry that stays compatible with the new TUI package build/test gate.

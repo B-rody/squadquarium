@@ -1,0 +1,127 @@
+import type { ScreenBufferHD } from "terminal-kit";
+
+import type { Layout } from "./layout.js";
+
+export interface ChromeConfig {
+  teamName: string;
+  skinName: string;
+  agentCount: number;
+  rounded?: boolean;
+  statusBarPosition?: "top" | "bottom";
+  color?: number | string;
+  bgColor?: number | string;
+}
+
+interface TextAttr {
+  color?: number | string;
+  bgColor?: number | string;
+  inverse?: boolean;
+}
+
+function put(
+  buffer: ScreenBufferHD,
+  x: number,
+  y: number,
+  text: string,
+  attr: TextAttr = {},
+): void {
+  if (text.length === 0) {
+    return;
+  }
+
+  buffer.put({ x, y, attr, wrap: false, dx: 0, dy: 0 }, text);
+}
+
+function drawHorizontal(
+  buffer: ScreenBufferHD,
+  x: number,
+  y: number,
+  width: number,
+  left: string,
+  middle: string,
+  right: string,
+): void {
+  if (width <= 1) {
+    return;
+  }
+
+  put(buffer, x, y, `${left}${middle.repeat(Math.max(0, width - 2))}${right}`);
+}
+
+function drawBox(
+  buffer: ScreenBufferHD,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  chars: { tl: string; tr: string; bl: string; br: string; h: string; v: string },
+): void {
+  if (width < 2 || height < 2) {
+    return;
+  }
+
+  drawHorizontal(buffer, x, y, width, chars.tl, chars.h, chars.tr);
+  drawHorizontal(buffer, x, y + height - 1, width, chars.bl, chars.h, chars.br);
+
+  for (let offset = 1; offset < height - 1; offset += 1) {
+    put(buffer, x, y + offset, chars.v);
+    put(buffer, x + width - 1, y + offset, chars.v);
+  }
+}
+
+function drawDivider(
+  buffer: ScreenBufferHD,
+  y: number,
+  width: number,
+  left: string,
+  middle: string,
+  right: string,
+  title: string,
+): void {
+  if (width < 2) {
+    return;
+  }
+
+  put(buffer, 0, y, `${left}${middle.repeat(Math.max(0, width - 2))}${right}`);
+  put(buffer, 2, y, title.slice(0, Math.max(0, width - 4)));
+}
+
+function drawStatusBar(buffer: ScreenBufferHD, layout: Layout, config: ChromeConfig): void {
+  const y = config.statusBarPosition === "bottom" ? layout.height - 1 : 0;
+  const text = `${config.teamName} · skin:${config.skinName} · agents:${config.agentCount}`;
+  const attr: TextAttr = { inverse: true };
+  if (config.color !== undefined) {
+    attr.color = config.color;
+  }
+  if (config.bgColor !== undefined) {
+    attr.bgColor = config.bgColor;
+  }
+
+  put(
+    buffer,
+    0,
+    y,
+    text.length > layout.width ? text.slice(0, layout.width) : text.padEnd(layout.width, " "),
+    attr,
+  );
+}
+
+export function drawChrome(buffer: ScreenBufferHD, layout: Layout, config: ChromeConfig): void {
+  const chars = config.rounded
+    ? { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│", lt: "├", rt: "┤" }
+    : { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│", lt: "├", rt: "┤" };
+
+  drawBox(buffer, 0, 0, layout.width, layout.height, chars);
+  drawDivider(buffer, layout.log.y - 1, layout.width, chars.lt, chars.h, chars.rt, " AQUARIUM ");
+  drawDivider(
+    buffer,
+    layout.input.y - 1,
+    layout.width,
+    chars.lt,
+    chars.h,
+    chars.rt,
+    " ACTIVITY LOG ",
+  );
+  put(buffer, 2, layout.height - 2, "INPUT");
+  drawStatusBar(buffer, layout, config);
+}

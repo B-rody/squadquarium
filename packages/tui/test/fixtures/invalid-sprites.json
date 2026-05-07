@@ -1,0 +1,15 @@
+{
+  "roles": {
+    "lead": {
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "cells": [[{ "glyph": "(", "fg": "fg" }]]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

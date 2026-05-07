@@ -12,6 +12,7 @@ export default tseslint.config(
       "skins/**",
       "**/skins/**",
       "**/web-dist/**",
+      "**/web-legacy/**",
     ],
   },
   tseslint.configs.recommended,

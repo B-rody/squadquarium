@@ -28,7 +28,7 @@
 - **Casting universe:** Alien (small-crew, isolated, vigilance-coded — fits a weekend hack with one independent reviewer)
 - **Squad version pin:** 0.9.4 (alpha — pin per Squadquarium release; treat `squad upgrade` as a port window)
 - **Runtime:** Node ≥ 22.5.0 (current host: 24.14.1); pnpm 10.33.3 workspace; TypeScript everywhere in `packages/`
-- **Form factor:** Single Node process. CLI (`squadquarium` / `sqq`) serves a React+Vite+Canvas2D web bundle over a loopback HTTP/WS server (127.0.0.1 only). No Tauri, no Electron, no Rust in v0.
+- **Form factor:** Single Node process. CLI (`squadquarium` / `sqq`) renders a hyper-rich fullscreen TUI via terminal-kit (truecolor, mouse, animated sprites, split-pane layout). No browser, no HTTP server in default mode. No Tauri, no Electron, no Rust. Web dashboard available via `--serve` flag (v1+).
 - **Repo layout:** `packages/{core,web,cli}` + `skins/{aquarium,office}` + `.squad/` (this team).
 - **North star:** Ambient by default. Drill-in on demand. CLI parity. Local-first. Skin manifest schema is a v0 architectural commitment.
 - **Hard rules:** `.squad/` is read-only from Squadquarium — all mutations route through the real Squad CLI via PTY. Loopback-only network. Single-flow lock at `.squad/.scratch/squadquarium.lock` for any UI flow that mutates `.squad/`. Hatcher delegates to the Coordinator (i.e., to *us*) — Squadquarium does NOT introduce its own LLM client / tool-call surface.

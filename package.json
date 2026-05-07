@@ -8,12 +8,10 @@
   },
   "packageManager": "pnpm@10.33.3",
   "scripts": {
-    "dev": "pnpm --filter @squadquarium/web dev",
     "build": "pnpm -r build",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "pnpm -r test",
-    "test:web": "pnpm --filter @squadquarium/web test:e2e",
     "smoke": "node packages/cli/dist/index.js --headless-smoke",
     "build:vscode": "pnpm --filter squadquarium-vscode build",
     "pack-all": "pnpm --filter squadquarium pack",

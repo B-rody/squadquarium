@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * bundle.mjs — builds dist/index.js via esbuild, inlining @squadquarium/core.
- * All other runtime deps remain external (node-pty, ws, open, commander,
+ * bundle.mjs — builds dist/index.js via esbuild, inlining workspace code.
+ * Runtime deps remain external (node-pty, ws, open, commander, terminal-kit,
  * @bradygaster/squad-sdk) so they install normally from npm.
  */
 import { build } from "esbuild";
@@ -30,6 +30,7 @@ await build({
     "ws",
     "open",
     "commander",
+    "terminal-kit",
     "@bradygaster/squad-sdk",
   ],
   // suppress "use of eval" warnings from @xterm or other deps

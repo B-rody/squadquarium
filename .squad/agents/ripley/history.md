@@ -146,3 +146,11 @@ Not a violation. All other FS writes are to `~/.squadquarium/state.json` (user h
 
 **Demo option chosen:** Option A (point at cloned repo's own `.squad/` directory). Confirmed real squad history with all five agents (Dallas, Lambert, Parker, Ripley, Scribe) visible via `diorama --frames 1`. Server confirmed responsive at `http://127.0.0.1:6280`.
 
+### 2026-05-06T19:17:29-07:00 — TUI harness contracts
+
+**Layout contract:** `calculateLayout()` should reserve a 1-cell outer border, keep the input band fixed at 2 rows, target an aquarium/log split of roughly 60/40 within the remaining content height, and degrade gracefully on cramped terminals.
+
+**Mock buffer requirement:** terminal-kit-facing tests need a ScreenBuffer mock that expands multi-character `put()` calls into per-cell state. The chrome/status bar code writes full strings, so single-call recording is not enough for assertions.
+
+**Validation gate:** the repo-wide gate `pnpm lint && pnpm -r build && pnpm -r test` now includes `@squadquarium/tui` and passes with the TUI package in the workspace.
+

@@ -2,9 +2,17 @@
 
 > A no-click idle diorama for your AI dev team.
 
-Watch your [Squad](https://github.com/bradygaster/squad) team work — in real time, in your browser, in glorious terminal aesthetic. The fish are real. The code commits are real. The vibes are immaculate.
+Watch your [Squad](https://github.com/bradygaster/squad) team work — in real time, inside a fullscreen terminal UI, in glorious terminal aesthetic. The fish are real. The code commits are real. The vibes are immaculate.
 
 [ ! demo gif goes here — out of scope for autonomous v0 build ]
+
+---
+
+## How it runs
+
+Squadquarium is a **TUI-first terminal app**. When you run `squadquarium`, the CLI launches a fullscreen terminal experience in-process using `terminal-kit` — no browser, no HTTP server, no second renderer. This keeps the runtime to one Node process while still giving us truecolor, mouse support, Unicode chrome, and animated glyph sprites.
+
+Want a native desktop shell around it later? See [Native desktop (Tauri)](#native-desktop-tauri-v1) below — it's still an opt-in v1+ wrapper.
 
 ---
 
@@ -42,7 +50,7 @@ Point at an arbitrary repo:
 squadquarium /path/to/repo
 ```
 
-That's it. Your default browser opens to the diorama. No config, no accounts, no server to run.
+That's it. The diorama opens directly in your terminal. No config, no accounts, no cloud — just one local Node process and your terminal.
 
 ---
 
@@ -50,12 +58,11 @@ That's it. Your default browser opens to the diorama. No config, no accounts, no
 
 Squadquarium is a **local-only ambient dashboard** for a Squad project. It:
 
-- **Habitat panel** — a Canvas2D glyph diorama, banded by role. Lead at the top (anglerfish `(°)>=<` with a flickering `*` lure), Frontend in the mood lagoon (seahorse), Backend at the engine reef (octopus), Tester in the test tank (pufferfish). Each creature animates in real time, driven by reconciled events from the Squad SDK.
-- **Log panel** — real `squad watch` PTY output rendered through `xterm.js`. Read-only in Ambient mode so you can always see what's actually happening. Hyperlinks off by default; OSC sequences restricted to cursor/title only.
-- **c′ split** — resizable, collapsible habitat + log panels in terminal-styled chrome (double-line border, phosphor palette, optional CRT scanlines + bloom). Click a creature → drill-in panel. Click a log line → camera pans to the agent.
-- **Interactive mode** — click **Hatch new teammate**, **Inscribe new skill**, or **Open Coordinator** to switch the log panel into a live PTY session. The Squad Coordinator's React+ink TUI renders inside; you type responses there. ESC returns to ambient.
-- **Skin toggle** — Aquarium (default, phosphor cyan-on-deep-teal) or Office (phosphor amber-on-near-black, `[¤]` figures at `╔═╗` desks). Restart-free via the command palette.
-- **PWA** — modern browsers offer "Install app." The v0 manifest ships, so the affordance works even if the icons aren't polished yet.
+- **Aquarium viewport** — animated glyph sprites rendered directly into terminal cells with `terminal-kit` ScreenBufferHD.
+- **Activity log** — a bottom-up ring buffer with mouse-wheel scrolling for recent status and command feedback.
+- **Command line** — a two-row input band with history, simple completion, and TUI-native command handling.
+- **Adaptive renderer** — truecolor when available, Unicode box-drawing chrome when supported, terminal-safe fallback when not.
+- **Single-process host** — no browser, no HTTP server, no second UI runtime in the default path.
 
 ---
 
@@ -107,18 +114,18 @@ If `node-pty` still fails to build, Squadquarium falls back to **no-PTY log-tail
 
 ## Commands
 
-| Command                                                           | Purpose                                                                                                                                                                                  |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `squadquarium [path]`                                             | Resolve squad context and launch the diorama in your default browser. `path` defaults to cwd; walks up to find `.squad/`; falls back to personal squad; shows empty-state if none found. |
-| `squadquarium --personal`                                         | Force open the personal/global squad regardless of cwd.                                                                                                                                  |
-| `squadquarium doctor`                                             | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                             |
-| `squadquarium status`                                             | Concise one-screen status snapshot (agents, last decision, last bus event). No browser required.                                                                                         |
-| `squadquarium trace <agent> [--task <id>] [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--task` narrows to a specific task; `--since` limits the window.     |
-| `squadquarium why <decision-id>`                                  | Expand a `decisions.md` entry: nearest orchestration log entries (±1 hour), matched skills, related decisions. Accepts index number, timestamp prefix, or title keyword.                 |
-| `squadquarium inspect <agent>`                                    | Compact agent card: charter role + voice line, recent history, skills matched by role, files touched in `orchestration-log/`. Good for quick context without opening the browser.        |
-| `squadquarium diorama [--frames N] [--width N]`                   | Render the current team's glyph sprites to stdout using the aquarium skin. Animates `N` frames in-place (TTY) or newline-separated (pipe). Smoke-tests skin asset loading.               |
-| `squadquarium aspire`                                             | Shell out to `squad aspire`, extract the Aspire dashboard URL from its output, and open it in the default browser. Prints install guidance if `squad aspire` is not found.               |
-| `squadquarium --headless-smoke`                                   | Boot the server, verify the WebSocket endpoint, fire a synthetic event burst, assert the web bundle responds, exit 0/non-zero. CI-friendly.                                              |
+| Command                                                           | Purpose                                                                                                                                                                              |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `squadquarium [path]`                                             | Resolve squad context and launch the fullscreen TUI. `path` defaults to cwd; walks up to find `.squad/`; falls back to personal squad; shows empty-state if none found.              |
+| `squadquarium --personal`                                         | Force open the personal/global squad regardless of cwd.                                                                                                                              |
+| `squadquarium doctor`                                             | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                         |
+| `squadquarium status`                                             | Concise one-screen status snapshot (agents, last decision, last bus event). No TUI required.                                                                                         |
+| `squadquarium trace <agent> [--task <id>] [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--task` narrows to a specific task; `--since` limits the window. |
+| `squadquarium why <decision-id>`                                  | Expand a `decisions.md` entry: nearest orchestration log entries (±1 hour), matched skills, related decisions. Accepts index number, timestamp prefix, or title keyword.             |
+| `squadquarium inspect <agent>`                                    | Compact agent card: charter role + voice line, recent history, skills matched by role, files touched in `orchestration-log/`.                                                        |
+| `squadquarium diorama [--frames N] [--width N]`                   | Render the current team's glyph sprites to stdout using the aquarium skin. Animates `N` frames in-place (TTY) or newline-separated (pipe). Smoke-tests skin asset loading.           |
+| `squadquarium aspire`                                             | Shell out to `squad aspire`, extract the Aspire dashboard URL from its output, and open it in the default browser. Prints install guidance if `squad aspire` is not found.           |
+| `squadquarium --headless-smoke`                                   | Boot the TUI once without terminal control and exit with a JSON result. CI-friendly.                                                                                                 |
 
 `sqq` is an alias for `squadquarium` for typing brevity.
 
@@ -236,7 +243,7 @@ Game mode will be off by default and toggled via a settings switch.
 
 Compared to the v0 release, v1 and v2 add (or plan to add) the following:
 
-- **`trace`, `why`, `inspect`, `diorama`, `aspire` subcommands** — CLI diagnostics without launching the browser.
+- **`trace`, `why`, `inspect`, `diorama`, `aspire` subcommands** — CLI diagnostics without launching the fullscreen TUI.
 - **Settings panel** — CRT bloom/scanlines toggles, voice bubbles, mood glyphs, ambient SFX, always-on-top.
 - **Wisdom Wing** — `identity/wisdom.md` rendered as a browsable pattern museum inside the diorama.
 - **Plugin marketplace UX** — browse and install Squad plugins from configured marketplaces via the command palette.
@@ -249,6 +256,22 @@ Compared to the v0 release, v1 and v2 add (or plan to add) the following:
 
 ---
 
+## Native desktop (Tauri) — v1+
+
+If you want a dedicated OS window with system tray, always-on-top, and native platform bundling (`.app` / `.exe` / `.AppImage`), the `squadquarium-app` Tauri wrapper is an opt-in package in this repo. It requires the Rust toolchain.
+
+**Prerequisites:** [rustup](https://rustup.rs/) + platform system deps (see `packages/squadquarium-app/README.md`).
+
+```bash
+# After installing rustup and building the CLI:
+pnpm --filter squadquarium-app dev    # dev window
+pnpm --filter squadquarium-app build  # release bundle
+```
+
+The browser-tab experience is identical — Tauri just wraps the same web bundle in a native window. Most users don't need this for v0.
+
+---
+
 ## Architecture
 
 One Node process. No Rust. No sidecar. No electron.
@@ -256,28 +279,28 @@ One Node process. No Rust. No sidecar. No electron.
 ```
 squadquarium/
 ├── packages/
-│   ├── core/   # Squad SDK adapter, SquadObserver, event reconciler,
-│   │           # PTY pool, lock file. No UI. Node-only.
-│   ├── web/    # React 19 + Vite + Canvas2D diorama (browser bundle)
-│   └── cli/    # `squadquarium` / `sqq` binary: arg parsing,
-│               # context resolution, HTTP/WS server, browser launch
+│   ├── core/        # Squad SDK adapter, SquadObserver, event reconciler,
+│   │                # PTY pool, lock file. No UI. Node-only.
+│   ├── tui/         # terminal-kit-based fullscreen renderer library
+│   ├── web-legacy/  # parked browser renderer, preserved for possible v1+
+│   └── cli/         # `squadquarium` / `sqq` binary: arg parsing,
+│                    # context resolution, TUI launch, stdout subcommands
 ├── skins/
 │   ├── aquarium/   # manifest.json, sprites.json, habitat.json, …
 │   └── office/
 └── .squad/         # the Squad team building Squadquarium (dogfooding)
 ```
 
-- **Transport** — single WebSocket on `127.0.0.1` between `web` and `core`. Framed messages with sequence numbers. Auto-reconnect on transient drops. `--host 0.0.0.0` is rejected with a hard error — loopback-only for v0.
 - **Event reconciler** — four sources (`bus > pty > fs > log`) fused into a single `SquadquariumEvent` envelope with per-entity watermarks and a `(entityKey, causedBy, seq, source)` dedupe key. Divergence between the diorama and the log panel is treated as a v0 invariant, not a v1 hardening.
-- **Renderer** — Canvas2D glyph atlas. Per-cell `(glyph, fg, bg, blink?)`. ~12 fps animation via glyph substitution. WebGL only if Canvas2D hits a perf wall (1k+ animated cells).
-- **Terminal** — `xterm.js` + `@xterm/addon-fit`. No `WebLinksAddon` by default (ANSI trust boundary). OSC allowlist: cursor/title only.
+- **Renderer** — `terminal-kit` ScreenBufferHD + Unicode box-drawing chrome. ~12 fps animation via glyph substitution and diffed terminal writes.
+- **Input + mouse** — in-process terminal handling for command entry, scroll, click targeting, and resize.
 - **State** — `@bradygaster/squad-sdk` (pinned `0.9.4`) for `SquadState` collections, `SquadObserver` (200ms debounce), and `EventBus` bridge.
 
 ---
 
-## PWA
+## Web dashboard status
 
-Modern browsers (Chrome, Edge, Arc) offer **"Install app"** when a PWA manifest is present. The v0 manifest ships at `packages/web/public/manifest.webmanifest` and a service worker precaches the bundle. Icon polish lands in v1; the affordance works in v0.
+The old browser renderer is parked in `packages/web-legacy/` and is not built or shipped in the TUI-first default path. A web dashboard may return later as an opt-in v1+ observer mode.
 
 ---
 

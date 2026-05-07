@@ -2,28 +2,25 @@ import { describe, expect, it } from "vitest";
 import { checkDirectSubcommand, parseArgs } from "../src/argv.js";
 
 describe("parseArgs", () => {
-  it("parses server options", () => {
+  it("parses TUI options", () => {
     const args = parseArgs([
       "node",
       "squadquarium",
       "C:\\Workspace\\personal\\squadquarium",
       "--personal",
-      "--port",
-      "6285",
-      "--host",
-      "localhost",
-      "--no-open",
       "--headless-smoke",
+      "--attach",
+      "C:\\Workspace\\team-a",
+      "--attach",
+      "C:\\Workspace\\team-b",
     ]);
 
     expect(args).toMatchObject({
       path: "C:\\Workspace\\personal\\squadquarium",
       personal: true,
-      port: 6285,
-      host: "localhost",
-      open: false,
       headlessSmoke: true,
       subcommand: null,
+      attachPaths: ["C:\\Workspace\\team-a", "C:\\Workspace\\team-b"],
     });
   });
 

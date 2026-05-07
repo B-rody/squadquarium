@@ -26,6 +26,15 @@
 
 ## Learnings
 
+### 2026-05-06T19:17:29-07:00 — TUI package + CLI pivot
+
+**TUI package:** `packages/tui/` now owns the fullscreen renderer shell using `terminal-kit` `ScreenBufferHD`, with three composited regions (aquarium, activity log, input), resize handling, mouse dispatch, and headless smoke coverage via Vitest.
+
+**CLI default path:** `packages/cli/src/index.ts` no longer boots the browser/server flow for `sqq` with no args. The default command now launches `startApp()` from `@squadquarium/tui`; text subcommands (`doctor`, `status`, `trace`, `why`, `inspect`, `diorama`, `aspire`) stay stdout-first.
+
+**Packaging / CI:** `packages/web/` is parked as `packages/web-legacy/` and excluded from the workspace. CI now runs lint + recursive build + recursive vitest only; the browser/Playwright path is removed from the main gate, while `--headless-smoke` remains as a non-interactive TUI bootstrap check for install-path validation.
+
+
 ### 2026-05-05T22:30Z — Pre-v0 scaffold + Spikes 1 & 6
 
 **Package versions pinned:**

@@ -1,5 +1,9 @@
 packages:
-  - "packages/*"
+  - "packages/cli"
+  - "packages/core"
+  - "packages/squadquarium-app"
+  - "packages/squadquarium-vscode"
+  - "packages/tui"
   - "skins/*"
 allowBuilds:
   "@bradygaster/squad-cli": true

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
-  # Job 1: lint · build · unit/integration tests · Playwright (win + linux only)
+  # Job 1: lint · build · unit/integration tests
   # ─────────────────────────────────────────────────────────────────────────────
   lint-build-test:
     name: lint-build-test (${{ matrix.os }})
@@ -32,8 +32,6 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          # Reads the "packageManager" field from package.json to determine pnpm
-          # version. Parker wires that field during monorepo scaffold.
           package_json_file: package.json
 
       - name: Setup Node
@@ -51,46 +49,16 @@ jobs:
       - name: Build (all packages)
         run: pnpm -r build
 
-      - name: Unit + integration tests (Vitest)
+      - name: Unit tests (Vitest)
         run: pnpm -r test
-
-      # Playwright is skipped on macOS for the first pass — it is the slowest
-      # runner and rarely the OS that breaks first. macOS coverage is added once
-      # the matrix is green on win + linux.
-      - name: Install Playwright browsers (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: pnpm --filter @squadquarium/web exec playwright install --with-deps chromium
-
-      - name: Install Playwright browsers (Windows)
-        if: matrix.os == 'windows-latest'
-        run: pnpm --filter @squadquarium/web exec playwright install chromium
-
-      - name: Playwright e2e tests (skip macOS v0)
-        if: matrix.os != 'macos-latest'
-        run: pnpm test:web
-
-      - name: Upload Playwright report + screenshot diffs
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-report-${{ matrix.os }}
-          path: |
-            packages/web/playwright-report/
-            packages/web/test/e2e/__screenshots__/
-          retention-days: 14
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: pack → install from tarball → headless smoke (PTY cross-platform gate)
-  # v0 published artifact: `squadquarium` from packages/cli.
-  # packages/cli uses esbuild to bundle @squadquarium/core inline; web assets are
-  # copied by the prepack script; only runtime deps (node-pty, ws, etc.) install.
   # ─────────────────────────────────────────────────────────────────────────────
   pack-install-smoke:
     name: pack-install-smoke (${{ matrix.os }})
     needs: lint-build-test
     runs-on: ${{ matrix.os }}
-    # TEMP: continue-on-error until cli is wired up; Ripley flips this off in
-    # the v0 milestone "publish dry run" task.
     continue-on-error: false
     strategy:
       fail-fast: false
@@ -118,13 +86,9 @@ jobs:
       - name: Build (all packages)
         run: pnpm -r build
 
-      # pnpm pack-all packs each publishable package.
-      # In v0, the only published artifact is packages/cli (the `squadquarium`
-      # npm package). It bundles core + web via bundleDependencies — see above.
       - name: Pack all publishable packages
         run: pnpm pack-all
 
-      # Windows needs pwsh for glob expansion; bash elsewhere handles it natively.
       - name: Install CLI from tarball (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh

@@ -136,11 +136,11 @@ function parseDioramaArgs(argv: string[]): { frames: number; width: number } {
 }
 
 function resolveSkinsDir(): string {
-  const webDistSkins = path.resolve(__dirname, "..", "web-dist", "skins");
+  const packagedSkins = path.resolve(__dirname, "..", "skins");
   const monoSkins = path.resolve(__dirname, "..", "..", "..", "skins");
   const cwdSkins = path.resolve(process.cwd(), "skins");
-  return fs.existsSync(webDistSkins)
-    ? webDistSkins
+  return fs.existsSync(packagedSkins)
+    ? packagedSkins
     : fs.existsSync(monoSkins)
       ? monoSkins
       : cwdSkins;

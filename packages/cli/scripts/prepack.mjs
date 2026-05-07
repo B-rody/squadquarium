@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 /**
- * prepack.mjs — runs before `pnpm pack` (or `npm pack`) to stage the
- * publishable assets into packages/cli/:
+ * prepack.mjs — runs before `pnpm pack` (or `npm pack`) to stage publishable
+ * CLI assets into packages/cli/.
  *
- *   web-dist/   ← packages/web/dist/  (Vite bundle, includes skins + fonts)
- *   skins/      ← <repo-root>/skins/  (raw skin sources for the CLI adapter)
+ *   skins/ ← <repo-root>/skins/ (raw skin sources for the CLI + diorama flows)
  *
- * Decision: bundleDependencies for @squadquarium/core; web + skins via copy.
- * See .squad/decisions/inbox/ripley-publish-shape.md.
+ * The TUI library is bundled into dist/index.js by esbuild, so only skins and
+ * optional node-pty prebuilds need staging here.
  */
 
 import fs from "node:fs";
@@ -18,8 +17,6 @@ import { execSync } from "node:child_process";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliDir = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(cliDir, "..", "..");
-const webDistSrc = path.resolve(repoRoot, "packages", "web", "dist");
-const webDistDest = path.resolve(cliDir, "web-dist");
 const skinsSrc = path.resolve(repoRoot, "skins");
 const skinsDest = path.resolve(cliDir, "skins");
 
@@ -29,33 +26,23 @@ execSync("pnpm --filter @squadquarium/core build", {
   stdio: "inherit",
 });
 
-console.log("prepack: building @squadquarium/web …");
-execSync("pnpm --filter @squadquarium/web build", {
+console.log("prepack: building @squadquarium/tui …");
+execSync("pnpm --filter @squadquarium/tui build", {
   cwd: repoRoot,
   stdio: "inherit",
 });
-
-console.log(`prepack: copying web dist → ${path.relative(repoRoot, webDistDest)}`);
-copyDir(webDistSrc, webDistDest);
 
 console.log(`prepack: copying skins → ${path.relative(repoRoot, skinsDest)}`);
 copyDir(skinsSrc, skinsDest);
 
 console.log("prepack: done.");
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Copy node-pty prebuilds if present (built by prebuild-node-pty.mjs).
-// This is a best-effort copy: if the prebuilds/ dir doesn't exist the tarball
-// ships without them and the install-time node-gyp build path is used instead.
 const prebuildsSrc = path.resolve(cliDir, "prebuilds");
 if (fs.existsSync(prebuildsSrc)) {
-  const prebuildsRelDest = path.resolve(cliDir, "prebuilds"); // already in "files"
   console.log(`prepack: prebuilds/ present — included in tarball (${prebuildsSrc})`);
 } else {
   console.log("prepack: no prebuilds/ dir — skipping (node-gyp will run on install).");
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 function copyDir(src, dest) {
   if (!fs.existsSync(src)) {

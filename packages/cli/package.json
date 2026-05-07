@@ -11,13 +11,12 @@
   "files": [
     "bin/",
     "dist/",
-    "web-dist/",
     "skins/",
     "prebuilds/",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc --noEmit && node scripts/bundle.mjs",
+    "build": "pnpm --filter @squadquarium/tui build && tsc --noEmit && node scripts/bundle.mjs",
     "prepack": "node scripts/prepack.mjs",
     "prebuild-node-pty": "node scripts/prebuild-node-pty.mjs",
     "test": "vitest run",
@@ -28,10 +27,12 @@
     "commander": "^13.0.0",
     "node-pty": "^1.0.0",
     "open": "^10.0.0",
+    "terminal-kit": "latest",
     "ws": "^8.0.0"
   },
   "devDependencies": {
     "@squadquarium/core": "workspace:*",
+    "@squadquarium/tui": "workspace:*",
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.0",
     "esbuild": "^0.25.0",

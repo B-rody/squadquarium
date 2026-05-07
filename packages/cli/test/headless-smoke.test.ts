@@ -22,8 +22,8 @@ describe("CLI — invocation contract", () => {
 });
 
 describe("CLI — --headless-smoke flag", () => {
-  it("boots the server, hits the WS endpoint, and exits 0 with a JSON result", () => {
-    const result = spawnSync(process.execPath, [entry, "--headless-smoke", "--no-open"], {
+  it("boots the TUI once and exits 0 with a JSON result", () => {
+    const result = spawnSync(process.execPath, [entry, "--headless-smoke"], {
       cwd: repoRoot,
       encoding: "utf8",
       timeout: 30_000,
