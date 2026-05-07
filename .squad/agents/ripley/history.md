@@ -20,6 +20,8 @@
 
 ## Recent Updates
 
+📌 2026-05-06T19:17 — **TUI-FIRST PIVOT LIVE.** Dallas finalized, Lambert researched. **Architecture:** terminal-kit renderer, split-pane TUI (aquarium + activity log + input), custom sprite compositor, animated sprites at ~12–20 fps. **Removed from v0 scope:** `packages/web/`, `--serve` flag, web dashboard. (`packages/web-legacy/` preserved for potential v1). **Impact on your test strategy:** TUI now replaces web as the primary UI. Pre-v0 spike was "xterm + ink compatibility"; that's obsolete. New TUI test harness focus: verify terminal-kit mouse events, color/palette rendering, frame sync (no flicker with synchronized-output wrapping). Headless smoke (`squadquarium --headless-smoke`) likely needs a TUI variant (render to off-screen ScreenBuffer, assert aquarium/log/input buffers contain expected glyphs). Two user directives: TUI-first + drop web entirely.
+
 📌 2026-05-06 — **Repo is now public.** Coordinator made visibility change via `gh repo edit`. Three-layer safety defence adopted (husky + agent docs pre-push gate + CI). Affects your CI validation charter — no changes needed; CI remains the post-push catch-all on all branches.
 
 📌 2026-05-05 — Team cast (Alien universe). Phase 1 onboarding underway. Plan.md is being amended to add explicit Testing strategy / CI strategy / Sprite-validation / Quality-gates sections — those are my contracts going forward.

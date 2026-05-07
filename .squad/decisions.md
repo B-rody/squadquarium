@@ -1603,7 +1603,582 @@ the Phase 2 CI matrix.
 - `--headless-smoke` returns `{"ok":true,"durationMs":~380}`.
 - `pnpm pack-all` produces `squadquarium-0.0.1.tgz` (~280 KB, 39 files); local `npm install -g` on Windows passes — `--version` and `--headless-smoke` both green from the global install.
 
-##### Governance & docs
+###
+### 2026-05-06T19:04:47-07:00 — TUI-First Renderer Pivot
+
+**Date:** 2026-05-06T19:04:47-07:00  
+**Author:** Dallas (Lead)  
+**Status:** Accepted  
+**Supersedes:** dallas-renderer-cut-v0.md (browser-first decision)
+
+---
+
+## Decision
+
+Squadquarium pivots from browser-first to **TUI-first**. The primary experience is a hyper-rich fullscreen terminal application — no browser, no HTTP server in the default path. The sprite format is already terminal-native (2×7 glyph grids with ANSI color tokens). The browser renderer was converting text into pixels. We stop doing that.
+
+---
+
+## What Changes
+
+| Component | Before | After |
+|-----------|--------|-------|
+| Default UX | CLI starts HTTP server → opens browser | CLI renders directly in terminal (fullscreen TUI) |
+| `packages/web/` | Primary renderer | **Removed from v0 scope.** Preserved in tree as `packages/web-legacy/` for potential v1+ web dashboard mode. Not built, not shipped. |
+| `packages/cli/` | Thin launcher + server | Becomes the renderer host. Houses the TUI app. |
+| New package | — | `packages/tui/` — the TUI renderer library (split from CLI for testability) |
+| Server mode | Required | **Optional** — `--serve` flag for headless/remote use cases (v1+) |
+| Sprite rendering | Canvas2D pixel painting from glyph data | Direct ANSI cell output — **zero conversion step** |
+
+---
+
+## Library Selection: `terminal-kit`
+
+After evaluating:
+
+| Library | Verdict | Reason |
+|---------|---------|--------|
+| **Ink** (React for CLI) | ❌ Rejected | Layout model too weak for split-pane with independent scroll regions. Mouse support experimental. Animation is DIY. |
+| **Blessed / neo-blessed** | ❌ Rejected | Original unmaintained since 2017. neo-blessed is a fork with sporadic activity. Widget model is powerful but the codebase is brittle and hard to extend. |
+| **terminal-kit** | ✅ **Selected** | Active maintainer. ScreenBuffer with dirty-rect diffing. Full mouse support (GPM + xterm). Truecolor (ScreenBufferHD). Built-in input fields. Double-buffering. 20-30 FPS on 80×24 confirmed. Mature event system. |
+| Yoga + raw ANSI | ❌ Rejected | Maximum control but too much plumbing for v0 timeline. No mouse/input primitives. |
+| Charm/Lipgloss ports | ❌ Rejected | Not mature in Node.js ecosystem. |
+
+### Why terminal-kit wins
+
+1. **ScreenBuffer** maps 1:1 to our sprite grid model — each cell is `{char, attr}`, exactly like our `{glyph, fg, bg}`.
+2. **Built-in mouse tracking** — click coordinates map directly to sprite/widget positions.
+3. **Double-buffering with diff** — only changed cells flush to stdout. Critical for animation without flicker.
+4. **Input field widget** — command input at bottom without building from scratch.
+5. **Active maintenance** — cronvel/terminal-kit has regular releases through 2025-2026.
+6. **No React dependency** — keeps the dependency tree lean. TUI doesn't need virtual DOM overhead.
+
+---
+
+## Layout Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│              AQUARIUM VIEWPORT               │  ← ScreenBuffer region, sprites render here
+│   (°)>=<        ><{{{°>       /\._./\        │     Scrollable if habitat > viewport
+│                                              │
+│         ≈≈≈  ≈≈≈  ≈≈≈  ≈≈≈                  │
+├─────────────────────────────────────────────┤  ← Box-drawing separator (Unicode)
+│  ACTIVITY LOG                          [3/7] │  ← Scrollable, latest at bottom
+│  19:02 Parker: working on auth module        │     Mouse-wheel scrolls
+│  19:03 Lambert: PR #12 opened                │     Click agent name → drill-in (v1)
+│  19:04 Ripley: reviewing PR #12              │
+├─────────────────────────────────────────────┤
+│ sqq> _                                       │  ← Input line. Tab-complete. Command palette.
+└─────────────────────────────────────────────┘
+```
+
+### Panel split ratios (default, resizable v1)
+
+- **Aquarium:** 60% of terminal height (min 8 rows)
+- **Activity log:** 30% of terminal height (min 4 rows)  
+- **Input line:** 1-2 rows (fixed)
+- **Chrome/borders:** 2-3 rows
+
+### Implementation
+
+- Three `ScreenBuffer` regions composited onto a single root buffer.
+- Aquarium buffer renders sprites at their grid positions with palette-resolved ANSI attrs.
+- Activity log is a ring buffer rendered bottom-up.
+- Input line uses terminal-kit's `InputField` widget.
+- `SIGWINCH` / terminal resize recalculates layout proportions.
+
+---
+
+## The "Hyper-Rich" Constraint — What It Means
+
+### v0 TUI (ships first)
+
+- **Truecolor palette** — skin hex colors rendered as 24-bit ANSI (`\x1b[38;2;r;g;b`m`).
+- **Animated sprites** — frame cycling at 1 Hz (blink) and 4 Hz (working state). Double-buffered, flicker-free.
+- **Unicode box-drawing** — `─│┌┐└┘├┤┬┴┼` for panel chrome. Rounded variants for softer look.
+- **Mouse support** — click on sprites for agent info popup. Scroll log with wheel. Click input to focus.
+- **Adaptive rendering** — detect `COLORTERM=truecolor` vs 256-color vs 16-color. Degrade gracefully.
+- **Status bar** — team name, active skin, agent count, connection status. Inverse-video chrome.
+
+### v1 TUI (post-ship)
+
+- **Sixel/Kitty image protocol** — for terminals that support it, render high-res skin art in the habitat band.
+- **Resizable panes** — drag borders with mouse.
+- **Clickable agent sprites** — popup context menu (view charter, view activity, hatch new agent).
+- **Notification badges** — unread count on activity log header.
+- **Themes** — light/dark mode beyond skin palette.
+- **Sparkline graphs** — agent activity over time in status bar.
+- **Kitty keyboard protocol** — disambiguated key events for power users.
+
+---
+
+## What Happens to packages/web
+
+1. Rename to `packages/web-legacy/`.
+2. Remove from `pnpm-workspace.yaml` packages list.
+3. Remove from CI build matrix.
+4. Keep in git history. Do not delete — it may become a web dashboard view in v1+ that renders the same layout as the TUI but in a browser (read-only observer mode).
+5. The `--serve` flag on the CLI becomes the opt-in path to web mode (v1+).
+
+---
+
+## Package Structure
+
+```
+packages/
+  core/          — SquadStateAdapter, event types, skin loader (unchanged)
+  tui/           — NEW: TUI renderer library
+    src/
+      app.ts           — top-level TUI app (init terminal-kit, compose layout)
+      layout.ts        — panel geometry calculator
+      aquarium.ts      — sprite renderer (ScreenBuffer → cells)
+      activity-log.ts  — ring buffer + render
+      input-line.ts    — command input with history
+      mouse.ts         — click/scroll handler → action dispatch
+      palette.ts       — skin palette → ANSI attr resolver
+      adaptive.ts      — terminal capability detection
+  cli/           — CLI entry point, arg parsing, launches TUI or subcommands
+  web-legacy/    — preserved, not built
+```
+
+The TUI package is a library consumed by CLI. This separation allows:
+- Unit testing the renderer without a real terminal (mock ScreenBuffer).
+- Future: other hosts (VS Code terminal panel) can consume `@squadquarium/tui`.
+
+---
+
+## Migration Path
+
+1. Create `packages/tui/` with terminal-kit dependency.
+2. Implement layout + aquarium renderer against existing `sprites.json` format.
+3. Wire into `packages/cli/` as the default `squadquarium` command (no args = TUI mode).
+4. Move `packages/web/` → `packages/web-legacy/`, remove from workspace.
+5. Update README, CI, all docs.
+6. Subcommands (`trace`, `why`, `inspect`, `diorama`, `aspire`) remain non-TUI (stdout text).
+
+---
+
+## Constraints Preserved
+
+- **Single Node process.** terminal-kit runs in-process. No child processes for rendering.
+- **`.squad/` is read-only.** TUI observes via SquadStateAdapter. Mutations still route through PTY to Squad CLI.
+- **Loopback-only.** No network in default TUI mode. `--serve` (v1+) binds 127.0.0.1 only.
+- **Skin manifest schema unchanged.** The schema already describes terminal-native data. No amendments needed.
+- **No Electron, no Tauri, no Rust.** This IS the native experience. It's a terminal.
+
+---
+
+## Risks
+
+| Risk | Mitigation |
+|------|-----------|
+| Windows Terminal ANSI support gaps | Test on Windows Terminal (full truecolor), ConEmu, and legacy cmd.exe (graceful 16-color fallback) |
+| terminal-kit maintainer bus factor | Library is MIT, can fork. Core API surface we use is stable and small. |
+| Animation perf on large viewports | Cap sprite tick rate. Dirty-rect diffing handles it. Profile on 200-col terminals. |
+| Mouse support varies by terminal | Feature-detect. Degrade to keyboard-only navigation. |
+
+---
+
+## v0 vs v1 Cut Summary
+
+| Feature | v0 | v1+ |
+|---------|:--:|:---:|
+| Fullscreen TUI with split panes | ✅ | |
+| Animated sprites (frame cycling) | ✅ | |
+| Truecolor with adaptive fallback | ✅ | |
+| Mouse click on input focus | ✅ | |
+| Activity log (scroll) | ✅ | |
+| Command input with history | ✅ | |
+| Unicode box-drawing chrome | ✅ | |
+| Clickable sprites → context menu | | ✅ |
+| Resizable pane borders | | ✅ |
+| Sixel/Kitty image protocol | | ✅ |
+| Web dashboard (--serve) | | ✅ |
+| Sparkline status bar | | ✅ |
+
+---
+
+## Rationale
+
+The sprite data IS terminal text. The browser was a detour — painting pixels from characters, then displaying them on a screen that could have just... shown the characters. The TUI is the truer expression of the data format. It's faster to build, faster to run, and more aligned with the developer audience (people who live in terminals).
+
+"Hyper-rich" in a terminal means: truecolor, mouse, animation, Unicode chrome, adaptive capability detection. terminal-kit gives us all of these with a stable, actively maintained library that maps cleanly to our data model.
+
+The cut is clean. Ship TUI. Park web.
+
+---
+
+# Lambert — TUI library research
+
+**Requested by:** Brody Schulke  
+**Timestamp:** 2026-05-06T19:04:47-07:00
+
+Brody wants the richest terminal experience we can responsibly ship on Windows Terminal without turning the renderer into an archaeology dig. I looked at the current Node.js TUI landscape, the modern terminal protocol frontier, and our sprite format (`2×7` glyph grids with palette tokens).
+
+## Executive call
+
+**Best fit for Squadquarium today:** **`terminal-kit` as the rendering/input substrate, with a thin custom scene graph for sprites and panes, plus optional `yoga-layout` only if we want declarative pane math.**
+
+Why:
+- **Ink** is excellent for React-style CLI chrome, but **no first-class mouse** is a hard blocker.
+- **Blessed** has the right widget vocabulary, but the trunk is stale and Windows history is shaky.
+- **Glyph** is the most exciting new entrant, but it is still early and **Windows proof is too thin** for a solo-dev primary bet.
+- **Raw ANSI only** gives maximum power, but also maximum yak-shaving.
+- **terminal-kit** hits the sweet spot: mouse, colors, off-screen buffers, image-ish rendering, and explicit control over frame loops.
+
+---
+
+## 1) Library landscape
+
+### Ink (`ink`)
+- React renderer for CLIs using **Yoga flexbox**.
+- Strengths: nested layout, strong DX, proven ecosystem, hooks, current maintenance, React mental model.
+- Important APIs/features: `<Box>`, `<Text>`, `useInput`, `useApp`, `useStdout`, `useAnimation`, incremental rendering, Kitty keyboard protocol support.
+- Weakness: **keyboard-first only**. No built-in click / hover / drag model.
+- Verdict: great for command UIs, weak for a fish tank that wants pointer interaction.
+
+### Blessed / neo-blessed / neo-neo-blessed
+- Classic Node TUI widget family: boxes, lists, forms, terminals, tables, mouse events, drag, focus.
+- Original **blessed** still exposes a lot of power, but the architecture is old and maintenance is effectively legacy.
+- **neo-blessed** did not become the long-term revival.
+- **neo-neo-blessed** is the new fork worth watching, but it is still a young project riding on blessed-era assumptions.
+- Verdict: still useful as a reference and maybe for spikes, not my first recommendation for a Windows-first flagship renderer.
+
+### terminal-kit
+- Mature imperative toolkit with **keyboard + mouse**, **24-bit color**, **ScreenBuffer / ScreenBufferHD**, and a document model.
+- Not ncurses-based; speaks terminal protocols directly.
+- Biggest win for us: it already thinks in **surfaces/buffers**, which maps cleanly to aquarium pane + log pane + input pane.
+- Weaknesses: less fashionable DX, less TypeScript polish, less community gravity than Ink.
+- Verdict: **strongest pragmatic base** for animation-heavy glyph work.
+
+### `react-blessed`
+- React binding over blessed.
+- Nice idea, but it inherits blessed’s risk profile and looks stale for modern React-era work.
+- Verdict: not the right horse in this race.
+
+### `@poppinss/cliui`
+- Excellent output kit for logs, spinners, tables, tasks, instructions.
+- Not a full-screen TUI framework.
+- Verdict: useful adjunct for non-aquarium commands, not the renderer core.
+
+### `@topcli/prompts`
+- Modern prompt library with good select/multiselect flows.
+- Not a full-screen renderer.
+- Verdict: use only for setup/config flows outside the aquarium.
+
+### `yoga-layout` directly
+- Gives us authoritative flexbox layout without React.
+- Good if we want custom pane geometry while keeping rendering totally under our control.
+- Verdict: **excellent optional helper**, not a full solution by itself.
+
+### Raw ANSI + custom renderer
+- Maximum control: alternate screen, cursor addressing, truecolor, mouse protocols, synchronized output, OSC 8, Sixel, terminal detection.
+- Maximum cost: width handling, diffing, clipping, hit-testing, cleanup, resize handling, and cross-terminal weirdness all become ours.
+- Verdict: best as a thin layer under a higher abstraction, not as the whole product unless we truly need protocol-by-protocol domination.
+
+### New / boundary-pushing entrants
+
+#### Glyph (`@semos-labs/glyph`)
+- New React renderer with Yoga, built-in components, focus system, **character-diff framebuffer**, and image support for Kitty/iTerm-style terminals.
+- Architecturally exciting: closer to the thing I would design from scratch than Ink is.
+- Risk: still young, lighter ecosystem, unclear real-world Windows depth.
+- Verdict: **best R&D candidate**, not yet my production recommendation.
+
+#### wolf-tui / TermUI and similar newcomers
+- Interesting experiments, but early.
+- Verdict: not mature enough for the mainline choice.
+
+### Misclassified item: `@aspect-build/rules_js`
+- This is a **Bazel/build system project**, not a TUI library.
+- Verdict: irrelevant to renderer selection.
+
+---
+
+## 2) Capability matrix
+
+Scale: **5 = strong**, **3 = workable with caveats**, **1 = poor / missing**.
+
+| Option | Split panes | Mouse | Truecolor | 12fps sprite anim | Unicode/emoji | Sixel / Kitty images | 50+ sprites | Maintenance | Windows Terminal | Notes |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| Ink | 5 | 1 | 5 | 3 | 4 | 1 | 3 | 5 | 5 | Superb React/Yoga; mouse is the blocker |
+| blessed | 4 | 5 | 3 | 3 | 2 | 2 | 3 | 1 | 2 | Rich widgets, legacy core |
+| neo-neo-blessed | 4 | 5 | 3 | 3 | 2 | 2 | 3 | 2 | 2 | Promising fork, still young |
+| terminal-kit | 4 | 5 | 5 | 5 | 3 | 2 | 4 | 4 | 4 | Best practical fit for animated glyph surfaces |
+| react-blessed | 4 | 5 | 3 | 3 | 2 | 2 | 3 | 1 | 2 | React wrapper over stale substrate |
+| Glyph | 5 | 4 | 5 | 4 | 4 | 4* | 4 | 2 | 2 | Most exciting new stack; Windows still a prove-it story |
+| `@poppinss/cliui` | 1 | 1 | 4 | 1 | 4 | 1 | 1 | 4 | 5 | Output kit, not a full-screen renderer |
+| `@topcli/prompts` | 1 | 1 | 4 | 1 | 4 | 1 | 1 | 4 | 5 | Prompt flows only |
+| `yoga-layout` + custom renderer | 5 | 5 | 5 | 5 | 4 | 5 | 5 | 3 | 5 | Highest ceiling, highest implementation cost |
+| Raw ANSI only | 5 | 5 | 5 | 5 | 4 | 5 | 5 | 3 | 5 | Absolute power, absolute maintenance burden |
+
+\* Glyph’s image story is strongest on Kitty/iTerm-class terminals, not the thing I would anchor the Windows path on.
+
+### Maintenance read, in plain terms
+- **Ink:** very active, broad adoption, safest ecosystem bet.
+- **terminal-kit:** active enough, lower tempo, still alive and relevant.
+- **Glyph:** active but young; promising, not yet boring.
+- **blessed/react-blessed:** legacy/stale.
+- **neo-neo-blessed:** worth watching, not yet proven.
+
+---
+
+## 3) The “pushing limits” frontier
+
+Modern terminals can do far more than the old 256-color myth suggests.
+
+### What is realistically available now
+- **24-bit truecolor:** standard and reliable in Windows Terminal, WezTerm, Kitty, iTerm2.
+- **Mouse reporting:** click, scroll, drag, and some motion/hover modes are available through xterm-style mouse protocols.
+- **OSC 8 hyperlinks:** widely supported.
+- **Synchronized output (`CSI ? 2026 h/l`):** the key anti-flicker primitive. Batch a whole frame, then flush atomically.
+- **Custom fonts:** terminal-config driven, not app-driven. This matters for deterministic glyph metrics.
+- **Kitty keyboard protocol:** now relevant on modern terminals, including current Windows Terminal builds.
+
+### Pixel graphics frontier
+- **Sixel:** available in several modern terminals, including recent Windows Terminal builds, but still not the universal denominator.
+- **Kitty graphics protocol:** great where supported, but **not the cross-terminal Windows baseline**.
+- **iTerm inline images / Kitty images:** nice luxury paths, not the core rendering substrate for us.
+
+### What this means for Squadquarium
+Our sprites are already **TUI-native glyph mosaics**, not PNGs pretending to be terminal art. That is good. It means the strongest path is still:
+- glyph cells
+- truecolor
+- synchronized output
+- careful diffing
+- deterministic font selection
+
+Use pixel protocols as an optional future flourish, not as the product’s foundation.
+
+### Frame-rate reality check
+- **12fps:** easy.
+- **24–30fps:** realistic with disciplined writes and buffering.
+- **60fps:** possible for tiny scenes, not a design baseline.
+- **120fps:** terminal-host fantasy more than product strategy, especially through PTY/ConPTY plumbing.
+
+If we want “feels alive,” **12fps with atomic frames and good sprite timing beats a flaky attempt at hero-number fps**.
+
+---
+
+## 4) Recommendation
+
+## Recommended architecture
+
+### Primary stack
+1. **terminal-kit** for terminal I/O, screen buffers, mouse, and input.
+2. **Custom sprite compositor** tailored to Squadquarium’s `2×7` glyph-cell sprites.
+3. **Manual pane manager** first; optional **`yoga-layout`** later if nested layouts become painful.
+4. **Raw escape helpers** for features terminal-kit does not abstract cleanly enough:
+   - synchronized output
+   - OSC 8 hyperlinks
+   - terminal capability probes
+   - optional Sixel experiments
+
+### Pane model
+- **Top:** aquarium scene buffer
+- **Middle:** scrollback/log buffer
+- **Bottom:** input/status buffer
+- Keep pane rectangles explicit. For v1, that is easier to reason about than forcing a heavyweight retained widget tree.
+- Add a draggable horizontal splitter between aquarium and log if needed; input bar height can stay fixed.
+
+### Why I am not recommending Ink
+Because Brody explicitly wants:
+- mouse clicks on fish/UI elements
+- animation
+- split panes
+- Windows Terminal
+
+Ink handles everything on that list **except the mouse**, and that one miss is fatal for this brief.
+
+### Why I am not recommending Glyph as the primary path
+Because it is the only new entrant that genuinely looks dangerous-in-a-good-way, but it still feels like a **frontier bet**. If Brody had a team and more time, I would absolutely prototype it. As a solo-dev primary path on Windows, I want the boringly controllable choice.
+
+### Why terminal-kit wins
+Because it gives us:
+- real mouse events
+- real screen buffers
+- real 24-bit color
+- direct control over animation cadence
+- a low enough abstraction level to keep sprite rendering exact
+- less reinvention than raw ANSI from scratch
+
+That is the right compromise between **power** and **shipability**.
+
+### Suggested roadmap
+- **Phase A:** terminal-kit-only prototype with aquarium/log/input panes and one clickable fish.
+- **Phase B:** sprite engine, hit-testing, dirty-rect rendering, synchronized-output wrapping.
+- **Phase C:** optional capability layer for Sixel embellishments on terminals that support it.
+- **R&D side branch:** keep a tiny **Glyph** spike alive so we can reevaluate if its Windows story firms up.
+
+---
+
+## 5) Proof-of-concept sketch
+
+```ts
+import termkit from 'terminal-kit'
+import type Yoga from 'yoga-layout'
+
+const term = termkit.terminal
+const ScreenBuffer = termkit.ScreenBuffer
+
+type Cell = {
+  glyph: string
+  fg: string
+  bg: string
+  blink?: boolean
+}
+
+type SpriteFrame = {
+  cells: Cell[][] // 2 rows x 7 cols
+}
+
+type SpriteState = {
+  frames: SpriteFrame[]
+}
+
+type SpriteDef = {
+  states: Record<string, SpriteState>
+}
+
+type Rect = { x: number; y: number; width: number; height: number }
+
+type Actor = {
+  role: string
+  state: string
+  x: number
+  y: number
+  frameIndex: number
+}
+
+const ui = {
+  aquarium: new ScreenBuffer({ dst: term, width: term.width, height: 18 }),
+  log: new ScreenBuffer({ dst: term, width: term.width, height: term.height - 21 }),
+  input: new ScreenBuffer({ dst: term, width: term.width, height: 3 })
+}
+
+function tokenToColor(token: string, palette: Record<string, string>) {
+  return palette[token] ?? palette.fg
+}
+
+function drawSprite(buffer: typeof ui.aquarium, actor: Actor, sprite: SpriteDef, palette: Record<string, string>) {
+  const frame = sprite.states[actor.state].frames[actor.frameIndex]
+
+  for (let row = 0; row < frame.cells.length; row++) {
+    for (let col = 0; col < frame.cells[row].length; col++) {
+      const cell = frame.cells[row][col]
+      buffer.put(
+        {
+          x: actor.x + col,
+          y: actor.y + row,
+          attr: {
+            color: tokenToColor(cell.fg, palette),
+            bgColor: tokenToColor(cell.bg, palette),
+            blink: !!cell.blink
+          }
+        },
+        cell.glyph
+      )
+    }
+  }
+}
+
+function hitTestFish(col: number, row: number, actors: Actor[]): Actor | undefined {
+  return actors.find((actor) => {
+    return col >= actor.x && col < actor.x + 7 && row >= actor.y && row < actor.y + 2
+  })
+}
+
+function renderFrame(actors: Actor[], sprites: Record<string, SpriteDef>, palette: Record<string, string>) {
+  // optional raw synchronized-output wrapper for flicker-free present
+  term.raw('\x1b[?2026h')
+
+  ui.aquarium.fill({ attr: { color: palette.fg, bgColor: palette.bg }, char: ' ' })
+
+  for (const actor of actors) {
+    drawSprite(ui.aquarium, actor, sprites[actor.role], palette)
+  }
+
+  ui.aquarium.draw({ x: 1, y: 1 })
+  ui.log.draw({ x: 1, y: 20 })
+  ui.input.draw({ x: 1, y: term.height - 2 })
+
+  term.raw('\x1b[?2026l')
+}
+
+term.grabInput({ mouse: 'motion' })
+term.on('mouse', (name, data) => {
+  const fish = hitTestFish(data.x, data.y, actors)
+  if (name === 'MOUSE_LEFT_BUTTON_PRESSED' && fish) {
+    fish.state = 'celebrate'
+  }
+})
+
+setInterval(() => {
+  for (const actor of actors) {
+    const frames = sprites[actor.role].states[actor.state].frames
+    actor.frameIndex = (actor.frameIndex + 1) % frames.length
+  }
+
+  renderFrame(actors, sprites, palette)
+}, 83)
+```
+
+### Mapping notes
+- Our existing sprite format already maps naturally to a terminal buffer: **one sprite cell = one terminal cell**.
+- The `2×7` footprint makes hit-testing trivial.
+- Palette tokens stay symbolic until render time, which keeps skins data-only.
+- If we later want richer pane math, the actor positions can still be computed from a Yoga-produced layout tree.
+
+---
+
+## Bottom line
+
+If Brody wants the **absolute limits of TUI** while still shipping on Windows Terminal, the smart move is **not** “pick the fanciest React library.”
+
+The smart move is:
+- **terminal-kit for the metal-facing layer**
+- **our own sprite/pane renderer for determinism**
+- **raw protocol helpers for the modern terminal tricks**
+- **Glyph kept in reserve as the exciting future branch**
+
+That stack gives us a terminal aquarium that is rich, clickable, animated, and still under control.
+
+---
+
+## Sources
+- Ink: https://github.com/vadimdemedes/ink
+- terminal-kit: https://github.com/cronvel/terminal-kit
+- Glyph: https://github.com/semos-labs/glyph
+- blessed: https://github.com/chjj/blessed
+- react-blessed: https://github.com/Yomguithereal/react-blessed
+- `@poppinss/cliui`: https://github.com/poppinss/cliui
+- `@topcli/prompts`: https://github.com/TopCli/prompts
+- Yoga: https://github.com/facebook/yoga
+- `@aspect-build/rules_js`: https://github.com/aspect-build/rules_js
+- Kitty graphics protocol: https://sw.kovidgoyal.net/kitty/graphics-protocol/
+- Kitty keyboard protocol: https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+- Synchronized output notes: https://github.com/contour-terminal/vt-extensions/blob/main/docs/protocol-synchronized-output.md
+- OSC 8 hyperlink reference: https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
+- Windows Terminal release notes: https://github.com/microsoft/terminal/releases
+- Windows Terminal preview blog: https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-25-release/
+- Are We Sixel Yet: https://www.arewesixelyet.com/
+
+---
+
+### 2026-05-06T19:04:47-07:00: User directive
+**By:** Brody Schulke (via Copilot)
+**What:** TUI-first renderer. Push to the absolute limits of what terminal UI is capable of with modern libraries. The aquarium renders in one area, output/logs in another, input line at bottom. Clickable elements for adding agents etc. Hyper-rich terminal experience.
+**Why:** User request — captured for team memory. This is a pivot from the previous "browser-first" decision. The sprite format (2×7 glyph grids with ANSI color tokens) is already native to terminal rendering.
+
+---
+
+### 2026-05-06T19:17:29-07:00: User directive
+**By:** Brody Schulke (via Copilot)
+**What:** No web dashboard mode. Drop it entirely. TUI is the only renderer. No --serve flag, no browser fallback. The terminal IS the experience.
+**Why:** User request — captured for team memory. Supersedes any prior "web as alternative" language.
+
+
+## Governance & docs
 - `team.md`, `routing.md`, `casting/registry.json`, `casting/history.json`, full charters + histories for Dallas / Lambert / Parker / Ripley; Scribe + Ralph charters overhauled (Ralph dormant for v0).
 - `.squad/decisions.md` records every architectural choice (north star, Squad pin, casting universe, spike order, source-of-truth boundary, default port, loopback-only, testing/CI/sprite-validation/quality-gate strategies, node-pty fallback, sprite flavor, naming, plus per-spike outcomes — schema lock, reconciler design, remote-ui negative result, publish shape, Playwright wiring, ritual layer, self-portrait, status fix).
 - `.squad/identity/wisdom.md` populated with distilled patterns from the dogfood pact.
