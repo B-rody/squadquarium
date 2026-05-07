@@ -107,18 +107,18 @@ If `node-pty` still fails to build, Squadquarium falls back to **no-PTY log-tail
 
 ## Commands
 
-| Command                                             | Purpose                                                                                                                                                                                  |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `squadquarium [path]`                               | Resolve squad context and launch the diorama in your default browser. `path` defaults to cwd; walks up to find `.squad/`; falls back to personal squad; shows empty-state if none found. |
-| `squadquarium --personal`                           | Force open the personal/global squad regardless of cwd.                                                                                                                                  |
-| `squadquarium doctor`                               | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                             |
-| `squadquarium status`                               | Concise one-screen status snapshot (agents, last decision, last bus event). No browser required.                                                                                         |
-| `squadquarium trace <agent> [--task <id>] [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--task` narrows to a specific task; `--since` limits the window. |
-| `squadquarium why <decision-id>`                    | Expand a `decisions.md` entry: nearest orchestration log entries (±1 hour), matched skills, related decisions. Accepts index number, timestamp prefix, or title keyword.                 |
-| `squadquarium inspect <agent>`                      | Compact agent card: charter role + voice line, recent history, skills matched by role, files touched in `orchestration-log/`. Good for quick context without opening the browser.        |
-| `squadquarium diorama [--frames N] [--width N]`     | Render the current team's glyph sprites to stdout using the aquarium skin. Animates `N` frames in-place (TTY) or newline-separated (pipe). Smoke-tests skin asset loading.               |
-| `squadquarium aspire`                               | Shell out to `squad aspire`, extract the Aspire dashboard URL from its output, and open it in the default browser. Prints install guidance if `squad aspire` is not found.               |
-| `squadquarium --headless-smoke`                     | Boot the server, verify the WebSocket endpoint, fire a synthetic event burst, assert the web bundle responds, exit 0/non-zero. CI-friendly.                                              |
+| Command                                                           | Purpose                                                                                                                                                                                  |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `squadquarium [path]`                                             | Resolve squad context and launch the diorama in your default browser. `path` defaults to cwd; walks up to find `.squad/`; falls back to personal squad; shows empty-state if none found. |
+| `squadquarium --personal`                                         | Force open the personal/global squad regardless of cwd.                                                                                                                                  |
+| `squadquarium doctor`                                             | Detect Node ≥ 22.5, `squad` on PATH, `node-pty` load, port availability, last-opened state file. Calls `squad doctor` for squad-side checks.                                             |
+| `squadquarium status`                                             | Concise one-screen status snapshot (agents, last decision, last bus event). No browser required.                                                                                         |
+| `squadquarium trace <agent> [--task <id>] [--since 24h\|7d\|30d]` | Time-ordered activity trail for an agent: stitches `history.md`, `orchestration-log/`, `log/`, and `decisions.md`. `--task` narrows to a specific task; `--since` limits the window.     |
+| `squadquarium why <decision-id>`                                  | Expand a `decisions.md` entry: nearest orchestration log entries (±1 hour), matched skills, related decisions. Accepts index number, timestamp prefix, or title keyword.                 |
+| `squadquarium inspect <agent>`                                    | Compact agent card: charter role + voice line, recent history, skills matched by role, files touched in `orchestration-log/`. Good for quick context without opening the browser.        |
+| `squadquarium diorama [--frames N] [--width N]`                   | Render the current team's glyph sprites to stdout using the aquarium skin. Animates `N` frames in-place (TTY) or newline-separated (pipe). Smoke-tests skin asset loading.               |
+| `squadquarium aspire`                                             | Shell out to `squad aspire`, extract the Aspire dashboard URL from its output, and open it in the default browser. Prints install guidance if `squad aspire` is not found.               |
+| `squadquarium --headless-smoke`                                   | Boot the server, verify the WebSocket endpoint, fire a synthetic event burst, assert the web bundle responds, exit 0/non-zero. CI-friendly.                                              |
 
 `sqq` is an alias for `squadquarium` for typing brevity.
 
@@ -278,6 +278,16 @@ squadquarium/
 ## PWA
 
 Modern browsers (Chrome, Edge, Arc) offer **"Install app"** when a PWA manifest is present. The v0 manifest ships at `packages/web/public/manifest.webmanifest` and a service worker precaches the bundle. Icon polish lands in v1; the affordance works in v0.
+
+---
+
+## CI
+
+### Local pre-push gate
+
+Husky runs `pnpm lint && pnpm -r build && pnpm -r test` on every push, matching the CI
+lint-build-test gate. The hook auto-installs through the root `prepare` script when
+contributors run `pnpm install`. In an emergency, bypass it with `git push --no-verify`.
 
 ---
 

@@ -114,3 +114,7 @@ Dallas's two items landed. Parker + Lambert items cannot be audited from Dallas'
 
 **Audit-driven doc fix pattern:**
 READMEs written optimistically during build can encode a future-state truth (`npm install -g squadquarium`) that is false at ship time. The correct fix is a "not yet on npm" caveat at the call-site — not a footnote, not a separate section — so the reader who runs the command sees the blocker immediately. Flip back to the clean one-liner ONLY after the package is confirmed live on npmjs.org. This pattern will recur for any package that is designed-to-publish but hasn't crossed the publish gate yet.
+
+### 2026-05-06T17:37:39-07:00 — Husky pre-push gate pattern
+
+Husky v9 belongs at the workspace root as a devDependency, with root `prepare: "husky"` for contributor onboarding. Hook bodies are plain shell files now — no v8 shebang or `husky.sh` source line — so `.husky/pre-push` should contain only the gate command.
