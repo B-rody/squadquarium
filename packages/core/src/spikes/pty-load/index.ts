@@ -5,7 +5,10 @@ const ANSI_STRIP_RE = /\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x
 
 export async function spawnNodeVersion(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const shell = process.platform === "win32" ? "node.exe" : "node";
+    // Use the absolute path to the running Node binary so pty.spawn never
+    // needs to resolve "node" through PATH — which is unreliable on macOS CI
+    // runners where Homebrew's bin dir may not be in the inherited environment.
+    const shell = process.execPath;
     const term = pty.spawn(shell, ["--version"], {
       name: "xterm-color",
       cols: 80,

@@ -57,9 +57,17 @@ jobs:
       # Playwright is skipped on macOS for the first pass — it is the slowest
       # runner and rarely the OS that breaks first. macOS coverage is added once
       # the matrix is green on win + linux.
+      - name: Install Playwright browsers (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm --filter @squadquarium/web exec playwright install --with-deps chromium
+
+      - name: Install Playwright browsers (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pnpm --filter @squadquarium/web exec playwright install chromium
+
       - name: Playwright e2e tests (skip macOS v0)
         if: matrix.os != 'macos-latest'
-        run: pnpm -r test:web
+        run: pnpm test:web
 
       - name: Upload Playwright report + screenshot diffs
         uses: actions/upload-artifact@v4
