@@ -51,3 +51,11 @@ ame, ersion, ngineVersion, license (SPDX, required), uthor, ont (with option
 - Fixed the truecolor path so `Palette.resolve()` now returns `{ r, g, b }` objects for `ScreenBufferHD`; ANSI fallback still resolves to numeric color indexes.
 - Routed palette-driven attrs through chrome, the activity log, and the input line so borders, labels, prompts, timestamps, and hints all render against the deep-ocean background instead of falling back to terminal defaults.
 - Synced the stock aquarium skin palette to the ocean-blue / cream / gold / alert-red token set and locked it in with renderer tests plus a full `pnpm lint && pnpm -r build && pnpm -r test` pass.
+
+### 2026-05-07T17:49:29-07:00 — Ocean TUI palette decision recorded
+
+Decision `.squad/decisions.md` → **"Lambert: ocean TUI palette"**:
+- Adopted deep-ocean palette tokens as stock aquarium TUI theme
+- `bg`: `#001b2e` | `fg`: `#f4fbff` | `accent`: `#ffd166` | `alert`: `#ef476f` | `dim`: `#6b8ca3`
+- Drives aquarium background, chrome borders, panel labels, log timestamps, input prompt/hints, and sprite cell colors
+- Rationale: TUI looked flat when chrome/text styling were missing; truecolor was failing (hex strings vs RGB objects). Standardizing keeps renderer, skin manifest, and tests aligned around one readable terminal look.

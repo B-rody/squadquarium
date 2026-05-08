@@ -1,6 +1,31 @@
 # Squad Decisions
 
 ## Active Decisions
+### 2026-05-07T17:17:37 PT — Lambert: ocean TUI palette
+
+**Date:** 2026-05-07T17:17:37-07:00  
+**Author:** Lambert (UI/UX Specialist)  
+**Status:** Adopted
+
+## Decision
+
+Adopt the deep-ocean palette tokens as the stock aquarium TUI theme:
+- `bg`: `#001b2e`
+- `fg`: `#f4fbff`
+- `accent`: `#ffd166`
+- `alert`: `#ef476f`
+- `dim`: `#6b8ca3`
+
+## Scope
+
+This palette now drives the aquarium background, chrome borders, panel labels, log timestamps, input prompt/hints, and sprite cell colors through the shared token resolver.
+
+## Why
+
+The TUI looked flat when chrome and text styling were missing, and truecolor was silently failing because the renderer received hex strings instead of RGB objects. Standardizing the stock aquarium palette keeps the renderer, skin manifest, and tests aligned around one readable terminal look.
+
+---
+
 ### 2026-05-06T18:09:58 PT — Skip Server-Side Branch Protection; Use Doc-Gate for AI Agents
 
 **Date:** 2026-05-06T18:09:58-07:00  
