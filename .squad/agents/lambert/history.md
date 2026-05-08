@@ -18,6 +18,8 @@ ame, ersion, ngineVersion, license (SPDX, required), uthor, ont (with option
 
 ## Recent Updates
 
+📌 2026-05-07T17:17 — **TUI Visual Fix Sprint (background batch).** Three agents spawned for palette format enhancements, color attributes, and click event polish. You are working on palette hex→RGB conversion and color attributes on chrome/log/input components. Orchestration log: `.squad/orchestration-log/2026-05-07T17-17-lambert.md`. Session: `.squad/log/2026-05-07T17-17-tui-visual-fix.md`.
+
 📌 2026-05-06T19:17 — **TUI-FIRST PIVOT LIVE.** You completed TUI library research (lambert-tui-library-research.md → decisions.md). Dallas finalized parallel architecture decision. Library choice: **terminal-kit** (mouse, truecolor, ScreenBuffer, animation-capable). Architectural call: custom sprite compositor + manual pane geometry (Yoga optional v1+). **v0 vs v1 cut:** TUI ships v0 (fullscreen, animated, truecolor, mouse on input), web dashboard dropped entirely per user directive. Your next task: aquarium sprite renderer implementation against terminal-kit ScreenBuffer. Proof-of-concept TypeScript sketch is in your research doc.
 
 📌 2026-05-06 — **Repo is now public.** Coordinator made visibility change via gh repo edit. Three-layer safety defence adopted (husky + agent docs pre-push gate + CI). Dallas authored .github/copilot-instructions.md with Pre-Push Validation Gate section; remember to run pnpm lint && pnpm -r build && pnpm -r test before pushing from cloud environments.

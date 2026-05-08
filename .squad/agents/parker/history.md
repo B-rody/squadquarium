@@ -18,7 +18,9 @@
 
 ## Recent Updates
 
-📌 2026-05-06T19:17 — **TUI-FIRST PIVOT LIVE.** Dallas finalized architecture decision, Lambert completed TUI library research. **New package:** `packages/tui/` (terminal-kit renderer library). **Removed:** `packages/web/` → `packages/web-legacy/` (parked, not built). **CLI scope changes:** CLI becomes TUI host, not server. Default `squadquarium` launches fullscreen TUI (aquarium + activity log + input line via three composited ScreenBuffer regions). `--serve` (web dashboard) deferred to v1+. Update your scaffold accordingly: TUI app init, not web-server init. Two user directives captured: TUI-first pivot + drop web entirely.
+📌 2026-05-07T17:17 — **TUI Visual Fix Sprint (background batch).** Three agents spawned for visual enhancements. You are working on click event debounce and startup message improvements. Orchestration log: `.squad/orchestration-log/2026-05-07T17-17-parker.md`. Session: `.squad/log/2026-05-07T17-17-tui-visual-fix.md`.
+
+📌 2026-05-06T19:17 — **TUI-FIRST PIVOT LIVE.**Dallas finalized architecture decision, Lambert completed TUI library research. **New package:** `packages/tui/` (terminal-kit renderer library). **Removed:** `packages/web/` → `packages/web-legacy/` (parked, not built). **CLI scope changes:** CLI becomes TUI host, not server. Default `squadquarium` launches fullscreen TUI (aquarium + activity log + input line via three composited ScreenBuffer regions). `--serve` (web dashboard) deferred to v1+. Update your scaffold accordingly: TUI app init, not web-server init. Two user directives captured: TUI-first pivot + drop web entirely.
 
 📌 2026-05-06 — **Repo is now public.** Coordinator made visibility change via `gh repo edit`. Three-layer safety defence adopted (husky + agent docs pre-push gate + CI). Dallas authored `.github/copilot-instructions.md` with Pre-Push Validation Gate section; you're covered by both husky (local) and docs gate (cloud agent).
 

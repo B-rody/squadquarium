@@ -2343,4 +2343,163 @@ without explicit Brody direction.
 - Document architectural decisions here
 - Keep history focused on work, decisions focused on direction
 
+---
+
+# 2026-05-06T18:45:33-07:00 — Browser-first renderer cut for v0
+
+**Date:** 2026-05-06T18:45:33-07:00
+**Author:** Dallas (Lead)
+**Status:** Accepted
+
+## Decision
+
+**Squadquarium v0 is browser-first.** The primary UX is: run `squadquarium`, the CLI starts a local HTTP/WebSocket server on `127.0.0.1`, and your default browser opens to the diorama. No Rust toolchain required. The Tauri desktop wrapper (`packages/squadquarium-app`) is an opt-in v1+ feature for users who want a native OS window, system tray, and always-on-top — it is not part of the v0 install contract.
+
+## Rationale
+
+The plan.md architecture section explicitly states "One Node process. No Rust. No sidecar. No electron." and lists the Tauri wrapper under "v1+ roadmap." The demo metaphor — creatures reflecting Squad activity — is fully delivered by the browser renderer. Native packaging adds a Rust toolchain prereq that most users don't have and that doesn't pay rent toward the v0 demo. Browser-first is also the PWA path the README already documents. The confusion Brody hit (expecting a desktop window, getting a browser tab) is a README omission, not an architecture deficiency.
+
+## Action
+
+Root `README.md` updated to add a "How it runs" section immediately before the Quick Start commands, making the browser-first UX explicit and framing it as a feature. Tauri remains documented as an opt-in subsection. No code changes required.
+
+---
+
+# 2026-05-06T18:40:37-07:00 — README + copilot-instructions tarball path is wrong
+
+**Date:** 2026-05-06T18:40:37-07:00
+**Author:** Ripley (Tester/Auditor)
+**Type:** doc-bug
+**Priority:** high
+
+## Finding
+
+Confirmed by live dogfood run in `C:\workspaces\sandbox\sqq-testing` on 2026-05-06.
+
+After `pnpm pack-all`, the tarball lands at the **workspace root**, not inside `packages/cli/`:
+
+```
+C:\workspaces\sandbox\sqq-testing\squadquarium-0.0.1.tgz   ← actual location
+```
+
+Both documentation sources have the wrong path:
+
+### README.md (lines 28–29, Quick start / pack-all block)
+```bash
+pnpm pack-all
+npm install -g packages/cli/squadquarium-0.0.1.tgz   # ← WRONG
+```
+
+### .github/copilot-instructions.md (pack-install-smoke section)
+```powershell
+$tarball = Get-ChildItem -Path packages/cli -Filter "squadquarium-*.tgz" | ...  # ← WRONG dir
+```
+
+### packages/cli/README.md (Build from source block, line 22)
+```bash
+npm install -g packages/cli/squadquarium-0.0.1.tgz   # ← WRONG
+```
+
+## Root cause
+
+`pnpm pack` run from the monorepo workspace root drops the tarball in the **cwd** (repo root), not in the subpackage directory. This is standard pnpm 10 behavior and was already captured in `wisdom.md` (pattern on line 50) — but the README was never updated to match.
+
+## Required fixes
+
+1. **README.md** — change pack-all block to:
+   ```bash
+   pnpm pack-all
+   npm install -g squadquarium-0.0.1.tgz
+   ```
+   Or, more robustly for future version bumps:
+   ```bash
+   pnpm pack-all
+   npm install -g $(ls squadquarium-*.tgz | head -1)     # bash
+   # PowerShell:
+   # npm install -g (Get-ChildItem squadquarium-*.tgz | Select -First 1 -Expand FullName)
+   ```
+
+2. **.github/copilot-instructions.md** — fix the PowerShell line:
+   ```powershell
+   $tarball = Get-ChildItem -Path . -Filter "squadquarium-*.tgz" | Select-Object -First 1 -ExpandProperty FullName
+   ```
+
+3. **packages/cli/README.md** — same fix as README.md.
+
+## What worked around it
+
+Running `npm install -g .\squadquarium-0.0.1.tgz` from the repo root works correctly.
+The global `squadquarium` binary installed and `--headless-smoke` returned `{"ok":true}`.
+
+## Routed to
+
+Dallas (Lead) to decide canonical fix wording. Parker to update docs (owns CLI package).
+
+---
+
+# 2026-05-06T19:17:29-07:00 — Keep `--headless-smoke` as TUI install-path verification
+
+**Date:** 2026-05-06T19:17:29-07:00
+**Author:** Parker (Backend Dev)
+**Status:** Proposed
+
+## Context
+
+The browser-first smoke path used an HTTP server plus WebSocket probe. The TUI-first pivot removes the browser and default server path, but the install flow still needs a non-interactive verification mode for local pack/install smoke checks and CI-adjacent validation.
+
+## Decision
+
+Keep `squadquarium --headless-smoke`, but redefine it as a **headless TUI bootstrap check**:
+
+- import and initialize the TUI stack
+- build buffers/layout once without taking over the terminal
+- exit with JSON timing output
+
+## Why this matters to the team
+
+- Parker keeps a packaging-safe smoke command for install-path validation.
+- Ripley can keep a fast non-interactive contract test without reviving browser automation.
+- Dallas's TUI-first decision stays intact because the smoke path does not reintroduce HTTP or browser rendering.
+
+---
+
+# 2026-05-06 — Fix macOS CI PTY spawn failure via `process.execPath`
+
+**Date:** 2026-05-06
+**Author:** Parker (Backend Dev)
+**Status:** Implemented
+
+## Context
+
+`packages/core/test/spikes/pty-load.test.ts` was failing on the macOS GitHub Actions runner with:
+
+```
+Error: posix_spawnp failed.
+```
+
+The spike's skip guard (`describe.skipIf(!PTY_AVAILABLE)`) only skips when `node-pty` itself fails to import. On macOS CI, the native addon loads fine — the failure happens later when `pty.spawn("node", ...)` can't locate the `node` binary, because the inherited `process.env` on the macOS runner doesn't include Homebrew's bin directory (`/opt/homebrew/bin`) or the nvm shim path where `node` lives.
+
+## Options Considered
+
+**Option A — Skip on macOS CI:** Extend the skip guard to also bail when `process.env.CI === 'true' && process.platform === 'darwin'`. Fast to land, but it papers over the real issue and means we get zero macOS PTY coverage in CI.
+
+**Option B — Fix the spawn (chosen):** Replace the bare `"node"` / `"node.exe"` string with `process.execPath`, which is the absolute path of the currently-running Node binary — guaranteed to be valid regardless of PATH. This is the correct fix because:
+- It eliminates the PATH resolution problem entirely, on all platforms.
+- `process.execPath` is always the same binary that loaded the test runner, so version parity is guaranteed.
+- It restores macOS CI coverage for this spike instead of silently skipping it.
+
+## Change Made
+
+`packages/core/src/spikes/pty-load/index.ts`:
+
+```diff
+- const shell = process.platform === "win32" ? "node.exe" : "node";
++ // Use the absolute path to the running Node binary so pty.spawn never
++ // needs to resolve "node" through PATH — which is unreliable on macOS CI.
++ const shell = process.execPath;
+```
+
+## Rationale
+
+The spike exists to verify that the PTY pool can round-trip a subprocess. Skipping it on macOS CI would leave a gap in exactly the platform that triggered the failure. The `process.execPath` fix is three characters of diff and provably correct.
 
