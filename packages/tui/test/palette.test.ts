@@ -9,6 +9,15 @@ const SKIN_PALETTE = {
   dim: "#004d40",
 } as const;
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const normalized = hex.slice(1);
+  return {
+    r: Number.parseInt(normalized.slice(0, 2), 16),
+    g: Number.parseInt(normalized.slice(2, 4), 16),
+    b: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
 afterEach(() => {
   vi.unstubAllEnvs();
 });
@@ -17,7 +26,7 @@ describe("Palette", () => {
   it.each(Object.entries(SKIN_PALETTE))("resolves %s in truecolor mode", (token, expected) => {
     const palette = new Palette(SKIN_PALETTE, { truecolor: true });
 
-    expect(palette.resolve(token)).toBe(expected);
+    expect(palette.resolve(token)).toEqual(hexToRgb(expected));
   });
 
   it("uses 256-color fallback when truecolor is unavailable", () => {
@@ -34,6 +43,6 @@ describe("Palette", () => {
   it("falls back unknown tokens to fg", () => {
     const palette = new Palette(SKIN_PALETTE, { truecolor: true });
 
-    expect(palette.resolve("unknown-token")).toBe(SKIN_PALETTE.fg);
+    expect(palette.resolve("unknown-token")).toEqual(hexToRgb(SKIN_PALETTE.fg));
   });
 });

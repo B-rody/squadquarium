@@ -14,11 +14,11 @@
     "asset": "fonts/JetBrainsMono.woff2"
   },
   "palette": {
-    "bg": "#001f1c",
-    "fg": "#00bfa5",
-    "accent": "#80cbc4",
-    "alert": "#ff5252",
-    "dim": "#004d40"
+    "bg": "#001b2e",
+    "fg": "#f4fbff",
+    "accent": "#ffd166",
+    "alert": "#ef476f",
+    "dim": "#6b8ca3"
   },
   "glyphAllowlist": [
     " ",
@@ -66,5 +66,5 @@
     "blocked": "idle",
     "celebrate": "working"
   },
-  "x-skin-notes": "Phosphor cyan-on-deep-teal. Sprite grid: 2 rows × 7 cols. v0 roles: lead (anglerfish), frontend (seahorse), backend (octopus), scribe (squid)."
+  "x-skin-notes": "Deep-ocean blue habitat with cream text, gold chrome, and alert-red lure blink. Sprite grid: 2 rows × 7 cols. v0 roles: lead (anglerfish), frontend (seahorse), backend (octopus), scribe (squid)."
 }

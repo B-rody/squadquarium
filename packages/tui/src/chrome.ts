@@ -1,6 +1,7 @@
 import type { ScreenBufferHD } from "terminal-kit";
 
 import type { Layout } from "./layout.js";
+import type { ColorValue } from "./palette.js";
 
 export interface ChromeConfig {
   teamName: string;
@@ -8,13 +9,15 @@ export interface ChromeConfig {
   agentCount: number;
   rounded?: boolean;
   statusBarPosition?: "top" | "bottom";
-  color?: number | string;
-  bgColor?: number | string;
+  color?: ColorValue;
+  bgColor?: ColorValue;
+  chromeColor?: ColorValue;
+  labelColor?: ColorValue;
 }
 
 interface TextAttr {
-  color?: number | string;
-  bgColor?: number | string;
+  color?: ColorValue;
+  bgColor?: ColorValue;
   inverse?: boolean;
 }
 
@@ -40,12 +43,13 @@ function drawHorizontal(
   left: string,
   middle: string,
   right: string,
+  attr: TextAttr = {},
 ): void {
   if (width <= 1) {
     return;
   }
 
-  put(buffer, x, y, `${left}${middle.repeat(Math.max(0, width - 2))}${right}`);
+  put(buffer, x, y, `${left}${middle.repeat(Math.max(0, width - 2))}${right}`, attr);
 }
 
 function drawBox(
@@ -55,17 +59,18 @@ function drawBox(
   width: number,
   height: number,
   chars: { tl: string; tr: string; bl: string; br: string; h: string; v: string },
+  attr: TextAttr = {},
 ): void {
   if (width < 2 || height < 2) {
     return;
   }
 
-  drawHorizontal(buffer, x, y, width, chars.tl, chars.h, chars.tr);
-  drawHorizontal(buffer, x, y + height - 1, width, chars.bl, chars.h, chars.br);
+  drawHorizontal(buffer, x, y, width, chars.tl, chars.h, chars.tr, attr);
+  drawHorizontal(buffer, x, y + height - 1, width, chars.bl, chars.h, chars.br, attr);
 
   for (let offset = 1; offset < height - 1; offset += 1) {
-    put(buffer, x, y + offset, chars.v);
-    put(buffer, x + width - 1, y + offset, chars.v);
+    put(buffer, x, y + offset, chars.v, attr);
+    put(buffer, x + width - 1, y + offset, chars.v, attr);
   }
 }
 
@@ -77,13 +82,15 @@ function drawDivider(
   middle: string,
   right: string,
   title: string,
+  lineAttr: TextAttr = {},
+  titleAttr: TextAttr = lineAttr,
 ): void {
   if (width < 2) {
     return;
   }
 
-  put(buffer, 0, y, `${left}${middle.repeat(Math.max(0, width - 2))}${right}`);
-  put(buffer, 2, y, title.slice(0, Math.max(0, width - 4)));
+  put(buffer, 0, y, `${left}${middle.repeat(Math.max(0, width - 2))}${right}`, lineAttr);
+  put(buffer, 2, y, title.slice(0, Math.max(0, width - 4)), titleAttr);
 }
 
 function drawStatusBar(buffer: ScreenBufferHD, layout: Layout, config: ChromeConfig): void {
@@ -110,9 +117,27 @@ export function drawChrome(buffer: ScreenBufferHD, layout: Layout, config: Chrom
   const chars = config.rounded
     ? { tl: "╭", tr: "╮", bl: "╰", br: "╯", h: "─", v: "│", lt: "├", rt: "┤" }
     : { tl: "┌", tr: "┐", bl: "└", br: "┘", h: "─", v: "│", lt: "├", rt: "┤" };
+  const chromeAttr: TextAttr = {
+    color: config.chromeColor ?? config.color,
+    bgColor: config.bgColor,
+  };
+  const labelAttr: TextAttr = {
+    color: config.labelColor ?? config.color,
+    bgColor: config.bgColor,
+  };
 
-  drawBox(buffer, 0, 0, layout.width, layout.height, chars);
-  drawDivider(buffer, layout.log.y - 1, layout.width, chars.lt, chars.h, chars.rt, " AQUARIUM ");
+  drawBox(buffer, 0, 0, layout.width, layout.height, chars, chromeAttr);
+  drawDivider(
+    buffer,
+    layout.log.y - 1,
+    layout.width,
+    chars.lt,
+    chars.h,
+    chars.rt,
+    " AQUARIUM ",
+    chromeAttr,
+    labelAttr,
+  );
   drawDivider(
     buffer,
     layout.input.y - 1,
@@ -121,7 +146,9 @@ export function drawChrome(buffer: ScreenBufferHD, layout: Layout, config: Chrom
     chars.h,
     chars.rt,
     " ACTIVITY LOG ",
+    chromeAttr,
+    labelAttr,
   );
-  put(buffer, 2, layout.height - 2, "INPUT");
+  put(buffer, 2, layout.height - 2, "INPUT", labelAttr);
   drawStatusBar(buffer, layout, config);
 }

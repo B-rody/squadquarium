@@ -1,6 +1,13 @@
+import type { ColorValue } from "./palette.js";
 import type { LogEntry, Rect } from "./types.js";
 
 const DEFAULT_CAPACITY = 500;
+
+export interface ActivityLogColors {
+  timestampColor: ColorValue;
+  color: ColorValue;
+  bgColor: ColorValue;
+}
 
 export class ActivityLog {
   private readonly capacity: number;
@@ -41,25 +48,34 @@ export class ActivityLog {
   }
 
   public getVisibleLines(height: number): string[] {
-    const lines = this.entries.map((entry) => `[${entry.timestamp}] ${entry.message}`);
-    const visible: string[] = [];
-    const lastIndex = lines.length - 1 - this.scrollOffset;
+    return this.getVisibleEntries(height).map(formatEntry);
+  }
+
+  public render(buffer: BufferWriter, rect: Rect, colors: ActivityLogColors): void {
+    fillRegion(buffer, rect.width, rect.height, {
+      color: colors.color,
+      bgColor: colors.bgColor,
+    });
+    const visibleEntries = this.getVisibleEntries(rect.height);
+    const startY = Math.max(0, rect.height - visibleEntries.length);
+
+    visibleEntries.forEach((entry, index) => {
+      renderEntry(buffer, startY + index, rect.width, entry, colors);
+    });
+  }
+
+  private getVisibleEntries(height: number): LogEntry[] {
+    const visible: LogEntry[] = [];
+    const lastIndex = this.entries.length - 1 - this.scrollOffset;
 
     for (let index = lastIndex; index >= 0 && visible.length < height; index -= 1) {
-      visible.unshift(lines[index]);
+      const entry = this.entries[index];
+      if (entry) {
+        visible.unshift(entry);
+      }
     }
 
     return visible;
-  }
-
-  public render(buffer: BufferWriter, rect: Rect): void {
-    fillRegion(buffer, rect.width, rect.height);
-    const visibleLines = this.getVisibleLines(rect.height);
-    const startY = Math.max(0, rect.height - visibleLines.length);
-
-    visibleLines.forEach((line, index) => {
-      buffer.put({ x: 0, y: startY + index }, fitToWidth(line, rect.width));
-    });
   }
 
   private getMaxScrollOffset(): number {
@@ -69,15 +85,57 @@ export class ActivityLog {
 
 interface BufferWriter {
   fill(options?: unknown): void;
-  put(options: { x: number; y: number }, text?: string): void;
+  put(options: { x: number; y: number; attr?: Record<string, unknown> }, text?: string): void;
 }
 
-function fillRegion(buffer: BufferWriter, width: number, height: number): void {
-  buffer.fill({ char: " ", region: { x: 0, y: 0, width, height } });
+function fillRegion(
+  buffer: BufferWriter,
+  width: number,
+  height: number,
+  attr: Record<string, unknown>,
+): void {
+  buffer.fill({ char: " ", attr, region: { x: 0, y: 0, width, height } });
 }
 
-function fitToWidth(text: string, width: number): string {
-  return text.length > width ? text.slice(0, width) : text.padEnd(width, " ");
+function renderEntry(
+  buffer: BufferWriter,
+  y: number,
+  width: number,
+  entry: LogEntry,
+  colors: ActivityLogColors,
+): void {
+  if (width <= 0) {
+    return;
+  }
+
+  const timestampText = `[${entry.timestamp}] `;
+  const visibleTimestamp = timestampText.slice(0, width);
+  buffer.put(
+    {
+      x: 0,
+      y,
+      attr: { color: colors.timestampColor, bgColor: colors.bgColor },
+    },
+    visibleTimestamp,
+  );
+
+  if (visibleTimestamp.length >= width) {
+    return;
+  }
+
+  const message = entry.message.slice(0, width - visibleTimestamp.length);
+  buffer.put(
+    {
+      x: visibleTimestamp.length,
+      y,
+      attr: { color: colors.color, bgColor: colors.bgColor },
+    },
+    message,
+  );
+}
+
+function formatEntry(entry: LogEntry): string {
+  return `[${entry.timestamp}] ${entry.message}`;
 }
 
 function clamp(value: number, min: number, max: number): number {

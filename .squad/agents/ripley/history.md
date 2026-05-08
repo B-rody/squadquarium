@@ -38,6 +38,14 @@
 
 **Validation gate:** the repo-wide gate `pnpm lint && pnpm -r build && pnpm -r test` now includes `@squadquarium/tui` and passes with the TUI package in the workspace.
 
+### 2026-05-07T17:17:37-07:00 — Truecolor attr contract + aquarium miss-click UX
+
+**Palette contract:** in TUI truecolor mode, `Palette.resolve()` must return `{ r, g, b }` objects, not hex strings. ScreenBufferHD attr payloads accept RGB objects directly; asserting on strings masks the exact integration bug Lambert was fixing.
+
+**Render coverage:** chrome, activity log, and input line tests should assert `put()` attr payloads, not just rendered glyphs. The real regression surface is whether terminal-kit receives color attrs on each write.
+
+**Aquarium click UX:** a miss in aquarium space should be silent. Logging only on actor hit prevents click-spam noise in the activity pane and keeps the log signal useful during mouse exploration.
+
 ---
 
 **Archive note:** Earlier detailed learning entries (Spike 5, Phase 5/6 Wave 2 audit findings, README dogfood) have been moved to history-archive.md on 2026-05-07 due to size threshold (15KB gate).

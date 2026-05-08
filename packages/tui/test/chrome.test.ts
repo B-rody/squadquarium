@@ -1,8 +1,14 @@
 import type { ScreenBufferHD } from "terminal-kit";
 import { describe, expect, it } from "vitest";
+
 import { drawChrome } from "../src/chrome.js";
 import type { Layout } from "../src/layout.js";
 import { createMockBuffer } from "./helpers/mock-screen-buffer.js";
+
+const statusColor = { r: 244, g: 251, b: 255 };
+const chromeColor = { r: 107, g: 140, b: 163 };
+const labelColor = { r: 255, g: 209, b: 102 };
+const chromeBgColor = { r: 0, g: 27, b: 46 };
 
 const layout: Layout = {
   width: 80,
@@ -52,10 +58,37 @@ describe("drawChrome", () => {
       teamName: "Squadquarium",
       skinName: "aquarium",
       agentCount: 4,
-      color: "#00bfa5",
-      bgColor: "#001f1c",
+      color: statusColor,
+      bgColor: chromeBgColor,
+      chromeColor,
+      labelColor,
     });
 
     expect(buffer.readLine(0)).toContain("Squadquarium · skin:aquarium · agents:4");
+  });
+
+  it("applies distinct attrs to borders, labels, and status bar", () => {
+    const buffer = createMockBuffer(80, 24);
+
+    drawChrome(buffer as unknown as ScreenBufferHD, layout, {
+      teamName: "Squadquarium",
+      skinName: "aquarium",
+      agentCount: 4,
+      color: statusColor,
+      bgColor: chromeBgColor,
+      chromeColor,
+      labelColor,
+    });
+
+    expect(buffer.attrAt(0, 23)).toEqual({ color: chromeColor, bgColor: chromeBgColor });
+    expect(buffer.attrAt(2, layout.log.y - 1)).toEqual({
+      color: labelColor,
+      bgColor: chromeBgColor,
+    });
+    expect(buffer.attrAt(0, 0)).toEqual({
+      inverse: true,
+      color: statusColor,
+      bgColor: chromeBgColor,
+    });
   });
 });

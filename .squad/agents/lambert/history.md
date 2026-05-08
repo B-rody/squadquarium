@@ -45,3 +45,9 @@ ame, ersion, ngineVersion, license (SPDX, required), uthor, ont (with option
 - Built `packages/tui` sprite plumbing around the locked skin format: validated sprite-sheet loading, palette token resolution, actor state/drift timing, and an `Aquarium` renderer that paints the aquarium skin onto `terminal-kit` `ScreenBufferHD` buffers.
 - Wired the TUI app to the new aquarium scene so the headless smoke path and package tests now render real aquarium actors instead of placeholder strings; clicks hit-test actors and kick them into `celebrate`.
 - Kept chrome and layout terminal-native: Unicode borders/separators, inverse status bar copy, and a tested 60/40-ish pane geometry that stays compatible with the new TUI package build/test gate.
+
+### 2026-05-07T17:17:37-07:00 — Ocean palette and chrome color pass
+
+- Fixed the truecolor path so `Palette.resolve()` now returns `{ r, g, b }` objects for `ScreenBufferHD`; ANSI fallback still resolves to numeric color indexes.
+- Routed palette-driven attrs through chrome, the activity log, and the input line so borders, labels, prompts, timestamps, and hints all render against the deep-ocean background instead of falling back to terminal defaults.
+- Synced the stock aquarium skin palette to the ocean-blue / cream / gold / alert-red token set and locked it in with renderer tests plus a full `pnpm lint && pnpm -r build && pnpm -r test` pass.

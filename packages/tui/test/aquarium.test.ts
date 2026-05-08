@@ -53,6 +53,27 @@ describe("Aquarium", () => {
 
     expect(() => aquarium.render(buffer as unknown as ScreenBufferHD)).not.toThrow();
     expect(buffer.fillCalls).toHaveLength(1);
-    expect(buffer.putCalls.length).toBeGreaterThan(0);
+    expect(buffer.fillCalls[0]?.attr).toEqual({
+      color: { r: 244, g: 251, b: 255 },
+      bgColor: { r: 0, g: 27, b: 46 },
+    });
+    expect(buffer.putCalls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          attr: expect.objectContaining({
+            color: expect.objectContaining({
+              r: expect.any(Number),
+              g: expect.any(Number),
+              b: expect.any(Number),
+            }),
+            bgColor: expect.objectContaining({
+              r: expect.any(Number),
+              g: expect.any(Number),
+              b: expect.any(Number),
+            }),
+          }),
+        }),
+      ]),
+    );
   });
 });

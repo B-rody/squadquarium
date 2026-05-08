@@ -1,7 +1,16 @@
 import { EventEmitter } from "node:events";
+
+import type { ColorValue } from "./palette.js";
 import type { Rect } from "./types.js";
 
 const TAB_COMPLETIONS = ["help", "clear", "exit", "quit", "status"];
+
+export interface InputLineColors {
+  promptColor: ColorValue;
+  textColor: ColorValue;
+  hintColor: ColorValue;
+  bgColor: ColorValue;
+}
 
 export class InputLine extends EventEmitter<{ command: [string] }> {
   private readonly prompt: string;
@@ -106,19 +115,36 @@ export class InputLine extends EventEmitter<{ command: [string] }> {
     }
   }
 
-  public render(buffer: BufferWriter, rect: Rect): void {
-    buffer.fill({ char: " ", region: { x: 0, y: 0, width: rect.width, height: rect.height } });
-    const baseLine = `${this.prompt}${this.value}`;
-    const cursorLine = injectCursor(baseLine, this.prompt.length + this.cursor);
-    const rendered =
-      cursorLine.length > rect.width
-        ? cursorLine.slice(cursorLine.length - rect.width)
-        : cursorLine;
+  public render(buffer: BufferWriter, rect: Rect, colors: InputLineColors): void {
+    const textAttr = { color: colors.textColor, bgColor: colors.bgColor };
+    buffer.fill({
+      char: " ",
+      attr: textAttr,
+      region: { x: 0, y: 0, width: rect.width, height: rect.height },
+    });
 
-    buffer.put({ x: 0, y: 0 }, rendered.padEnd(rect.width, " "));
+    const prompt = this.prompt.slice(0, rect.width);
+    buffer.put(
+      { x: 0, y: 0, attr: { color: colors.promptColor, bgColor: colors.bgColor } },
+      prompt,
+    );
+
+    const availableWidth = Math.max(0, rect.width - prompt.length);
+    if (availableWidth > 0) {
+      const inputText = injectCursor(this.value, this.cursor);
+      const visibleInput =
+        inputText.length > availableWidth
+          ? inputText.slice(inputText.length - availableWidth)
+          : inputText;
+      buffer.put({ x: prompt.length, y: 0, attr: textAttr }, visibleInput);
+    }
+
     if (rect.height > 1) {
       const hint = "Enter=run  Tab=complete  Up/Down=history";
-      buffer.put({ x: 0, y: 1 }, hint.slice(0, rect.width).padEnd(rect.width, " "));
+      buffer.put(
+        { x: 0, y: 1, attr: { color: colors.hintColor, bgColor: colors.bgColor } },
+        hint.slice(0, rect.width),
+      );
     }
   }
 
@@ -163,7 +189,7 @@ export class InputLine extends EventEmitter<{ command: [string] }> {
 
 interface BufferWriter {
   fill(options?: unknown): void;
-  put(options: { x: number; y: number }, text?: string): void;
+  put(options: { x: number; y: number; attr?: Record<string, unknown> }, text?: string): void;
 }
 
 function injectCursor(text: string, index: number): string {

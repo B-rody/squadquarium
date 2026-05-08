@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import termkit, { type ScreenBufferHD as TerminalScreenBufferHD } from "terminal-kit";
 import { ActivityLog } from "./activity-log.js";
 import { detectCapabilities } from "./adaptive.js";
@@ -9,6 +10,7 @@ import { drawChrome } from "./chrome.js";
 import { InputLine } from "./input-line.js";
 import { calculateLayout, type Layout } from "./layout.js";
 import { MouseHandler, type MouseEventData } from "./mouse.js";
+import { DEFAULT_PALETTE, Palette, type ColorValue } from "./palette.js";
 import { loadSpritesSync, type SpriteSheet } from "./sprites.js";
 import type { AppConfig, Rect } from "./types.js";
 
@@ -29,6 +31,13 @@ interface SkinManifest {
   fallbacks?: Record<string, string>;
 }
 
+interface UiColors {
+  bg: ColorValue;
+  fg: ColorValue;
+  accent: ColorValue;
+  dim: ColorValue;
+}
+
 interface RuntimeState {
   config: Required<Pick<AppConfig, "fps" | "inputPrompt" | "headless" | "smokeTest">> & AppConfig;
   layout: Layout;
@@ -40,6 +49,7 @@ interface RuntimeState {
   inputLine: InputLine;
   mouseHandler: MouseHandler;
   aquariumScene: Aquarium;
+  uiColors: UiColors;
   capabilities: ReturnType<typeof detectCapabilities>;
   interval: NodeJS.Timeout | null;
   running: boolean;
@@ -55,6 +65,47 @@ interface RuntimeState {
 }
 
 let runtime: RuntimeState | null = null;
+
+const ACTOR_CLICK_MESSAGES: Record<string, string> = {
+  lead: "Anglerfish noticed you!",
+  frontend: "Seahorse did a quick twirl for you!",
+  backend: "Octopus flashed a curious wave!",
+  scribe: "Squid scribbled your hello!",
+};
+
+const HELP_MESSAGES = [
+  "Commands:",
+  "  help   Show this guide",
+  "  status Show aquarium panel size",
+  "  clear  Clear the activity log",
+  "  exit   Close Squadquarium",
+  "  quit   Same as exit",
+] as const;
+
+export function createStartupMessages(config: AppConfig, agentCount: number): string[] {
+  const watchTarget = config.personal ? "your personal squad" : (config.cwd ?? process.cwd());
+  const attachedCount = config.attachPaths?.length ?? 0;
+  const messages = [
+    "Welcome to Squadquarium.",
+    `Watching: ${watchTarget}`,
+    `${agentCount} agent${agentCount === 1 ? "" : "s"} swimming.`,
+  ];
+
+  if (attachedCount > 0) {
+    messages.push(`${attachedCount} extra squad${attachedCount === 1 ? "" : "s"} linked.`);
+  }
+
+  messages.push("Tank ready. Type help for commands, clear to wipe the log, exit to leave.");
+  return messages;
+}
+
+export function createHelpMessages(): string[] {
+  return [...HELP_MESSAGES];
+}
+
+export function describeAquariumClick(role: string): string {
+  return ACTOR_CLICK_MESSAGES[role] ?? `${formatRoleName(role)} noticed you!`;
+}
 
 export async function startApp(config: AppConfig = {}): Promise<void> {
   if (runtime?.running) {
@@ -132,6 +183,7 @@ function createRuntime(config: AppConfig): RuntimeState {
   const size = getTerminalSize(effectiveConfig);
   const layout = calculateLayout(size.width, size.height);
   const capabilities = detectCapabilities();
+  const uiColors = loadUiColors(effectiveConfig.skinsDir, capabilities.truecolor);
   const root = createBuffer(size.width, size.height, undefined, effectiveConfig.headless);
   const aquarium = createBuffer(
     layout.aquarium.width,
@@ -159,12 +211,9 @@ function createRuntime(config: AppConfig): RuntimeState {
     effectiveConfig.skinsDir,
   );
 
-  activityLog.add(`cwd=${effectiveConfig.cwd ?? process.cwd()}`);
-  activityLog.add(`mode=${effectiveConfig.personal ? "personal" : "project"}`);
-  if ((effectiveConfig.attachPaths?.length ?? 0) > 0) {
-    activityLog.add(`attached=${effectiveConfig.attachPaths?.length ?? 0}`);
+  for (const message of createStartupMessages(effectiveConfig, aquariumScene.getActors().length)) {
+    activityLog.add(message);
   }
-  activityLog.add("TUI ready — help, clear, exit");
 
   const mouseHandler = new MouseHandler({
     getRegions: () => layout,
@@ -184,6 +233,7 @@ function createRuntime(config: AppConfig): RuntimeState {
     inputLine,
     mouseHandler,
     aquariumScene,
+    uiColors,
     capabilities,
     interval: null,
     running: true,
@@ -204,7 +254,7 @@ function initializeTerminal(state: RuntimeState): void {
 
   terminal.fullscreen?.(true);
   terminal.hideCursor?.();
-  terminal.grabInput?.({ mouse: "motion" });
+  terminal.grabInput?.({ mouse: "button" });
 }
 
 function bindEvents(state: RuntimeState): void {
@@ -226,7 +276,9 @@ function bindEvents(state: RuntimeState): void {
     }
 
     if (trimmed === "help") {
-      state.activityLog.add("commands: help, clear, exit, quit, status");
+      for (const message of createHelpMessages()) {
+        state.activityLog.add(message);
+      }
       return;
     }
 
@@ -357,11 +409,20 @@ function rebuildBuffers(state: RuntimeState): void {
 
 function render(state: RuntimeState): void {
   state.frame += 1;
-  state.root.fill({ char: " ", attr: baseAttr(state.capabilities) });
+  state.root.fill({ char: " ", attr: baseAttr(state.uiColors) });
   state.aquariumScene.tick();
   state.aquariumScene.render(state.aquarium as unknown as TerminalScreenBufferHD);
-  state.activityLog.render(state.log, state.layout.log);
-  state.inputLine.render(state.input, state.layout.input);
+  state.activityLog.render(state.log, state.layout.log, {
+    timestampColor: state.uiColors.dim,
+    color: state.uiColors.fg,
+    bgColor: state.uiColors.bg,
+  });
+  state.inputLine.render(state.input, state.layout.input, {
+    promptColor: state.uiColors.accent,
+    textColor: state.uiColors.fg,
+    hintColor: state.uiColors.dim,
+    bgColor: state.uiColors.bg,
+  });
   state.aquarium.draw();
   state.log.draw();
   state.input.draw();
@@ -371,6 +432,10 @@ function render(state: RuntimeState): void {
     agentCount: state.aquariumScene.getActors().length,
     rounded: state.capabilities.unicode,
     statusBarPosition: "top",
+    color: state.uiColors.fg,
+    bgColor: state.uiColors.bg,
+    chromeColor: state.uiColors.dim,
+    labelColor: state.uiColors.accent,
   });
   if (!state.config.headless) {
     state.root.draw({ delta: true });
@@ -405,16 +470,29 @@ function createAquariumScene(rect: Rect, truecolor: boolean, skinsDir?: string):
   return aquarium;
 }
 
+function loadUiColors(skinsDir: string | undefined, truecolor: boolean): UiColors {
+  const { manifest } = loadAquariumAssets(skinsDir);
+  const palette = new Palette(manifest.palette ?? DEFAULT_PALETTE, { truecolor });
+
+  return {
+    bg: palette.resolve("bg"),
+    fg: palette.resolve("fg"),
+    accent: palette.resolve("accent"),
+    dim: palette.resolve("dim"),
+  };
+}
+
+function defaultSkinsDir(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "skins");
+}
+
 function loadAquariumAssets(skinsDir: string | undefined): {
   manifest: SkinManifest;
   spriteSheet: SpriteSheet | undefined;
 } {
-  if (!skinsDir) {
-    return { manifest: {}, spriteSheet: undefined };
-  }
-
-  const manifestPath = path.join(skinsDir, "aquarium", "manifest.json");
-  const spritesPath = path.join(skinsDir, "aquarium", "sprites.json");
+  const baseDir = skinsDir ?? defaultSkinsDir();
+  const manifestPath = path.join(baseDir, "aquarium", "manifest.json");
+  const spritesPath = path.join(baseDir, "aquarium", "sprites.json");
 
   const manifest = fs.existsSync(manifestPath)
     ? (JSON.parse(fs.readFileSync(manifestPath, "utf8")) as SkinManifest)
@@ -424,7 +502,7 @@ function loadAquariumAssets(skinsDir: string | undefined): {
   return { manifest, spriteSheet };
 }
 
-function handleAquariumClick(
+export function handleAquariumClick(
   aquarium: Aquarium,
   activityLog: ActivityLog,
   x: number,
@@ -432,12 +510,15 @@ function handleAquariumClick(
 ): void {
   const actor = aquarium.hitTest(x, y);
   if (!actor) {
-    activityLog.add(`aquarium click @ ${x},${y}`);
     return;
   }
 
   actor.setState("celebrate");
-  activityLog.add(`${actor.role} clicked @ ${x},${y}`);
+  activityLog.add(describeAquariumClick(actor.role));
+}
+
+function formatRoleName(role: string): string {
+  return role.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function createBuffer(
@@ -455,12 +536,8 @@ function createBuffer(
   return ScreenBufferHD.create(bufferOptions) as ScreenBufferLike;
 }
 
-function baseAttr(
-  caps: ReturnType<typeof detectCapabilities>,
-): Record<string, unknown> | undefined {
-  return caps.truecolor
-    ? { color: { r: 230, g: 240, b: 255 }, bgColor: { r: 8, g: 12, b: 18 } }
-    : undefined;
+function baseAttr(colors: UiColors): Record<string, unknown> {
+  return { color: colors.fg, bgColor: colors.bg };
 }
 
 function getTerminalSize(config: AppConfig): { width: number; height: number } {

@@ -112,3 +112,9 @@
 ### 2026-05-07T00:55Z — Husky pre-push gate deployed
 
 **Note for next push:** Pre-push hook now exists at `.husky/pre-push` running `pnpm lint && pnpm -r build && pnpm -r test` on all local pushes. Bypass with `git push --no-verify` if needed.
+
+### 2026-05-07T17:17:37-07:00 — TUI interaction log cleanup
+
+**Aquarium clicks:** `packages/tui/src/app.ts` should stay silent on hit-test misses. Only successful actor clicks belong in the activity log, and the copy reads better as fish reactions than raw coordinate dumps.
+
+**Startup + input UX:** Friendly startup/help copy lives in the app shell, and v0 should grab `mouse: "button"` input only. Motion capture adds cost without user value in the current TUI.

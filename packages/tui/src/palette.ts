@@ -25,11 +25,13 @@ const ANSI_16 = [
   [0xff, 0xff, 0xff],
 ] as const;
 
-interface Rgb {
+export interface Rgb {
   r: number;
   g: number;
   b: number;
 }
+
+export type ColorValue = number | Rgb;
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -135,13 +137,13 @@ export class Palette {
     return normalizeHex(value);
   }
 
-  resolve(token: string): number | string {
+  resolve(token: string): ColorValue {
     const hex = this.resolveHex(token);
+    const rgb = hexToRgb(hex);
     if (this.truecolor) {
-      return hex;
+      return rgb;
     }
 
-    const rgb = hexToRgb(hex);
     return this.use256Color ? toAnsi256(rgb) : toAnsi16(rgb);
   }
 }
