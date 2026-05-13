@@ -9,6 +9,7 @@ import {
   getFrameSize,
   resolveFramePixels,
   resolveHalfBlockState,
+  type HalfBlockFrame,
   type HalfBlockSpriteSheet,
 } from "./halfblock-sprites.js";
 import {
@@ -121,6 +122,27 @@ function spriteContains(
   return x === actorX + col && y === actorY + row;
 }
 
+function halfBlockContains(
+  frame: HalfBlockFrame,
+  x: number,
+  y: number,
+  actorX: number,
+  actorY: number,
+): boolean {
+  const col = x - actorX;
+  const cellRow = y - actorY;
+  if (col < 0 || cellRow < 0) {
+    return false;
+  }
+
+  const topPixelRow = cellRow * 2;
+  const bottomPixelRow = topPixelRow + 1;
+  return (
+    (frame.pixels[topPixelRow]?.[col] ?? null) !== null ||
+    (frame.pixels[bottomPixelRow]?.[col] ?? null) !== null
+  );
+}
+
 function renderGlyph(glyph: string): string {
   return glyph === " " ? "·" : glyph;
 }
@@ -134,6 +156,7 @@ export class Aquarium {
   private readonly actors: ActorManager;
   private readonly fallbacks: Record<string, string>;
   private readonly roleLabels: Record<string, ActorLabel>;
+  private readonly actorLabels = new WeakMap<Actor, ActorLabel>();
   private tickCount = 0;
 
   constructor(width: number, height: number, options: AquariumOptions = {}) {
@@ -171,17 +194,21 @@ export class Aquarium {
     return this.actors.addActor(role, x, y, state);
   }
 
+  setActorLabel(actor: Actor, label: ActorLabel): void {
+    this.actorLabels.set(actor, label);
+  }
+
   tick(): void {
     this.tickCount += 1;
     this.actors.tick((actor) => {
       // Use half-block frame count if available, else ASCII
-      if (this.halfBlockSprites?.roles[actor.role]) {
-        const hbDef = this.halfBlockSprites.roles[actor.role];
-        const stateName = resolveHalfBlockState(actor.state, hbDef.states);
-        const state = hbDef.states[stateName];
-        return state?.frames.length ?? 1;
+      const halfBlockFrame = this.getCurrentHalfBlockFrame(actor);
+      if (halfBlockFrame) {
+        return halfBlockFrame.frameCount;
       }
-      return this.getCurrentState(actor).frames.length;
+
+      const asciiSprite = this.sprites.roles[actor.role];
+      return asciiSprite ? this.getCurrentState(actor).frames.length : 1;
     });
   }
 
@@ -209,14 +236,10 @@ export class Aquarium {
 
     // Sprites
     for (const actor of this.actors.getActors()) {
-      const hbDef = this.halfBlockSprites!.roles[actor.role];
-      if (!hbDef) continue;
+      const halfBlockFrame = this.getCurrentHalfBlockFrame(actor);
+      if (!halfBlockFrame) continue;
 
-      const stateName = resolveHalfBlockState(actor.state, hbDef.states);
-      const state = hbDef.states[stateName];
-      if (!state || state.frames.length === 0) continue;
-
-      const frame = state.frames[actor.frameIndex % state.frames.length];
+      const frame = halfBlockFrame.frame;
       const pixels = resolveFramePixels(frame, this.palette);
       // Actor y is in terminal rows; convert to pixel rows
       canvas.blitPixels(actor.x, actor.y * 2, pixels);
@@ -227,7 +250,11 @@ export class Aquarium {
 
     // Overlay text labels (rendered directly to buffer, not through half-block canvas)
     for (const actor of this.actors.getActors()) {
-      this.renderHalfBlockLabel(buffer, actor, bg);
+      if (this.getCurrentHalfBlockFrame(actor)) {
+        this.renderHalfBlockLabel(buffer, actor, bg);
+      } else if (this.sprites.roles[actor.role]) {
+        this.renderAsciiActor(buffer, actor);
+      }
     }
   }
 
@@ -304,7 +331,7 @@ export class Aquarium {
   }
 
   private renderHalfBlockLabel(buffer: ScreenBufferHD, actor: Actor, bg: Rgb): void {
-    const label = this.roleLabels[actor.role];
+    const label = this.getActorLabel(actor);
     if (!label) return;
 
     const hbDef = this.halfBlockSprites?.roles[actor.role];
@@ -346,43 +373,47 @@ export class Aquarium {
     this.renderBackdrop(buffer);
 
     for (const actor of this.actors.getActors()) {
-      const frame = this.getCurrentFrame(actor);
-      for (let row = 0; row < frame.cells.length; row += 1) {
-        const cells = frame.cells[row] ?? [];
-        for (let col = 0; col < cells.length; col += 1) {
-          const cell = cells[col];
-          const targetX = actor.x + col;
-          const targetY = actor.y + row;
-
-          if (
-            !cell ||
-            targetX < 0 ||
-            targetX >= this.width ||
-            targetY < 0 ||
-            targetY >= this.height
-          ) {
-            continue;
-          }
-
-          const glyph = cell.blink && !this.isBlinkVisible() ? " " : cell.glyph;
-          buffer.put(
-            {
-              x: targetX,
-              y: targetY,
-              attr: {
-                color: this.palette.resolve(cell.fg),
-                bgColor: this.palette.resolve(cell.bg),
-              },
-              wrap: false,
-              dx: 0,
-              dy: 0,
-            },
-            glyph,
-          );
-        }
-      }
-      this.renderActorLabel(buffer, actor, frame);
+      this.renderAsciiActor(buffer, actor);
     }
+  }
+
+  private renderAsciiActor(buffer: ScreenBufferHD, actor: Actor): void {
+    const frame = this.getCurrentFrame(actor);
+    for (let row = 0; row < frame.cells.length; row += 1) {
+      const cells = frame.cells[row] ?? [];
+      for (let col = 0; col < cells.length; col += 1) {
+        const cell = cells[col];
+        const targetX = actor.x + col;
+        const targetY = actor.y + row;
+
+        if (
+          !cell ||
+          targetX < 0 ||
+          targetX >= this.width ||
+          targetY < 0 ||
+          targetY >= this.height
+        ) {
+          continue;
+        }
+
+        const glyph = cell.blink && !this.isBlinkVisible() ? " " : cell.glyph;
+        buffer.put(
+          {
+            x: targetX,
+            y: targetY,
+            attr: {
+              color: this.palette.resolve(cell.fg),
+              bgColor: this.palette.resolve(cell.bg),
+            },
+            wrap: false,
+            dx: 0,
+            dy: 0,
+          },
+          glyph,
+        );
+      }
+    }
+    this.renderActorLabel(buffer, actor, frame);
   }
 
   describeDebugRender(maxSamplesPerActor = 3): string[] {
@@ -393,6 +424,24 @@ export class Aquarium {
     ];
 
     for (const actor of this.actors.getActors()) {
+      const halfBlockFrame = this.getCurrentHalfBlockFrame(actor);
+      if (halfBlockFrame) {
+        const samples = this.collectHalfBlockSamples(halfBlockFrame.frame, maxSamplesPerActor);
+        const sampleSummary =
+          samples.length === 0
+            ? "all transparent"
+            : samples
+                .map(
+                  (sample) =>
+                    `${sample.token}@${sample.col},${sample.row}=${formatColorValue(this.palette.resolve(sample.token))}`,
+                )
+                .join(" ; ");
+        lines.push(
+          `[DEBUG] render ${actor.role}.${halfBlockFrame.stateName}[${halfBlockFrame.frameIndex}] halfblock ${sampleSummary}`,
+        );
+        continue;
+      }
+
       const stateName = this.getCurrentStateName(actor);
       const state = this.getCurrentState(actor);
       const frameIndex = actor.frameIndex % state.frames.length;
@@ -416,6 +465,22 @@ export class Aquarium {
   hitTest(x: number, y: number): Actor | undefined {
     const actors = [...this.actors.getActors()].reverse();
     for (const actor of actors) {
+      const halfBlockFrame = this.getCurrentHalfBlockFrame(actor);
+      if (halfBlockFrame) {
+        if (halfBlockContains(halfBlockFrame.frame, x, y, actor.x, actor.y)) {
+          return actor;
+        }
+
+        if (containsPoint(this.getHalfBlockActorBounds(actor, halfBlockFrame.frame), x, y)) {
+          return actor;
+        }
+        continue;
+      }
+
+      if (!this.sprites.roles[actor.role]) {
+        continue;
+      }
+
       const frame = this.getCurrentFrame(actor);
       for (let row = 0; row < frame.cells.length; row += 1) {
         const cells = frame.cells[row] ?? [];
@@ -481,7 +546,7 @@ export class Aquarium {
   }
 
   private renderActorLabel(buffer: ScreenBufferHD, actor: Actor, frame: SpriteFrame): void {
-    const label = this.roleLabels[actor.role];
+    const label = this.getActorLabel(actor);
     if (!label) {
       return;
     }
@@ -499,7 +564,7 @@ export class Aquarium {
   }
 
   private getActorBounds(actor: Actor, frame = this.getCurrentFrame(actor)): ActorBounds {
-    const label = this.roleLabels[actor.role];
+    const label = this.getActorLabel(actor);
     const spriteWidth = Math.max(...frame.cells.map((row) => row.length), 1);
     const spriteHeight = frame.cells.length;
     const labelWidth = label ? `${label.name} - ${label.role}`.length : 0;
@@ -514,6 +579,29 @@ export class Aquarium {
     );
 
     return { x, y, width, height: spriteHeight + 1 };
+  }
+
+  private getHalfBlockActorBounds(actor: Actor, frame: HalfBlockFrame): ActorBounds {
+    const label = this.getActorLabel(actor);
+    const size = getFrameSize(frame);
+    const spriteWidth = Math.max(size.width, 1);
+    const spriteHeight = Math.max(Math.ceil(size.pixelHeight / 2), 1);
+    const labelWidth = label ? label.name.length : 0;
+    const width = Math.min(this.width, Math.max(spriteWidth, labelWidth) + 2);
+    const spriteCenter = actor.x + Math.floor(spriteWidth / 2);
+    const x = clamp(spriteCenter - Math.floor(width / 2), 0, Math.max(0, this.width - width));
+    const labelFitsBelow = actor.y + spriteHeight < this.height;
+    const y = clamp(
+      labelFitsBelow ? actor.y : actor.y - 1,
+      0,
+      Math.max(0, this.height - spriteHeight - 1),
+    );
+
+    return { x, y, width, height: spriteHeight + 1 };
+  }
+
+  private getActorLabel(actor: Actor): ActorLabel | undefined {
+    return this.actorLabels.get(actor) ?? this.roleLabels[actor.role];
   }
 
   private put(
@@ -553,12 +641,63 @@ export class Aquarium {
     return samples;
   }
 
+  private collectHalfBlockSamples(
+    frame: HalfBlockFrame,
+    limit: number,
+  ): Array<{ token: string; row: number; col: number }> {
+    const samples: Array<{ token: string; row: number; col: number }> = [];
+
+    for (let row = 0; row < frame.pixels.length && samples.length < limit; row += 1) {
+      const cells = frame.pixels[row] ?? [];
+      for (let col = 0; col < cells.length && samples.length < limit; col += 1) {
+        const token = cells[col];
+        if (token === null || token === undefined) {
+          continue;
+        }
+
+        samples.push({ token, row, col });
+      }
+    }
+
+    return samples;
+  }
+
+  private getCurrentHalfBlockFrame(
+    actor: Actor,
+  ):
+    | { stateName: string; frameIndex: number; frame: HalfBlockFrame; frameCount: number }
+    | undefined {
+    const sprite = this.halfBlockSprites?.roles[actor.role];
+    if (!sprite) {
+      return undefined;
+    }
+
+    const stateName = resolveHalfBlockState(actor.state, sprite.states);
+    const state = sprite.states[stateName];
+    if (!state || state.frames.length === 0) {
+      return undefined;
+    }
+
+    const frameIndex = actor.frameIndex % state.frames.length;
+    const frame = state.frames[frameIndex] ?? state.frames[0];
+    return { stateName, frameIndex, frame, frameCount: state.frames.length };
+  }
+
   private getCurrentStateName(actor: Actor): string {
-    return resolveStateName(actor.state, this.sprites.roles[actor.role].states, this.fallbacks);
+    const sprite = this.sprites.roles[actor.role];
+    if (!sprite) {
+      return "idle";
+    }
+
+    return resolveStateName(actor.state, sprite.states, this.fallbacks);
   }
 
   private getCurrentState(actor: Actor): SpriteState {
     const sprite = this.sprites.roles[actor.role];
+    if (!sprite) {
+      throw new Error(`Unknown ASCII sprite role: ${actor.role}`);
+    }
+
     const stateName = this.getCurrentStateName(actor);
     return sprite.states[stateName];
   }

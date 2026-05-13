@@ -1,11 +1,45 @@
 import type { ScreenBufferHD } from "terminal-kit";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Aquarium } from "../src/aquarium.js";
+import { parseHalfBlockSheet } from "../src/halfblock-sprites.js";
 import { loadSpritesSync } from "../src/sprites.js";
 import { repoPath } from "./helpers/contracts.js";
 import { createMockBuffer } from "./helpers/mock-screen-buffer.js";
 
 const spriteSheet = loadSpritesSync(repoPath("skins", "aquarium", "sprites.json"));
+const halfBlockOnlySprites = parseHalfBlockSheet(
+  JSON.stringify({
+    format: "halfblock",
+    roles: {
+      tester: {
+        states: {
+          idle: {
+            frames: [
+              {
+                pixels: [
+                  ["fg", "fg", null],
+                  ["fg", "accent", null],
+                  [null, "fg", null],
+                ],
+              },
+            ],
+          },
+          working: {
+            frames: [
+              {
+                pixels: [
+                  ["accent", "fg", null],
+                  ["fg", "accent", null],
+                  [null, "fg", null],
+                ],
+              },
+            ],
+          },
+        },
+      },
+    },
+  }),
+);
 
 let aquarium: Aquarium;
 
@@ -46,6 +80,24 @@ describe("Aquarium", () => {
     const actor = labeled.addActor("lead", 5, 4);
 
     expect(labeled.hitTest(3, 6)).toBe(actor);
+  });
+
+  it("supports distinct labels for multiple actors using the same sprite role", () => {
+    const labeled = new Aquarium(50, 20, {
+      spriteSheet,
+      capabilities: { truecolor: true },
+    });
+    const first = labeled.addActor("lead", 5, 4);
+    const second = labeled.addActor("lead", 30, 4);
+    labeled.setActorLabel(first, { name: "Dallas", role: "Lead" });
+    labeled.setActorLabel(second, { name: "Dana", role: "Lead" });
+    const buffer = createMockBuffer(50, 20);
+
+    labeled.render(buffer as unknown as ScreenBufferHD);
+
+    const rendered = Array.from({ length: 20 }, (_, y) => buffer.readLine(y)).join("\n");
+    expect(rendered).toContain("Dallas");
+    expect(rendered).toContain("Dana");
   });
 
   it("tick advances all actor frames", () => {
@@ -98,5 +150,20 @@ describe("Aquarium", () => {
         expect.stringContaining("fg alert=rgb(239,71,111)"),
       ]),
     );
+  });
+
+  it("supports half-block-only sprite roles without requiring an ASCII fallback", () => {
+    const halfBlockOnly = new Aquarium(20, 10, {
+      spriteSheet,
+      halfBlockSprites: halfBlockOnlySprites,
+      capabilities: { truecolor: true },
+    });
+    const actor = halfBlockOnly.addActor("tester", 4, 2);
+    const buffer = createMockBuffer(20, 10);
+
+    expect(() => halfBlockOnly.tick()).not.toThrow();
+    expect(() => halfBlockOnly.render(buffer as unknown as ScreenBufferHD)).not.toThrow();
+    expect(() => halfBlockOnly.describeDebugRender()).not.toThrow();
+    expect(halfBlockOnly.hitTest(4, 2)).toBe(actor);
   });
 });

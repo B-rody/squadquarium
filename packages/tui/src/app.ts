@@ -560,8 +560,8 @@ function createAquariumScene(
     const sprite = spriteRoleFor(agent.role, spriteRoles);
     const x = Math.min(spacing * (i + 1), Math.max(0, rect.width - 12));
     const y = Math.max(0, Math.floor(rect.height / 2) - 2 + (i % 2 === 0 ? -1 : 1));
-    roleLabels[sprite] = { name: capitalize(agent.name), role: agent.role };
-    aquarium.addActor(sprite, x, y, "idle");
+    const actor = aquarium.addActor(sprite, x, y, "idle");
+    aquarium.setActorLabel(actor, { name: capitalize(agent.name), role: agent.role });
   });
 
   return aquarium;

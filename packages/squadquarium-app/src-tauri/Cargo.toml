@@ -14,5 +14,4 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # Tauri 2 core — tray-icon feature enables system tray support.
-# image-default bundles platform-default icon handling.
-tauri = { version = "2", features = ["tray-icon", "image-default"] }
+tauri = { version = "2", features = ["tray-icon"] }
