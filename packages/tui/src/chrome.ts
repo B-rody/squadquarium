@@ -127,28 +127,20 @@ export function drawChrome(buffer: ScreenBufferHD, layout: Layout, config: Chrom
   };
 
   drawBox(buffer, 0, 0, layout.width, layout.height, chars, chromeAttr);
+
+  // Divider between aquarium and copilot pane
+  const copilotY = layout.copilot.y;
   drawDivider(
     buffer,
-    layout.log.y - 1,
+    copilotY - 1,
     layout.width,
     chars.lt,
     chars.h,
     chars.rt,
-    " AQUARIUM ",
+    " COPILOT ",
     chromeAttr,
     labelAttr,
   );
-  drawDivider(
-    buffer,
-    layout.input.y - 1,
-    layout.width,
-    chars.lt,
-    chars.h,
-    chars.rt,
-    " ACTIVITY LOG ",
-    chromeAttr,
-    labelAttr,
-  );
-  put(buffer, 2, layout.height - 2, "INPUT", labelAttr);
+
   drawStatusBar(buffer, layout, config);
 }

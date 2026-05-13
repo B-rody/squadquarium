@@ -54,7 +54,7 @@ describe("InputLine", () => {
     expect(buffer.putCalls[2]).toEqual(
       expect.objectContaining({
         attr: { color: colors.hintColor, bgColor: colors.bgColor },
-        char: expect.stringContaining("Enter=run  Tab=complete  Up/Down=history"),
+        char: expect.stringContaining("Enter=send  Try: inspect Lambert"),
       }),
     );
   });

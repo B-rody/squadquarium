@@ -6,12 +6,14 @@ describe("detectCapabilities", () => {
     const caps = detectCapabilities({ COLORTERM: "truecolor" });
 
     expect(caps.truecolor).toBe(true);
+    expect(caps.colorLevel).toBe("truecolor");
   });
 
   it("treats missing COLORTERM as non-truecolor by default", () => {
     const caps = detectCapabilities({ TERM: "xterm-256color" });
 
     expect(caps.truecolor).toBe(false);
+    expect(caps.colorLevel).toBe("ansi256");
   });
 
   it("captures TERM_PROGRAM when present", () => {
@@ -25,5 +27,12 @@ describe("detectCapabilities", () => {
     const caps = detectCapabilities({ WT_SESSION: "1" });
 
     expect(caps.windowsTerminal).toBe(true);
+    expect(caps.colorLevel).toBe("truecolor");
+  });
+
+  it("reports none for dumb terminals", () => {
+    const caps = detectCapabilities({ TERM: "dumb" });
+
+    expect(caps.colorLevel).toBe("none");
   });
 });

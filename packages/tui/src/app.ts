@@ -5,18 +5,53 @@ import { fileURLToPath } from "node:url";
 import termkit, { type ScreenBufferHD as TerminalScreenBufferHD } from "terminal-kit";
 import { ActivityLog } from "./activity-log.js";
 import { detectCapabilities } from "./adaptive.js";
-import { Aquarium } from "./aquarium.js";
+import { Aquarium, type ActorLabel } from "./aquarium.js";
 import { drawChrome } from "./chrome.js";
-import { InputLine } from "./input-line.js";
+import { CopilotPane } from "./copilot-pane.js";
+import { loadHalfBlockSpritesSync, type HalfBlockSpriteSheet } from "./halfblock-sprites.js";
 import { calculateLayout, type Layout } from "./layout.js";
 import { MouseHandler, type MouseEventData } from "./mouse.js";
 import { DEFAULT_PALETTE, Palette, type ColorValue } from "./palette.js";
+import { PtyManager } from "./pty-manager.js";
 import { loadSpritesSync, type SpriteSheet } from "./sprites.js";
-import type { AppConfig, Rect } from "./types.js";
+import { SquadWatcher, type AgentInfo, type SquadState } from "./squad-watcher.js";
+import type { AppConfig, Capabilities, Rect } from "./types.js";
 
 const { terminal, ScreenBufferHD } = termkit;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 30;
+
+// --- Sprite role mapping ---
+// Maps squad agent roles (from charter.md) to sprite role keys in skins/
+const ROLE_TO_SPRITE: Record<string, string> = {
+  lead: "lead",
+  "tech lead": "lead",
+  architect: "lead",
+  "senior architect": "lead",
+  "frontend dev": "frontend",
+  "frontend developer": "frontend",
+  "ui engineer": "frontend",
+  "backend dev": "backend",
+  "backend developer": "backend",
+  "api engineer": "backend",
+  tester: "scribe", // fallback — no tester sprite yet
+  "session logger": "scribe",
+  scribe: "scribe",
+};
+
+function spriteRoleFor(agentRole: string, availableRoles: string[]): string {
+  const lower = agentRole.toLowerCase().trim();
+  const mapped = ROLE_TO_SPRITE[lower];
+  if (mapped && availableRoles.includes(mapped)) return mapped;
+  // Fuzzy: check if any key is a substring
+  for (const [key, sprite] of Object.entries(ROLE_TO_SPRITE)) {
+    if (lower.includes(key) && availableRoles.includes(sprite)) return sprite;
+  }
+  // Fallback to first available
+  return availableRoles[0] ?? "lead";
+}
+
+// --- Screen buffer abstraction ---
 
 interface ScreenBufferLike {
   fill(options?: unknown): void;
@@ -38,74 +73,37 @@ interface UiColors {
   dim: ColorValue;
 }
 
+// --- Runtime state ---
+
 interface RuntimeState {
-  config: Required<Pick<AppConfig, "fps" | "inputPrompt" | "headless" | "smokeTest">> & AppConfig;
+  config: Required<Pick<AppConfig, "fps" | "headless" | "smokeTest" | "debug">> & AppConfig;
   layout: Layout;
   root: ScreenBufferLike;
-  aquarium: ScreenBufferLike;
-  log: ScreenBufferLike;
-  input: ScreenBufferLike;
-  activityLog: ActivityLog;
-  inputLine: InputLine;
-  mouseHandler: MouseHandler;
+  aquariumBuffer: ScreenBufferLike;
+  copilotBuffer: ScreenBufferLike;
   aquariumScene: Aquarium;
+  activityLog: ActivityLog;
+  copilotPane: CopilotPane;
+  ptyManager: PtyManager | null;
+  mouseHandler: MouseHandler;
   uiColors: UiColors;
-  capabilities: ReturnType<typeof detectCapabilities>;
+  capabilities: Capabilities;
+  squadWatcher: SquadWatcher;
+  squadState: SquadState;
   interval: NodeJS.Timeout | null;
   running: boolean;
   frame: number;
   resolve: (() => void) | null;
   reject: ((error: unknown) => void) | null;
-  cleanupHandlers: Array<
-    [NodeJS.Signals | "uncaughtException" | "unhandledRejection", EventListener]
-  >;
-  keyListener: ((name: string) => void) | null;
-  mouseListener: ((name: string, data: MouseEventData) => void) | null;
-  resizeListener: (() => void) | null;
+  cleanupHandlers: Array<[string, EventListener]>;
+  keyListener: EventListener | null;
+  mouseListener: EventListener | null;
+  resizeListener: EventListener | null;
 }
 
 let runtime: RuntimeState | null = null;
 
-const ACTOR_CLICK_MESSAGES: Record<string, string> = {
-  lead: "Anglerfish noticed you!",
-  frontend: "Seahorse did a quick twirl for you!",
-  backend: "Octopus flashed a curious wave!",
-  scribe: "Squid scribbled your hello!",
-};
-
-const HELP_MESSAGES = [
-  "Commands:",
-  "  help   Show this guide",
-  "  status Show aquarium panel size",
-  "  clear  Clear the activity log",
-  "  exit   Close Squadquarium",
-  "  quit   Same as exit",
-] as const;
-
-export function createStartupMessages(config: AppConfig, agentCount: number): string[] {
-  const watchTarget = config.personal ? "your personal squad" : (config.cwd ?? process.cwd());
-  const attachedCount = config.attachPaths?.length ?? 0;
-  const messages = [
-    "Welcome to Squadquarium.",
-    `Watching: ${watchTarget}`,
-    `${agentCount} agent${agentCount === 1 ? "" : "s"} swimming.`,
-  ];
-
-  if (attachedCount > 0) {
-    messages.push(`${attachedCount} extra squad${attachedCount === 1 ? "" : "s"} linked.`);
-  }
-
-  messages.push("Tank ready. Type help for commands, clear to wipe the log, exit to leave.");
-  return messages;
-}
-
-export function createHelpMessages(): string[] {
-  return [...HELP_MESSAGES];
-}
-
-export function describeAquariumClick(role: string): string {
-  return ACTOR_CLICK_MESSAGES[role] ?? `${formatRoleName(role)} noticed you!`;
-}
+// --- Public API ---
 
 export async function startApp(config: AppConfig = {}): Promise<void> {
   if (runtime?.running) {
@@ -121,6 +119,12 @@ export async function startApp(config: AppConfig = {}): Promise<void> {
   runtime = createRuntime(config);
   initializeTerminal(runtime);
   bindEvents(runtime);
+
+  // Spawn the PTY child process (non-headless only)
+  if (!runtime.config.headless && runtime.config.ptyMode) {
+    await spawnPty(runtime);
+  }
+
   render(runtime);
 
   return new Promise<void>((resolve, reject) => {
@@ -148,9 +152,7 @@ export async function startApp(config: AppConfig = {}): Promise<void> {
 
 export async function stopApp(): Promise<void> {
   const current = runtime;
-  if (!current || !current.running) {
-    return;
-  }
+  if (!current || !current.running) return;
 
   current.running = false;
   if (current.interval) {
@@ -158,6 +160,12 @@ export async function stopApp(): Promise<void> {
     current.interval = null;
   }
 
+  // Kill PTY child
+  if (current.ptyManager?.running) {
+    current.ptyManager.kill();
+  }
+
+  current.squadWatcher.stop();
   unbindEvents(current);
 
   if (!current.config.headless) {
@@ -171,70 +179,175 @@ export async function stopApp(): Promise<void> {
   current.resolve?.();
 }
 
+async function spawnPty(state: RuntimeState): Promise<void> {
+  const pty = new PtyManager();
+  state.ptyManager = pty;
+
+  pty.on("data", (data: string) => {
+    state.copilotPane.write(data);
+  });
+
+  pty.on("exit", (code: number) => {
+    state.copilotPane.write(`\n[Process exited with code ${code}]\n`);
+  });
+
+  try {
+    await pty.spawn({
+      mode: state.config.ptyMode ?? "copilot",
+      cwd: state.config.cwd ?? process.cwd(),
+      cols: state.layout.copilot.width,
+      rows: state.layout.copilot.height,
+      extraArgs: state.config.ptyExtraArgs ?? [],
+    });
+    state.copilotPane.write("PTY connected. Waiting for output...\n\n");
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    state.copilotPane.write(`Failed to spawn PTY: ${msg}\n`);
+    state.copilotPane.write("Make sure 'copilot' or 'squad' is on your PATH.\n");
+    state.copilotPane.write("You can still use squad directly in another terminal.\n");
+  }
+}
+
+// --- Exported helpers for tests ---
+
+export function createStartupMessages(config: AppConfig, agentCount: number): string[] {
+  const cwd = config.cwd ?? process.cwd();
+  return [
+    "Welcome to Squadquarium.",
+    `Watching: ${cwd}`,
+    `${agentCount} agent${agentCount === 1 ? "" : "s"} detected.`,
+    "Copilot pane: real PTY output. Aquarium: ambient agent state.",
+  ];
+}
+
+export function createDebugMessages(): string[] {
+  return ["[DEBUG] debug messages not yet reimplemented for v1 architecture"];
+}
+
+export function createHelpMessages(): string[] {
+  return [
+    "Squadquarium wraps copilot --agent squad.",
+    "All input goes to the Copilot PTY. Use Squad slash commands:",
+    "  /status  /agents  /help  /history  /clear  /quit",
+  ];
+}
+
+export function describeAquariumClick(role: string): string {
+  return `Clicked ${formatRoleName(role)}.`;
+}
+
+export function handleAquariumClick(
+  aquarium: Aquarium,
+  activityLog: ActivityLog,
+  x: number,
+  y: number,
+): void {
+  const actor = aquarium.hitTest(x, y);
+  if (!actor) return;
+  actor.setState("celebrate");
+  activityLog.add(describeAquariumClick(actor.role));
+}
+
+// --- Runtime creation ---
+
 function createRuntime(config: AppConfig): RuntimeState {
   const effectiveConfig = {
     ...config,
     fps: config.fps ?? 12,
-    inputPrompt: config.inputPrompt ?? "sqq> ",
     headless: config.headless ?? false,
     smokeTest: config.smokeTest ?? false,
+    debug: config.debug ?? false,
   };
 
   const size = getTerminalSize(effectiveConfig);
   const layout = calculateLayout(size.width, size.height);
   const capabilities = detectCapabilities();
-  const uiColors = loadUiColors(effectiveConfig.skinsDir, capabilities.truecolor);
+  const assets = loadAquariumAssets(effectiveConfig.skinsDir);
+  const palette = new Palette(assets.manifest.palette ?? DEFAULT_PALETTE, capabilities);
+  const uiColors: UiColors = {
+    bg: palette.resolve("bg"),
+    fg: palette.resolve("fg"),
+    accent: palette.resolve("accent"),
+    dim: palette.resolve("dim"),
+  };
+
   const root = createBuffer(size.width, size.height, undefined, effectiveConfig.headless);
-  const aquarium = createBuffer(
+  const aquariumBuffer = createBuffer(
     layout.aquarium.width,
     layout.aquarium.height,
     { dst: root, x: layout.aquarium.x, y: layout.aquarium.y },
     effectiveConfig.headless,
   );
-  const log = createBuffer(
-    layout.log.width,
-    layout.log.height,
-    { dst: root, x: layout.log.x, y: layout.log.y },
+  const copilotBuffer = createBuffer(
+    layout.copilot.width,
+    layout.copilot.height,
+    { dst: root, x: layout.copilot.x, y: layout.copilot.y },
     effectiveConfig.headless,
   );
-  const input = createBuffer(
-    layout.input.width,
-    layout.input.height,
-    { dst: root, x: layout.input.x, y: layout.input.y },
-    effectiveConfig.headless,
-  );
+
+  const squadWatcher = new SquadWatcher(effectiveConfig.cwd ?? process.cwd());
+  const squadState = squadWatcher.readState();
+
+  const aquariumScene = createAquariumScene(layout.aquarium, capabilities, assets, squadState);
   const activityLog = new ActivityLog();
-  const inputLine = new InputLine(effectiveConfig.inputPrompt);
-  const aquariumScene = createAquariumScene(
-    layout.aquarium,
-    capabilities.truecolor,
-    effectiveConfig.skinsDir,
-  );
+  const copilotPane = new CopilotPane();
 
-  for (const message of createStartupMessages(effectiveConfig, aquariumScene.getActors().length)) {
-    activityLog.add(message);
+  // Feed startup info into the copilot pane
+  const startupLines = createStartupMessages(effectiveConfig, squadState.agents.length);
+  copilotPane.write(startupLines.join("\n") + "\n");
+
+  if (squadWatcher.detected) {
+    copilotPane.write(`Squad root: ${squadState.squadRoot}\n`);
+    if (squadState.focus) copilotPane.write(`Focus: ${squadState.focus}\n`);
+    if (squadState.recentDecision)
+      copilotPane.write(`Last decision: ${squadState.recentDecision}\n`);
+  } else {
+    copilotPane.write("No .squad/ found. Run squad init to create a team.\n");
   }
+  copilotPane.write("\nCopilot PTY output will appear here when connected.\n");
 
+  // Use late-binding through runtime reference so resize updates are reflected
   const mouseHandler = new MouseHandler({
-    getRegions: () => layout,
-    onAquariumClick: (x, y) => handleAquariumClick(aquariumScene, activityLog, x, y),
-    onLogScroll: (direction) => activityLog.handleWheel(direction),
-    onInputFocus: () => inputLine.focus(),
+    getRegions: () => runtime?.layout ?? layout,
+    onAquariumClick: (x, y) =>
+      handleAquariumClick(runtime?.aquariumScene ?? aquariumScene, activityLog, x, y),
+    onLogScroll: (direction) => {
+      const cp = runtime?.copilotPane;
+      if (cp) cp.scroll(direction === "up" ? 3 : -3);
+    },
+    onInputFocus: () => {},
   });
+
+  // Start watching for filesystem changes
+  squadWatcher.on("change", (newState) => {
+    if (runtime) {
+      runtime.squadState = newState;
+      // Rebuild aquarium actors on roster change
+      runtime.aquariumScene = createAquariumScene(
+        runtime.layout.aquarium,
+        runtime.capabilities,
+        loadAquariumAssets(runtime.config.skinsDir),
+        newState,
+      );
+    }
+  });
+  squadWatcher.start();
 
   return {
     config: effectiveConfig,
     layout,
     root,
-    aquarium,
-    log,
-    input,
-    activityLog,
-    inputLine,
-    mouseHandler,
+    aquariumBuffer,
+    copilotBuffer,
     aquariumScene,
+    activityLog,
+    copilotPane,
+    ptyManager: null,
+    mouseHandler,
     uiColors,
     capabilities,
+    squadWatcher,
+    squadState,
     interval: null,
     running: true,
     frame: 0,
@@ -247,68 +360,68 @@ function createRuntime(config: AppConfig): RuntimeState {
   };
 }
 
-function initializeTerminal(state: RuntimeState): void {
-  if (state.config.headless) {
-    return;
-  }
+// --- Terminal initialization ---
 
+function initializeTerminal(state: RuntimeState): void {
+  if (state.config.headless) return;
+
+  ensureTerminalColorEscapes();
   terminal.fullscreen?.(true);
   terminal.hideCursor?.();
   terminal.grabInput?.({ mouse: "button" });
 }
 
+function ensureTerminalColorEscapes(): void {
+  if (process.env.NO_COLOR) return;
+
+  if (terminal.optimized.color24bits(1, 2, 3) === "") {
+    terminal.optimized.color24bits = (r: number, g: number, b: number) =>
+      `\x1B[38;2;${clampByte(r)};${clampByte(g)};${clampByte(b)}m`;
+  }
+  if (terminal.optimized.bgColor24bits(1, 2, 3) === "") {
+    terminal.optimized.bgColor24bits = (r: number, g: number, b: number) =>
+      `\x1B[48;2;${clampByte(r)};${clampByte(g)};${clampByte(b)}m`;
+  }
+}
+
+function clampByte(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+// --- Event binding ---
+
 function bindEvents(state: RuntimeState): void {
-  state.inputLine.on("command", (command) => {
-    const trimmed = command.trim();
-    if (trimmed === "") {
-      return;
-    }
+  state.keyListener = (name: unknown) => {
+    const key = name as string;
 
-    if (trimmed === "exit" || trimmed === "quit") {
-      void stopApp();
-      return;
-    }
-
-    if (trimmed === "clear") {
-      state.activityLog.clear();
-      state.activityLog.add("log cleared");
-      return;
-    }
-
-    if (trimmed === "help") {
-      for (const message of createHelpMessages()) {
-        state.activityLog.add(message);
+    // Ctrl+C: if PTY is running, forward it; otherwise quit
+    if (key === "CTRL_C") {
+      if (state.ptyManager?.running) {
+        state.ptyManager.write("\x03");
+      } else {
+        void stopApp();
       }
       return;
     }
 
-    if (trimmed === "status") {
-      state.activityLog.add(
-        `layout ${state.layout.aquarium.width}x${state.layout.aquarium.height}`,
-      );
-      return;
+    // Forward all other keys to PTY
+    if (state.ptyManager?.running) {
+      const mapped = mapKeyToPty(key);
+      if (mapped) state.ptyManager.write(mapped);
     }
-
-    state.activityLog.add(`command: ${trimmed}`);
-  });
-
-  state.keyListener = (name: string) => {
-    if (name === "CTRL_C") {
-      void stopApp();
-      return;
-    }
-    state.inputLine.handleKey(name);
   };
 
-  state.mouseListener = (name: string, data: MouseEventData) => {
-    state.mouseHandler.dispatch(name, data);
+  state.mouseListener = (name: unknown, data: unknown) => {
+    state.mouseHandler.dispatch(name as string, data as MouseEventData);
   };
 
   state.resizeListener = () => {
-    if (!runtime) {
-      return;
-    }
+    if (!runtime) return;
     rebuildBuffers(runtime);
+    // Forward resize to PTY
+    if (runtime.ptyManager?.running) {
+      runtime.ptyManager.resize(runtime.layout.copilot.width, runtime.layout.copilot.height);
+    }
     render(runtime);
   };
 
@@ -318,41 +431,27 @@ function bindEvents(state: RuntimeState): void {
     terminal.on("resize", state.resizeListener as EventListener);
   }
 
-  const onSignal = () => {
-    void stopApp();
-  };
+  const onSignal = () => void stopApp();
   const onException = (error: unknown) => {
-    void stopApp().finally(() => {
-      state.reject?.(error);
-    });
-  };
-
-  const onResizeSignal = () => {
-    if (!runtime) {
-      return;
-    }
-    rebuildBuffers(runtime);
-    render(runtime);
+    void stopApp().finally(() => state.reject?.(error));
   };
 
   state.cleanupHandlers.push(["SIGINT", onSignal]);
   state.cleanupHandlers.push(["SIGTERM", onSignal]);
   state.cleanupHandlers.push(["uncaughtException", onException]);
   state.cleanupHandlers.push(["unhandledRejection", onException]);
-  state.cleanupHandlers.push(["SIGWINCH", onResizeSignal]);
 
   process.on("SIGINT", onSignal);
   process.on("SIGTERM", onSignal);
   process.on("uncaughtException", onException);
   process.on("unhandledRejection", onException);
-  process.on("SIGWINCH", onResizeSignal);
 }
 
 function unbindEvents(state: RuntimeState): void {
   if (!state.config.headless) {
-    removeTerminalListener("key", state.keyListener as EventListener | null);
-    removeTerminalListener("mouse", state.mouseListener as EventListener | null);
-    removeTerminalListener("resize", state.resizeListener as EventListener | null);
+    removeTerminalListener("key", state.keyListener);
+    removeTerminalListener("mouse", state.mouseListener);
+    removeTerminalListener("resize", state.resizeListener);
   }
 
   state.cleanupHandlers.forEach(([event, handler]) => {
@@ -362,164 +461,152 @@ function unbindEvents(state: RuntimeState): void {
 }
 
 function removeTerminalListener(event: string, listener: EventListener | null): void {
-  if (!listener) {
-    return;
-  }
-  if (terminal.off) {
-    terminal.off(event, listener);
-  } else {
-    terminal.removeListener?.(event, listener);
-  }
+  if (!listener) return;
+  if (terminal.off) terminal.off(event, listener);
+  else terminal.removeListener?.(event, listener);
 }
+
+// --- Buffer rebuild on resize ---
 
 function rebuildBuffers(state: RuntimeState): void {
   const size = getTerminalSize(state.config);
   state.layout = calculateLayout(size.width, size.height);
   state.root = createBuffer(size.width, size.height, undefined, state.config.headless);
-  state.aquarium = createBuffer(
+  state.aquariumBuffer = createBuffer(
     state.layout.aquarium.width,
     state.layout.aquarium.height,
     { dst: state.root, x: state.layout.aquarium.x, y: state.layout.aquarium.y },
     state.config.headless,
   );
-  state.log = createBuffer(
-    state.layout.log.width,
-    state.layout.log.height,
-    { dst: state.root, x: state.layout.log.x, y: state.layout.log.y },
-    state.config.headless,
-  );
-  state.input = createBuffer(
-    state.layout.input.width,
-    state.layout.input.height,
-    { dst: state.root, x: state.layout.input.x, y: state.layout.input.y },
+  state.copilotBuffer = createBuffer(
+    state.layout.copilot.width,
+    state.layout.copilot.height,
+    { dst: state.root, x: state.layout.copilot.x, y: state.layout.copilot.y },
     state.config.headless,
   );
   state.aquariumScene = createAquariumScene(
     state.layout.aquarium,
-    state.capabilities.truecolor,
-    state.config.skinsDir,
+    state.capabilities,
+    loadAquariumAssets(state.config.skinsDir),
+    state.squadState,
   );
-  state.mouseHandler = new MouseHandler({
-    getRegions: () => state.layout,
-    onAquariumClick: (x, y) => handleAquariumClick(state.aquariumScene, state.activityLog, x, y),
-    onLogScroll: (direction) => state.activityLog.handleWheel(direction),
-    onInputFocus: () => state.inputLine.focus(),
-  });
 }
+
+// --- Render loop ---
 
 function render(state: RuntimeState): void {
   state.frame += 1;
   state.root.fill({ char: " ", attr: baseAttr(state.uiColors) });
+
+  // Aquarium
   state.aquariumScene.tick();
-  state.aquariumScene.render(state.aquarium as unknown as TerminalScreenBufferHD);
-  state.activityLog.render(state.log, state.layout.log, {
-    timestampColor: state.uiColors.dim,
-    color: state.uiColors.fg,
-    bgColor: state.uiColors.bg,
+  state.aquariumScene.render(state.aquariumBuffer as unknown as TerminalScreenBufferHD);
+
+  // Copilot pane — CopilotPane renders stripped PTY output
+  state.copilotPane.render(state.copilotBuffer, state.layout.copilot, {
+    fg: state.uiColors.fg,
+    bg: state.uiColors.bg,
+    dim: state.uiColors.dim,
   });
-  state.inputLine.render(state.input, state.layout.input, {
-    promptColor: state.uiColors.accent,
-    textColor: state.uiColors.fg,
-    hintColor: state.uiColors.dim,
-    bgColor: state.uiColors.bg,
-  });
-  state.aquarium.draw();
-  state.log.draw();
-  state.input.draw();
+
+  state.aquariumBuffer.draw();
+  state.copilotBuffer.draw();
+
+  // Chrome
   drawChrome(state.root as unknown as TerminalScreenBufferHD, state.layout, {
-    teamName: "Squadquarium",
+    teamName: state.squadState.teamName,
     skinName: "aquarium",
-    agentCount: state.aquariumScene.getActors().length,
+    agentCount: state.squadState.agents.length,
     rounded: state.capabilities.unicode,
-    statusBarPosition: "top",
+    statusBarPosition: "bottom",
     color: state.uiColors.fg,
     bgColor: state.uiColors.bg,
     chromeColor: state.uiColors.dim,
     labelColor: state.uiColors.accent,
   });
+
   if (!state.config.headless) {
     state.root.draw({ delta: true });
   }
 }
 
-function createAquariumScene(rect: Rect, truecolor: boolean, skinsDir?: string): Aquarium {
-  const assets = loadAquariumAssets(skinsDir);
+// --- Aquarium scene from Squad state ---
+
+function createAquariumScene(
+  rect: Rect,
+  capabilities: Capabilities,
+  assets: LoadedAquariumAssets,
+  squadState: SquadState,
+): Aquarium {
+  // Prefer half-block sprite roles when available
+  const hbRoles = assets.halfBlockSprites ? Object.keys(assets.halfBlockSprites.roles) : [];
+  const asciiRoles = assets.spriteSheet ? Object.keys(assets.spriteSheet.roles) : [];
+  const spriteRoles = hbRoles.length > 0 ? hbRoles : asciiRoles.length > 0 ? asciiRoles : ["lead"];
+  const roleLabels: Record<string, ActorLabel> = {};
+
   const aquarium = new Aquarium(rect.width, rect.height, {
-    capabilities: { truecolor },
+    capabilities,
     spriteSheet: assets.spriteSheet,
+    halfBlockSprites: assets.halfBlockSprites,
     skinPalette: assets.manifest.palette,
     fallbacks: assets.manifest.fallbacks,
+    roleLabels,
   });
-  const baseY = Math.max(0, Math.floor(rect.height / 2) - 1);
 
-  aquarium.addActor("lead", 2, Math.max(0, baseY - 3), "idle");
-  aquarium.addActor(
-    "frontend",
-    Math.max(0, Math.floor(rect.width * 0.25)),
-    Math.max(0, baseY - 1),
-    "working",
-  );
-  aquarium.addActor("backend", Math.max(0, Math.floor(rect.width * 0.5)), baseY, "idle");
-  aquarium.addActor(
-    "scribe",
-    Math.max(0, rect.width - 10),
-    Math.min(Math.max(0, rect.height - 2), baseY + 2),
-    "celebrate",
-  );
+  const agents = squadState.agents.length > 0 ? squadState.agents : defaultAgents();
+  const spacing = Math.max(1, Math.floor(rect.width / (agents.length + 1)));
+
+  agents.forEach((agent, i) => {
+    const sprite = spriteRoleFor(agent.role, spriteRoles);
+    const x = Math.min(spacing * (i + 1), Math.max(0, rect.width - 12));
+    const y = Math.max(0, Math.floor(rect.height / 2) - 2 + (i % 2 === 0 ? -1 : 1));
+    roleLabels[sprite] = { name: capitalize(agent.name), role: agent.role };
+    aquarium.addActor(sprite, x, y, "idle");
+  });
 
   return aquarium;
 }
 
-function loadUiColors(skinsDir: string | undefined, truecolor: boolean): UiColors {
-  const { manifest } = loadAquariumAssets(skinsDir);
-  const palette = new Palette(manifest.palette ?? DEFAULT_PALETTE, { truecolor });
+function defaultAgents(): AgentInfo[] {
+  return [
+    { name: "lead", role: "Lead", status: "active" },
+    { name: "frontend", role: "Frontend Dev", status: "active" },
+    { name: "backend", role: "Backend Dev", status: "active" },
+    { name: "scribe", role: "Scribe", status: "active" },
+  ];
+}
 
-  return {
-    bg: palette.resolve("bg"),
-    fg: palette.resolve("fg"),
-    accent: palette.resolve("accent"),
-    dim: palette.resolve("dim"),
-  };
+// --- Asset loading ---
+
+interface LoadedAquariumAssets {
+  baseDir: string;
+  manifest: SkinManifest;
+  spriteSheet: SpriteSheet | undefined;
+  halfBlockSprites: HalfBlockSpriteSheet | undefined;
 }
 
 function defaultSkinsDir(): string {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "skins");
 }
 
-function loadAquariumAssets(skinsDir: string | undefined): {
-  manifest: SkinManifest;
-  spriteSheet: SpriteSheet | undefined;
-} {
+function loadAquariumAssets(skinsDir: string | undefined): LoadedAquariumAssets {
   const baseDir = skinsDir ?? defaultSkinsDir();
   const manifestPath = path.join(baseDir, "aquarium", "manifest.json");
   const spritesPath = path.join(baseDir, "aquarium", "sprites.json");
+  const halfBlockPath = path.join(baseDir, "aquarium", "sprites-halfblock.json");
 
   const manifest = fs.existsSync(manifestPath)
     ? (JSON.parse(fs.readFileSync(manifestPath, "utf8")) as SkinManifest)
     : {};
   const spriteSheet = fs.existsSync(spritesPath) ? loadSpritesSync(spritesPath) : undefined;
+  const halfBlockSprites = fs.existsSync(halfBlockPath)
+    ? loadHalfBlockSpritesSync(halfBlockPath)
+    : undefined;
 
-  return { manifest, spriteSheet };
+  return { baseDir, manifest, spriteSheet, halfBlockSprites };
 }
 
-export function handleAquariumClick(
-  aquarium: Aquarium,
-  activityLog: ActivityLog,
-  x: number,
-  y: number,
-): void {
-  const actor = aquarium.hitTest(x, y);
-  if (!actor) {
-    return;
-  }
-
-  actor.setState("celebrate");
-  activityLog.add(describeAquariumClick(actor.role));
-}
-
-function formatRoleName(role: string): string {
-  return role.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-}
+// --- Utility ---
 
 function createBuffer(
   width: number,
@@ -541,16 +628,79 @@ function baseAttr(colors: UiColors): Record<string, unknown> {
 }
 
 function getTerminalSize(config: AppConfig): { width: number; height: number } {
-  if (config.headlessSize) {
-    return config.headlessSize;
-  }
-
-  if (config.headless) {
-    return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
-  }
-
+  if (config.headlessSize) return config.headlessSize;
+  if (config.headless) return { width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
   return {
     width: Math.max(40, terminal.width ?? process.stdout.columns ?? DEFAULT_WIDTH),
     height: Math.max(16, terminal.height ?? process.stdout.rows ?? DEFAULT_HEIGHT),
   };
+}
+
+function formatRoleName(role: string): string {
+  return role.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function capitalize(name: string): string {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Map terminal-kit key names to PTY-compatible escape sequences. */
+function mapKeyToPty(key: string): string | null {
+  // Single printable character
+  if (key.length === 1) return key;
+
+  switch (key) {
+    case "ENTER":
+      return "\r";
+    case "BACKSPACE":
+      return "\x7f";
+    case "DELETE":
+      return "\x1B[3~";
+    case "TAB":
+      return "\t";
+    case "ESCAPE":
+      return "\x1B";
+    case "UP":
+      return "\x1B[A";
+    case "DOWN":
+      return "\x1B[B";
+    case "RIGHT":
+      return "\x1B[C";
+    case "LEFT":
+      return "\x1B[D";
+    case "HOME":
+      return "\x1B[H";
+    case "END":
+      return "\x1B[F";
+    case "PAGE_UP":
+      return "\x1B[5~";
+    case "PAGE_DOWN":
+      return "\x1B[6~";
+    case "CTRL_A":
+      return "\x01";
+    case "CTRL_B":
+      return "\x02";
+    case "CTRL_D":
+      return "\x04";
+    case "CTRL_E":
+      return "\x05";
+    case "CTRL_F":
+      return "\x06";
+    case "CTRL_K":
+      return "\x0B";
+    case "CTRL_L":
+      return "\x0C";
+    case "CTRL_N":
+      return "\x0E";
+    case "CTRL_P":
+      return "\x10";
+    case "CTRL_R":
+      return "\x12";
+    case "CTRL_U":
+      return "\x15";
+    case "CTRL_W":
+      return "\x17";
+    default:
+      return null;
+  }
 }

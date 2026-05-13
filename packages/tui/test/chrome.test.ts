@@ -13,10 +13,11 @@ const chromeBgColor = { r: 0, g: 27, b: 46 };
 const layout: Layout = {
   width: 80,
   height: 24,
-  aquarium: { x: 1, y: 1, width: 78, height: 12 },
-  log: { x: 1, y: 14, width: 78, height: 6 },
-  input: { x: 1, y: 21, width: 78, height: 2 },
-  statusBar: { x: 0, y: 0, width: 80, height: 1 },
+  aquarium: { x: 1, y: 1, width: 78, height: 6 },
+  copilot: { x: 1, y: 8, width: 78, height: 14 },
+  log: { x: 1, y: 8, width: 78, height: 14 },
+  input: { x: 1, y: 21, width: 78, height: 1 },
+  statusBar: { x: 0, y: 23, width: 80, height: 1 },
 };
 
 describe("drawChrome", () => {
@@ -45,10 +46,10 @@ describe("drawChrome", () => {
       agentCount: 4,
     });
 
-    const line = buffer.readLine(layout.log.y - 1);
+    const line = buffer.readLine(layout.copilot.y - 1);
     expect(line.startsWith("├")).toBe(true);
     expect(line.endsWith("┤")).toBe(true);
-    expect(line).toContain("AQUARIUM");
+    expect(line).toContain("COPILOT");
   });
 
   it("renders status bar content", () => {
@@ -58,13 +59,14 @@ describe("drawChrome", () => {
       teamName: "Squadquarium",
       skinName: "aquarium",
       agentCount: 4,
+      statusBarPosition: "bottom",
       color: statusColor,
       bgColor: chromeBgColor,
       chromeColor,
       labelColor,
     });
 
-    expect(buffer.readLine(0)).toContain("Squadquarium · skin:aquarium · agents:4");
+    expect(buffer.readLine(23)).toContain("Squadquarium · skin:aquarium · agents:4");
   });
 
   it("applies distinct attrs to borders, labels, and status bar", () => {
@@ -74,18 +76,22 @@ describe("drawChrome", () => {
       teamName: "Squadquarium",
       skinName: "aquarium",
       agentCount: 4,
+      statusBarPosition: "bottom",
       color: statusColor,
       bgColor: chromeBgColor,
       chromeColor,
       labelColor,
     });
 
-    expect(buffer.attrAt(0, 23)).toEqual({ color: chromeColor, bgColor: chromeBgColor });
-    expect(buffer.attrAt(2, layout.log.y - 1)).toEqual({
+    // Border uses chromeColor
+    expect(buffer.attrAt(0, 22)).toEqual({ color: chromeColor, bgColor: chromeBgColor });
+    // Label uses labelColor
+    expect(buffer.attrAt(2, layout.copilot.y - 1)).toEqual({
       color: labelColor,
       bgColor: chromeBgColor,
     });
-    expect(buffer.attrAt(0, 0)).toEqual({
+    // Status bar uses inverse
+    expect(buffer.attrAt(0, 23)).toEqual({
       inverse: true,
       color: statusColor,
       bgColor: chromeBgColor,

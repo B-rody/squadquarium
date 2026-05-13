@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Palette } from "../src/palette.js";
+import { describePalette, formatColorValue, Palette } from "../src/palette.js";
 
 const SKIN_PALETTE = {
   bg: "#001f1c",
@@ -29,20 +29,31 @@ describe("Palette", () => {
     expect(palette.resolve(token)).toEqual(hexToRgb(expected));
   });
 
-  it("uses 256-color fallback when truecolor is unavailable", () => {
+  it("keeps RGB values when truecolor detection is unavailable", () => {
     vi.stubEnv("TERM", "xterm-256color");
     const palette = new Palette(SKIN_PALETTE, { truecolor: false });
 
-    expect(palette.resolve("fg")).toEqual(expect.any(Number));
-    expect(palette.resolve("bg")).toEqual(expect.any(Number));
-    expect(palette.resolve("accent")).toEqual(expect.any(Number));
-    expect(palette.resolve("alert")).toEqual(expect.any(Number));
-    expect(palette.resolve("dim")).toEqual(expect.any(Number));
+    expect(palette.getColorLevel()).toBe("ansi256");
+    expect(palette.resolve("fg")).toEqual(hexToRgb(SKIN_PALETTE.fg));
+    expect(palette.resolve("bg")).toEqual(hexToRgb(SKIN_PALETTE.bg));
+    expect(palette.resolve("accent")).toEqual(hexToRgb(SKIN_PALETTE.accent));
+    expect(palette.resolve("alert")).toEqual(hexToRgb(SKIN_PALETTE.alert));
+    expect(palette.resolve("dim")).toEqual(hexToRgb(SKIN_PALETTE.dim));
   });
 
   it("falls back unknown tokens to fg", () => {
     const palette = new Palette(SKIN_PALETTE, { truecolor: true });
 
     expect(palette.resolve("unknown-token")).toEqual(hexToRgb(SKIN_PALETTE.fg));
+  });
+
+  it("describes raw and resolved palette values", () => {
+    const palette = new Palette(SKIN_PALETTE, { truecolor: true, colorLevel: "truecolor" });
+
+    expect(describePalette(palette, ["bg", "fg"])).toEqual([
+      "[DEBUG] palette mode=truecolor raw bg=#001f1c fg=#00bfa5",
+      "[DEBUG] palette resolved bg=#001f1c=>rgb(0,31,28) fg=#00bfa5=>rgb(0,191,165)",
+    ]);
+    expect(formatColorValue({ r: 1, g: 2, b: 3 })).toBe("rgb(1,2,3)");
   });
 });

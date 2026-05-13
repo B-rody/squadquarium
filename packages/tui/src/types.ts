@@ -20,10 +20,19 @@ export interface AppConfig {
   headlessSize?: { width: number; height: number };
   smokeTest?: boolean;
   skinsDir?: string;
+  debug?: boolean;
+  debugLogPath?: string;
+  /** Which process to spawn in the PTY pane. Default: "copilot" */
+  ptyMode?: "copilot" | "triage" | "loop";
+  /** Extra args passed through to the child process */
+  ptyExtraArgs?: string[];
 }
+
+export type ColorSupportLevel = "truecolor" | "ansi256" | "ansi16" | "none";
 
 export interface Capabilities {
   truecolor: boolean;
+  colorLevel: ColorSupportLevel;
   mouse: boolean;
   unicode: boolean;
   termProgram: string;

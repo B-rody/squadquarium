@@ -26,6 +26,12 @@ export class ActivityLog {
     this.scrollOffset = 0;
   }
 
+  public addMany(messages: string[], timestamp = formatTimestamp(new Date())): void {
+    for (const message of messages) {
+      this.add(message, timestamp);
+    }
+  }
+
   public clear(): void {
     this.entries.length = 0;
     this.scrollOffset = 0;

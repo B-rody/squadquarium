@@ -3,7 +3,7 @@ import { EventEmitter } from "node:events";
 import type { ColorValue } from "./palette.js";
 import type { Rect } from "./types.js";
 
-const TAB_COMPLETIONS = ["help", "clear", "exit", "quit", "status"];
+const TAB_COMPLETIONS = ["help", "inspect", "team", "clear", "exit", "quit", "status"];
 
 export interface InputLineColors {
   promptColor: ColorValue;
@@ -140,7 +140,7 @@ export class InputLine extends EventEmitter<{ command: [string] }> {
     }
 
     if (rect.height > 1) {
-      const hint = "Enter=run  Tab=complete  Up/Down=history";
+      const hint = "Enter=send  Try: inspect Lambert  Chat bridge: @Dallas <msg>";
       buffer.put(
         { x: 0, y: 1, attr: { color: colors.hintColor, bgColor: colors.bgColor } },
         hint.slice(0, rect.width),

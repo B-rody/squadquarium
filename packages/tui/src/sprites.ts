@@ -29,6 +29,22 @@ export interface SpriteSheet {
   roles: Record<string, SpriteDef>;
 }
 
+function renderGlyph(glyph: string): string {
+  return glyph === " " ? "·" : glyph;
+}
+
+function uniqueColorTokens(frame: SpriteFrame): string[] {
+  const tokens = new Set<string>();
+  for (const row of frame.cells) {
+    for (const cell of row) {
+      tokens.add(cell.fg);
+      tokens.add(cell.bg);
+    }
+  }
+
+  return [...tokens];
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -187,6 +203,29 @@ export function validateSpriteSheet(value: unknown): SpriteSheet {
 
 export function parseSpriteSheet(json: string): SpriteSheet {
   return validateSpriteSheet(JSON.parse(json) as unknown);
+}
+
+export function describeSpriteFrame(frame: SpriteFrame): string {
+  return frame.cells.map((row) => row.map((cell) => renderGlyph(cell.glyph)).join("")).join("|");
+}
+
+export function describeSpriteSheet(sheet: SpriteSheet): string[] {
+  const roles = Object.keys(sheet.roles);
+  const lines = [`[DEBUG] sprites roles=${roles.length}: ${roles.join(",")}`];
+
+  for (const roleName of roles) {
+    const role = sheet.roles[roleName];
+    const stateNames = Object.keys(role?.states ?? {});
+    const firstStateName = stateNames[0];
+    const firstFrame = firstStateName ? role?.states[firstStateName]?.frames[0] : undefined;
+    const preview = firstFrame ? describeSpriteFrame(firstFrame) : "(no frames)";
+    const colors = firstFrame ? uniqueColorTokens(firstFrame).join("/") : "(none)";
+    lines.push(
+      `[DEBUG] sprite ${roleName} states=${stateNames.join(",")} sample=${firstStateName ?? "(none)"}[0]=${preview} colors=${colors}`,
+    );
+  }
+
+  return lines;
 }
 
 export async function loadSprites(path: string): Promise<SpriteSheet> {

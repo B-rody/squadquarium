@@ -33,8 +33,19 @@ describe("Aquarium", () => {
   it("hitTest returns undefined for empty space", () => {
     aquarium.addActor("lead", 5, 4);
 
-    expect(aquarium.hitTest(0, 0)).toBeUndefined();
-    expect(aquarium.hitTest(5, 4)).toBeUndefined();
+    expect(aquarium.hitTest(0, 19)).toBeUndefined();
+    expect(aquarium.hitTest(30, 2)).toBeUndefined();
+  });
+
+  it("hitTest accepts the actor label and card bounds when labels are configured", () => {
+    const labeled = new Aquarium(40, 20, {
+      spriteSheet,
+      capabilities: { truecolor: true },
+      roleLabels: { lead: { name: "Dallas", role: "Lead" } },
+    });
+    const actor = labeled.addActor("lead", 5, 4);
+
+    expect(labeled.hitTest(3, 6)).toBe(actor);
   });
 
   it("tick advances all actor frames", () => {
@@ -73,6 +84,18 @@ describe("Aquarium", () => {
             }),
           }),
         }),
+      ]),
+    );
+  });
+
+  it("describes the colorized render plan for debug logging", () => {
+    aquarium.addActor("lead", 5, 4);
+
+    expect(aquarium.describeDebugRender()).toEqual(
+      expect.arrayContaining([
+        "[DEBUG] render fill fg=rgb(244,251,255) bg=rgb(0,27,46) mode=truecolor",
+        expect.stringContaining("[DEBUG] render lead.idle[0]"),
+        expect.stringContaining("fg alert=rgb(239,71,111)"),
       ]),
     );
   });

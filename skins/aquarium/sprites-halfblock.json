@@ -1,0 +1,238 @@
+{
+  "_comment": "Half-block pixel-art sprites. Each 'pixel' is a palette color token. Two pixel rows = one terminal row via ▀ half-block rendering. null = transparent.",
+  "format": "halfblock",
+  "roles": {
+    "lead": {
+      "_comment": "Anglerfish with bioluminescent lure. 10w × 8h pixels = 10×4 terminal cells.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "_comment": "Lure glowing",
+              "pixels": [
+                [null, null, "accent", null, null, null, null, null, null, null],
+                [null, "accent", null, null, null, null, null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                ["fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", null, "dim", null, null],
+                [null, null, "fg", null, "fg", null, null, null, null, null]
+              ]
+            },
+            {
+              "_comment": "Lure dim",
+              "pixels": [
+                [null, null, null, null, null, null, null, null, null, null],
+                [null, "dim", null, null, null, null, null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                ["fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", null, "dim", null, null],
+                [null, null, "fg", null, "fg", null, null, null, null, null]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, "accent", null, null, null, null, null, null, null],
+                [null, "accent", null, null, null, null, null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                ["fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", "dim", "dim", null],
+                [null, null, "fg", null, "fg", null, null, null, null, null]
+              ]
+            },
+            {
+              "pixels": [
+                [null, null, null, "accent", null, null, null, null, null, null],
+                [null, null, "accent", null, null, null, null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "dim", "dim", null],
+                [null, null, null, "fg", null, "fg", null, null, null, null]
+              ]
+            }
+          ]
+        },
+        "celebrate": {
+          "frames": [
+            {
+              "pixels": [
+                [null, "accent", null, "accent", null, null, null, null, null, null],
+                ["accent", null, "accent", null, null, null, null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                ["fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, null, "fg", null, "fg", null, null, null, null, null]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "frontend": {
+      "_comment": "Seahorse. Curled tail, vertical body. 8w × 10h pixels = 8×5 terminal cells.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", null, null, null],
+                [null, "fg", "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null],
+                [null, null, null, "fg", "fg", null, null, null],
+                [null, null, null, null, "fg", "fg", null, null],
+                [null, null, null, "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", null, null, null, null]
+              ]
+            },
+            {
+              "pixels": [
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", null, null, null],
+                [null, "fg", "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null],
+                [null, null, null, "fg", "fg", null, null, null],
+                [null, null, null, "fg", "fg", null, null, null],
+                [null, null, null, null, "fg", "fg", null, null],
+                [null, null, null, "fg", "fg", null, null, null]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, "fg", "accent", "fg", "fg", null, null, null],
+                [null, "fg", "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", null, null, null, null],
+                [null, null, "fg", "fg", "dim", null, null, null],
+                [null, null, "fg", "fg", "fg", null, null, null],
+                [null, null, null, "fg", "fg", null, null, null],
+                [null, null, null, null, "fg", "fg", null, null],
+                [null, null, null, "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", null, null, null, null]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "backend": {
+      "_comment": "Octopus. Round head, tentacles splaying. 10w × 8h pixels = 10×4 terminal cells.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, null, "fg", "fg", "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "accent", "fg", "fg", "accent", "fg", "fg", null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", null, "fg", null, null, "fg", null, "fg", null],
+                ["fg", null, "fg", null, null, null, null, "fg", null, "fg"],
+                [null, null, null, null, null, null, null, null, null, null]
+              ]
+            },
+            {
+              "pixels": [
+                [null, null, null, "fg", "fg", "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "accent", "fg", "fg", "accent", "fg", "fg", null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                ["fg", null, "fg", null, null, null, null, "fg", null, "fg"],
+                [null, "fg", null, null, null, null, null, null, "fg", null],
+                [null, null, null, null, null, null, null, null, null, null]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, null, "fg", "fg", "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "fg", "accent", "fg", "fg", "accent", "fg", "fg", null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", "fg", "fg", null],
+                [null, null, "fg", "fg", "fg", "fg", "fg", "fg", null, null],
+                [null, "fg", "dim", "fg", null, null, "fg", "dim", "fg", null],
+                ["fg", null, "fg", null, "dim", "dim", null, "fg", null, "fg"],
+                [null, null, null, null, null, null, null, null, null, null]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "scribe": {
+      "_comment": "Squid. Elongated body, trailing tentacles. 10w × 8h pixels = 10×4 terminal cells.",
+      "states": {
+        "idle": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, "fg", "accent", "fg", "fg", "accent", "fg", null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, null, null, "fg", "fg", null, null, null, null, null],
+                [null, null, null, "fg", "fg", null, null, null, null, null],
+                [null, null, "dim", null, null, "dim", null, null, null, null]
+              ]
+            },
+            {
+              "pixels": [
+                [null, null, "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, "fg", "accent", "fg", "fg", "accent", "fg", null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, null, null, "fg", "fg", null, null, null, null, null],
+                [null, null, "dim", "fg", "fg", "dim", null, null, null, null],
+                [null, null, null, null, null, null, null, null, null, null]
+              ]
+            }
+          ]
+        },
+        "working": {
+          "frames": [
+            {
+              "pixels": [
+                [null, null, "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, "fg", "accent", "fg", "fg", "accent", "fg", null, null, null],
+                [null, "fg", "fg", "fg", "fg", "fg", "fg", null, null, null],
+                [null, null, "fg", "fg", "fg", "fg", null, null, null, null],
+                [null, null, "dim", "fg", "fg", "dim", null, null, null, null],
+                [null, null, null, "fg", "fg", null, null, null, null, null],
+                [null, null, "dim", null, null, "dim", null, null, null, null]
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

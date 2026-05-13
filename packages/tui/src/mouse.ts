@@ -38,13 +38,22 @@ export class MouseHandler {
       return true;
     }
 
-    if (isWithin(data, regions.aquarium) && name.includes("LEFT_BUTTON")) {
+    if (isWithin(data, regions.aquarium) && isLeftButtonPress(name)) {
       this.options.onAquariumClick(data.x - regions.aquarium.x, data.y - regions.aquarium.y);
       return true;
     }
 
     return false;
   }
+}
+
+function isLeftButtonPress(name: string): boolean {
+  const normalized = name.toUpperCase();
+  return (
+    normalized.includes("LEFT_BUTTON") &&
+    !normalized.includes("RELEASE") &&
+    !normalized.includes("UP")
+  );
 }
 
 function isWithin(point: MouseEventData, rect: Rect): boolean {

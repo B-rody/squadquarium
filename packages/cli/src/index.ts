@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startApp } from "@squadquarium/tui";
+import type { PtyMode } from "@squadquarium/tui";
 import { runAspire } from "./aspire.js";
 import { checkDirectSubcommand, parseArgs } from "./argv.js";
 import { runDiorama } from "./diorama.js";
@@ -38,17 +39,22 @@ async function main(): Promise<void> {
       await runAspire(process.argv.slice(3));
       return;
     }
+    // triage and loop: pass through to startApp with the right PTY mode
+    if (directSub === "triage" || directSub === "loop") {
+      const cwd = process.cwd();
+      const skinsDir = resolveSkinsDir();
+      await startApp({
+        cwd,
+        skinsDir,
+        ptyMode: directSub as PtyMode,
+        ptyExtraArgs: process.argv.slice(3),
+      });
+      return;
+    }
 
     const args = parseArgs();
     const cwd = path.resolve(args.path);
-    const packagedSkins = path.resolve(__dirname, "..", "skins");
-    const monoSkins = path.resolve(__dirname, "..", "..", "..", "skins");
-    const cwdSkins = path.resolve(process.cwd(), "skins");
-    const skinsDir = fs.existsSync(packagedSkins)
-      ? packagedSkins
-      : fs.existsSync(monoSkins)
-        ? monoSkins
-        : cwdSkins;
+    const skinsDir = resolveSkinsDir();
 
     if (args.subcommand === "doctor") {
       const result = await runDoctor();
@@ -70,6 +76,10 @@ async function main(): Promise<void> {
       headless: args.headlessSmoke,
       smokeTest: args.headlessSmoke,
       skinsDir,
+      debug: args.debug,
+      debugLogPath: args.debugLogPath,
+      ptyMode: "copilot",
+      ptyExtraArgs: args.yolo ? ["--yolo"] : [],
     });
 
     if (args.headlessSmoke) {
@@ -79,4 +89,15 @@ async function main(): Promise<void> {
     console.error(`squadquarium: ${err instanceof Error ? err.message : String(err)}`);
     process.exitCode = 1;
   }
+}
+
+function resolveSkinsDir(): string {
+  const packagedSkins = path.resolve(__dirname, "..", "skins");
+  const monoSkins = path.resolve(__dirname, "..", "..", "..", "skins");
+  const cwdSkins = path.resolve(process.cwd(), "skins");
+  return fs.existsSync(packagedSkins)
+    ? packagedSkins
+    : fs.existsSync(monoSkins)
+      ? monoSkins
+      : cwdSkins;
 }

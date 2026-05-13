@@ -1,3 +1,5 @@
+import type { ColorSupportLevel } from "./types.js";
+
 const DEFAULT_PALETTE = {
   bg: "#001b2e",
   fg: "#f4fbff",
@@ -6,32 +8,17 @@ const DEFAULT_PALETTE = {
   dim: "#6b8ca3",
 } satisfies Record<string, string>;
 
-const ANSI_16 = [
-  [0x00, 0x00, 0x00],
-  [0x80, 0x00, 0x00],
-  [0x00, 0x80, 0x00],
-  [0x80, 0x80, 0x00],
-  [0x00, 0x00, 0x80],
-  [0x80, 0x00, 0x80],
-  [0x00, 0x80, 0x80],
-  [0xc0, 0xc0, 0xc0],
-  [0x80, 0x80, 0x80],
-  [0xff, 0x00, 0x00],
-  [0x00, 0xff, 0x00],
-  [0xff, 0xff, 0x00],
-  [0x00, 0x00, 0xff],
-  [0xff, 0x00, 0xff],
-  [0x00, 0xff, 0xff],
-  [0xff, 0xff, 0xff],
-] as const;
-
 export interface Rgb {
   r: number;
   g: number;
   b: number;
 }
 
-export type ColorValue = number | Rgb;
+export type ColorValue = Rgb;
+export interface PaletteCapabilities {
+  truecolor: boolean;
+  colorLevel?: ColorSupportLevel;
+}
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -54,53 +41,16 @@ function rgbToHex({ r, g, b }: Rgb): string {
   return `#${[r, g, b].map((value) => clamp(value).toString(16).padStart(2, "0")).join("")}`;
 }
 
+export function formatColorValue(color: ColorValue): string {
+  return `rgb(${color.r},${color.g},${color.b})`;
+}
+
 function dimRgb(rgb: Rgb): Rgb {
   return {
     r: clamp(rgb.r * 0.6),
     g: clamp(rgb.g * 0.6),
     b: clamp(rgb.b * 0.6),
   };
-}
-
-function distance(a: Rgb, b: Rgb): number {
-  return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
-}
-
-function toAnsi16(rgb: Rgb): number {
-  let bestIndex = 0;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  ANSI_16.forEach((candidate, index) => {
-    const candidateRgb = { r: candidate[0], g: candidate[1], b: candidate[2] };
-    const candidateDistance = distance(rgb, candidateRgb);
-    if (candidateDistance < bestDistance) {
-      bestDistance = candidateDistance;
-      bestIndex = index;
-    }
-  });
-
-  return bestIndex;
-}
-
-function toAnsi256(rgb: Rgb): number {
-  const components = [rgb.r, rgb.g, rgb.b];
-  const cube = components.map((value) => Math.round((value / 255) * 5));
-  const cubeIndex = 16 + 36 * cube[0] + 6 * cube[1] + cube[2];
-
-  const average = Math.round((rgb.r + rgb.g + rgb.b) / 3);
-  const grayscaleStep =
-    average < 8 ? 0 : average > 248 ? 23 : Math.round(((average - 8) / 247) * 23);
-  const grayscaleIndex = 232 + grayscaleStep;
-
-  const cubeRgb = {
-    r: cube[0] === 0 ? 0 : 55 + cube[0] * 40,
-    g: cube[1] === 0 ? 0 : 55 + cube[1] * 40,
-    b: cube[2] === 0 ? 0 : 55 + cube[2] * 40,
-  };
-  const grayLevel = grayscaleStep === 0 ? 8 : 8 + grayscaleStep * 10;
-  const grayRgb = { r: grayLevel, g: grayLevel, b: grayLevel };
-
-  return distance(rgb, cubeRgb) <= distance(rgb, grayRgb) ? cubeIndex : grayscaleIndex;
 }
 
 function supports256ColorFallback(): boolean {
@@ -114,19 +64,31 @@ function supports256ColorFallback(): boolean {
 
 export class Palette {
   private readonly palette: Record<string, string>;
-  private readonly truecolor: boolean;
-  private readonly use256Color: boolean;
+  private readonly colorLevel: Exclude<ColorSupportLevel, "none">;
 
-  constructor(skinPalette: Record<string, string>, capabilities: { truecolor: boolean }) {
+  constructor(skinPalette: Record<string, string>, capabilities: PaletteCapabilities) {
     this.palette = {
       ...DEFAULT_PALETTE,
       ...skinPalette,
     };
-    this.truecolor = capabilities.truecolor;
-    this.use256Color = !capabilities.truecolor && supports256ColorFallback();
+    this.colorLevel = capabilities.truecolor
+      ? "truecolor"
+      : capabilities.colorLevel === "ansi256"
+        ? "ansi256"
+        : supports256ColorFallback()
+          ? "ansi256"
+          : "ansi16";
   }
 
-  private resolveHex(token: string): string {
+  getColorLevel(): Exclude<ColorSupportLevel, "none"> {
+    return this.colorLevel;
+  }
+
+  getEntries(): Record<string, string> {
+    return { ...this.palette };
+  }
+
+  resolveTokenHex(token: string): string {
     if (token === "dim") {
       return normalizeHex(
         this.palette.dim ?? rgbToHex(dimRgb(hexToRgb(this.palette.fg ?? DEFAULT_PALETTE.fg))),
@@ -138,14 +100,28 @@ export class Palette {
   }
 
   resolve(token: string): ColorValue {
-    const hex = this.resolveHex(token);
-    const rgb = hexToRgb(hex);
-    if (this.truecolor) {
-      return rgb;
-    }
-
-    return this.use256Color ? toAnsi256(rgb) : toAnsi16(rgb);
+    const hex = this.resolveTokenHex(token);
+    return hexToRgb(hex);
   }
+}
+
+export function describePalette(
+  palette: Palette,
+  tokens: string[] = Object.keys(palette.getEntries()),
+): string[] {
+  const entries = palette.getEntries();
+  const rawSummary = tokens.map(
+    (token) => `${token}=${entries[token] ?? palette.resolveTokenHex(token)}`,
+  );
+  const resolvedSummary = tokens.map(
+    (token) =>
+      `${token}=${palette.resolveTokenHex(token)}=>${formatColorValue(palette.resolve(token))}`,
+  );
+
+  return [
+    `[DEBUG] palette mode=${palette.getColorLevel()} raw ${rawSummary.join(" ")}`,
+    `[DEBUG] palette resolved ${resolvedSummary.join(" ")}`,
+  ];
 }
 
 export { DEFAULT_PALETTE };
