@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkDirectSubcommand, parseArgs } from "../src/argv.js";
+import { checkDirectSubcommand, parseArgs, parseSdkWorkflowArgs } from "../src/argv.js";
 
 describe("parseArgs", () => {
   it("parses TUI options", () => {
@@ -12,6 +12,9 @@ describe("parseArgs", () => {
       "--debug",
       "--debug-log",
       "C:\\Temp\\sqq-debug.log",
+      "--model",
+      "gpt-5.4",
+      "--mouse",
       "--attach",
       "C:\\Workspace\\team-a",
       "--attach",
@@ -24,6 +27,8 @@ describe("parseArgs", () => {
       headlessSmoke: true,
       debug: true,
       debugLogPath: "C:\\Temp\\sqq-debug.log",
+      model: "gpt-5.4",
+      enableMouse: true,
       subcommand: null,
       attachPaths: ["C:\\Workspace\\team-a", "C:\\Workspace\\team-b"],
     });
@@ -44,5 +49,24 @@ describe("parseArgs", () => {
   it("parses --yolo flag", () => {
     const args = parseArgs(["node", "squadquarium", "--yolo"]);
     expect(args.yolo).toBe(true);
+    expect(args.enableMouse).toBe(false);
+  });
+
+  it("parses SDK workflow flags without passing them through", () => {
+    const args = parseSdkWorkflowArgs(["--model", "gpt-5.4", "--yolo", "--execute"]);
+    expect(args).toEqual({
+      model: "gpt-5.4",
+      yolo: true,
+      passthrough: ["--execute"],
+    });
+  });
+
+  it("parses --model=value for SDK workflow flags", () => {
+    const args = parseSdkWorkflowArgs(["--model=claude-sonnet-4.6", "--interval", "5"]);
+    expect(args).toEqual({
+      model: "claude-sonnet-4.6",
+      yolo: false,
+      passthrough: ["--interval", "5"],
+    });
   });
 });

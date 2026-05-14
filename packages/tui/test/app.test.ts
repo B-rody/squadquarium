@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { ActivityLog } from "../src/activity-log.js";
 import {
+  completeSlashInput,
   createHelpMessages,
+  createSlashCommandHelpMessages,
   createStartupMessages,
+  detectPromptTargetAgentId,
+  getSlashCompletionHint,
   handleAquariumClick,
   startApp,
   stopApp,
@@ -26,7 +30,50 @@ describe("app", () => {
   it("lists help text", () => {
     const help = createHelpMessages();
     expect(help.length).toBeGreaterThan(0);
-    expect(help.join("\n")).toContain("/status");
+    expect(help.join("\n")).toContain("GitHub Copilot SDK");
+    expect(help.join("\n")).toContain("/help");
+    expect(help.join("\n")).toContain("/model");
+  });
+
+  it("lists local slash commands", () => {
+    const help = createSlashCommandHelpMessages();
+    expect(help.join("\n")).toContain("/help");
+    expect(help.join("\n")).toContain("/models");
+    expect(help.join("\n")).toContain("/model <id>");
+    expect(help.join("\n")).toContain("/copy");
+    expect(help.join("\n")).toContain("Tab");
+  });
+
+  it("detects explicit prompt-leading agent names for optimistic activity", () => {
+    const rows = [
+      { id: "dallas", name: "Dallas" },
+      { id: "lambert", name: "Lambert" },
+    ];
+
+    expect(detectPromptTargetAgentId("dallas say hi", rows)).toBe("dallas");
+    expect(detectPromptTargetAgentId("@lambert check this", rows)).toBe("lambert");
+    expect(detectPromptTargetAgentId("ask dallas to say hi", rows)).toBeNull();
+  });
+
+  it("autocompletes local slash commands", () => {
+    expect(completeSlashInput("/he")).toEqual({ kind: "complete", value: "/help " });
+    expect(completeSlashInput("/m")).toEqual({ kind: "complete", value: "/model" });
+    expect(completeSlashInput("/")).toMatchObject({ kind: "suggest" });
+    expect(completeSlashInput("//literal")).toEqual({ kind: "none" });
+  });
+
+  it("builds inline slash completion hints", () => {
+    expect(getSlashCompletionHint("/he")).toBe("lp ");
+    expect(getSlashCompletionHint("/m")).toBe("odel");
+    expect(getSlashCompletionHint("/model")).toBeNull();
+  });
+
+  it("autocompletes model ids when available", () => {
+    expect(completeSlashInput("/model g", undefined, ["gpt-5.4", "claude-sonnet-4.6"])).toEqual({
+      kind: "complete",
+      value: "/model gpt-5.4",
+    });
+    expect(completeSlashInput("/model g", undefined, [])).toEqual({ kind: "need-models" });
   });
 
   it("only logs aquarium clicks when an actor is hit", () => {

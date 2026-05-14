@@ -2,24 +2,30 @@ import type { Rect } from "./types.js";
 
 const MIN_AQUARIUM_HEIGHT = 5;
 const MIN_COPILOT_HEIGHT = 8;
+const AQUARIUM_RATIO = 0.4;
+const MIN_COPILOT_WIDTH = 48;
+const MIN_COMMAND_CENTER_WIDTH = 24;
+const COMMAND_CENTER_RATIO = 0.28;
 const BORDER_THICKNESS = 1;
 const STATUS_BAR_HEIGHT = 1;
 const SEPARATOR_HEIGHT = 1;
+const VERTICAL_SEPARATOR_WIDTH = 1;
 
 export interface Layout {
   width: number;
   height: number;
   aquarium: Rect;
   copilot: Rect;
+  commandCenter: Rect;
   statusBar: Rect;
   /** @deprecated use copilot instead — kept for chrome/test compat */
   log: Rect;
-  /** @deprecated no longer a separate region — input goes to PTY */
+  /** @deprecated no longer a separate region — input is rendered in the SDK pane */
   input: Rect;
 }
 
 /**
- * Calculate the split layout: aquarium (~30% top) + copilot pane (~70% bottom).
+ * Calculate the split layout: aquarium (~40% top) + copilot/command center bottom.
  * A status bar sits at the very bottom. Regions never overlap.
  */
 export function calculateLayout(width: number, height: number): Layout {
@@ -33,8 +39,8 @@ export function calculateLayout(width: number, height: number): Layout {
     safeHeight - BORDER_THICKNESS * 2 - STATUS_BAR_HEIGHT - SEPARATOR_HEIGHT,
   );
 
-  // Target: aquarium ≈ 30%, copilot ≈ 70%
-  let aquariumHeight = Math.round(usable * 0.3);
+  // Target: aquarium ≈ 40%, lower command/chat area ≈ 60%
+  let aquariumHeight = Math.round(usable * AQUARIUM_RATIO);
   let copilotHeight = usable - aquariumHeight;
 
   // Enforce minimums when there's enough space
@@ -59,10 +65,25 @@ export function calculateLayout(width: number, height: number): Layout {
   };
 
   const copilotY = aquarium.y + aquariumHeight + SEPARATOR_HEIGHT;
+  const canShowCommandCenter =
+    innerWidth >= MIN_COPILOT_WIDTH + MIN_COMMAND_CENTER_WIDTH + VERTICAL_SEPARATOR_WIDTH;
+  const commandCenterWidth = canShowCommandCenter
+    ? Math.max(MIN_COMMAND_CENTER_WIDTH, Math.round(innerWidth * COMMAND_CENTER_RATIO))
+    : 0;
+  const commandSeparatorWidth = commandCenterWidth > 0 ? VERTICAL_SEPARATOR_WIDTH : 0;
+  const copilotWidth = innerWidth - commandCenterWidth - commandSeparatorWidth;
+
   const copilot: Rect = {
     x: BORDER_THICKNESS,
     y: copilotY,
-    width: innerWidth,
+    width: copilotWidth,
+    height: copilotHeight,
+  };
+
+  const commandCenter: Rect = {
+    x: copilot.x + copilot.width + commandSeparatorWidth,
+    y: copilotY,
+    width: commandCenterWidth,
     height: copilotHeight,
   };
 
@@ -78,6 +99,7 @@ export function calculateLayout(width: number, height: number): Layout {
     height: safeHeight,
     aquarium,
     copilot,
+    commandCenter,
     statusBar,
     // Compat aliases — copilot pane replaces both log and input
     log: copilot,

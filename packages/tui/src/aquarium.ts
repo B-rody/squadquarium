@@ -40,6 +40,7 @@ export interface AquariumOptions {
   fallbacks?: Record<string, string>;
   capabilities?: PaletteCapabilities;
   roleLabels?: Record<string, ActorLabel>;
+  autoCycleStates?: boolean;
 }
 
 const DEFAULT_FALLBACKS = {
@@ -50,6 +51,7 @@ const DEFAULT_FALLBACKS = {
 } satisfies Record<string, string>;
 
 export interface ActorLabel {
+  id?: string;
   name: string;
   role: string;
 }
@@ -180,7 +182,7 @@ export class Aquarium {
       options.capabilities ?? detectCapabilities(),
     );
     this.roleLabels = options.roleLabels ?? {};
-    this.actors = new ActorManager(width, height);
+    this.actors = new ActorManager(width, height, { autoCycleStates: options.autoCycleStates });
   }
 
   addActor(role: string, x: number, y: number, state = "idle"): Actor {
@@ -196,6 +198,18 @@ export class Aquarium {
 
   setActorLabel(actor: Actor, label: ActorLabel): void {
     this.actorLabels.set(actor, label);
+  }
+
+  setActorStateById(id: string, state: string): boolean {
+    let changed = false;
+    for (const actor of this.actors.getActors()) {
+      const label = this.getActorLabel(actor);
+      if (label?.id === id) {
+        actor.setState(state);
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   tick(): void {
@@ -240,7 +254,7 @@ export class Aquarium {
       if (!halfBlockFrame) continue;
 
       const frame = halfBlockFrame.frame;
-      const pixels = resolveFramePixels(frame, this.palette);
+      const pixels = this.tintPixels(resolveFramePixels(frame, this.palette), actor);
       // Actor y is in terminal rows; convert to pixel rows
       canvas.blitPixels(actor.x, actor.y * 2, pixels);
     }
@@ -250,8 +264,15 @@ export class Aquarium {
 
     // Overlay text labels (rendered directly to buffer, not through half-block canvas)
     for (const actor of this.actors.getActors()) {
-      if (this.getCurrentHalfBlockFrame(actor)) {
+      const halfBlockFrame = this.getCurrentHalfBlockFrame(actor);
+      if (halfBlockFrame) {
         this.renderHalfBlockLabel(buffer, actor, bg);
+        this.renderThinkingMarker(
+          buffer,
+          actor,
+          this.getHalfBlockActorBounds(actor, halfBlockFrame.frame),
+          bg,
+        );
       } else if (this.sprites.roles[actor.role]) {
         this.renderAsciiActor(buffer, actor);
       }
@@ -260,7 +281,6 @@ export class Aquarium {
 
   private renderHalfBlockBackdrop(canvas: HalfBlockCanvas, bg: Rgb): void {
     const dim = this.palette.resolve("dim");
-    const accent = this.palette.resolve("accent");
     const pixelHeight = canvas.pixelHeight;
 
     // Water gradient: slightly lighter at top, darker at bottom
@@ -308,13 +328,15 @@ export class Aquarium {
 
     // Kelp — small vertical strands
     if (pixelHeight >= 10 && this.width >= 12) {
+      const kelp = this.palette.resolve("kelp");
+      const kelpLight = this.palette.resolve("kelpLight");
       const kelpSpacing = Math.max(15, Math.floor(this.width / 3));
       for (let x = 5; x < this.width - 3; x += kelpSpacing) {
         const kelpHeight = Math.min(5, pixelHeight - 6);
         const baseY = pixelHeight - 4;
         for (let k = 0; k < kelpHeight; k++) {
           const sway = Math.sin((k + this.tickCount * 0.2) * 0.8) > 0 ? 1 : 0;
-          canvas.setPixel(x + sway, baseY - k, accent);
+          canvas.setPixel(x + sway, baseY - k, k % 2 === 0 ? kelpLight : kelp);
         }
       }
     }
@@ -342,18 +364,17 @@ export class Aquarium {
     if (!state || state.frames.length === 0) return;
 
     const frame = state.frames[actor.frameIndex % state.frames.length];
-    const size = getFrameSize(frame);
-    // Label goes below the sprite (in terminal rows)
-    const spriteTermRows = Math.ceil(size.pixelHeight / 2);
-    const labelY = actor.y + spriteTermRows;
+    const bounds = this.getHalfBlockActorBounds(actor, frame);
+    const labelY = bounds.y + bounds.height - 1;
     if (labelY >= this.height) return;
 
-    const labelText = `${label.name}`;
-    const x = Math.max(0, Math.min(actor.x, this.width - labelText.length));
+    const labelText = this.formatHalfBlockLabel(actor, label);
+    const x = bounds.x;
+    const labelColor = this.getActorTint(actor);
 
     this.put(buffer, x, labelY, labelText.slice(0, this.width - x), {
-      color: this.palette.resolve("accent"),
-      bgColor: bg,
+      color: labelColor,
+      bgColor: actor.state === "working" ? mixRgb(bg, labelColor, 0.18) : bg,
     });
   }
 
@@ -402,8 +423,8 @@ export class Aquarium {
             x: targetX,
             y: targetY,
             attr: {
-              color: this.palette.resolve(cell.fg),
-              bgColor: this.palette.resolve(cell.bg),
+              color: this.resolveActorColor(actor, cell.fg),
+              bgColor: this.resolveActorColor(actor, cell.bg),
             },
             wrap: false,
             dx: 0,
@@ -502,7 +523,6 @@ export class Aquarium {
 
   private renderBackdrop(buffer: ScreenBufferHD): void {
     const dim = this.palette.resolve("dim");
-    const accent = this.palette.resolve("accent");
     const bg = this.palette.resolve("bg");
 
     // Waterline — subtle wave at top
@@ -534,12 +554,17 @@ export class Aquarium {
 
     // Kelp — only if pane is tall enough
     if (this.height >= 6) {
+      const kelp = this.palette.resolve("kelp");
+      const kelpLight = this.palette.resolve("kelpLight");
       const kelpSpacing = Math.max(20, Math.floor(this.width / 3));
       for (let x = 6; x < this.width - 2; x += kelpSpacing) {
         const maxKelp = Math.min(3, this.height - 4);
         for (let k = 0; k < maxKelp; k += 1) {
           const glyph = (k + this.tickCount) % 2 === 0 ? ")" : "(";
-          this.put(buffer, x, floorY - 1 - k, glyph, { color: accent, bgColor: bg });
+          this.put(buffer, x, floorY - 1 - k, glyph, {
+            color: k % 2 === 0 ? kelpLight : kelp,
+            bgColor: bg,
+          });
         }
       }
     }
@@ -553,21 +578,22 @@ export class Aquarium {
 
     const bounds = this.getActorBounds(actor, frame);
     const bg = this.palette.resolve("bg");
-    const labelText = `${label.name} - ${label.role}`;
+    const labelText = this.formatActorLabel(actor, label);
     const x = bounds.x;
     const y = bounds.y + bounds.height - 1;
 
     this.put(buffer, x, y, labelText.slice(0, bounds.width), {
       color: this.palette.resolve("accent"),
-      bgColor: bg,
+      bgColor: actor.state === "working" ? mixRgb(bg, this.getActorTint(actor), 0.18) : bg,
     });
+    this.renderThinkingMarker(buffer, actor, bounds, bg);
   }
 
   private getActorBounds(actor: Actor, frame = this.getCurrentFrame(actor)): ActorBounds {
     const label = this.getActorLabel(actor);
     const spriteWidth = Math.max(...frame.cells.map((row) => row.length), 1);
     const spriteHeight = frame.cells.length;
-    const labelWidth = label ? `${label.name} - ${label.role}`.length : 0;
+    const labelWidth = label ? this.formatActorLabel(actor, label).length : 0;
     const width = Math.min(this.width, Math.max(spriteWidth, labelWidth) + 2);
     const spriteCenter = actor.x + Math.floor(spriteWidth / 2);
     const x = clamp(spriteCenter - Math.floor(width / 2), 0, Math.max(0, this.width - width));
@@ -586,7 +612,7 @@ export class Aquarium {
     const size = getFrameSize(frame);
     const spriteWidth = Math.max(size.width, 1);
     const spriteHeight = Math.max(Math.ceil(size.pixelHeight / 2), 1);
-    const labelWidth = label ? label.name.length : 0;
+    const labelWidth = label ? this.formatHalfBlockLabel(actor, label).length : 0;
     const width = Math.min(this.width, Math.max(spriteWidth, labelWidth) + 2);
     const spriteCenter = actor.x + Math.floor(spriteWidth / 2);
     const x = clamp(spriteCenter - Math.floor(width / 2), 0, Math.max(0, this.width - width));
@@ -602,6 +628,70 @@ export class Aquarium {
 
   private getActorLabel(actor: Actor): ActorLabel | undefined {
     return this.actorLabels.get(actor) ?? this.roleLabels[actor.role];
+  }
+
+  private formatActorLabel(actor: Actor, label: ActorLabel): string {
+    return actor.state === "working" ? `[${label.name} BUSY]` : `[${label.name}]`;
+  }
+
+  private formatHalfBlockLabel(actor: Actor, label: ActorLabel): string {
+    return this.formatActorLabel(actor, label);
+  }
+
+  private tintPixels(pixels: (Rgb | null)[][], actor: Actor): (Rgb | null)[][] {
+    const fg = this.palette.resolve("fg");
+    const dim = this.palette.resolve("dim");
+    const tint = this.getActorTint(actor);
+    const tintDim = mixRgb(tint, this.palette.resolve("bg"), 0.45);
+
+    return pixels.map((row) =>
+      row.map((pixel) => {
+        if (!pixel) return null;
+        if (rgbEquals(pixel, fg)) return tint;
+        if (rgbEquals(pixel, dim)) return tintDim;
+        return pixel;
+      }),
+    );
+  }
+
+  private resolveActorColor(actor: Actor, token: string): Rgb {
+    if (token === "fg") return this.getActorTint(actor);
+    if (token === "dim") return mixRgb(this.getActorTint(actor), this.palette.resolve("bg"), 0.45);
+    return this.palette.resolve(token);
+  }
+
+  private getActorTint(actor: Actor): Rgb {
+    const label = this.getActorLabel(actor);
+    const key = `${label?.name ?? actor.role}:${label?.role ?? actor.state}`;
+    const base = tintFromIdentity(key);
+    return actor.state === "working" ? mixRgb(base, this.palette.resolve("accent"), 0.22) : base;
+  }
+
+  private renderThinkingMarker(
+    buffer: ScreenBufferHD,
+    actor: Actor,
+    bounds: ActorBounds,
+    bg: Rgb,
+  ): void {
+    if (actor.state !== "working") {
+      return;
+    }
+
+    const marker = this.formatWorkingMarker(bounds.width);
+    const travel = Math.max(1, bounds.width - marker.length);
+    const phase = this.tickCount % (travel + 1);
+    const x = clamp(bounds.x + phase, 0, Math.max(0, this.width - marker.length));
+    const y = bounds.y > 0 ? bounds.y - 1 : bounds.y;
+    this.put(buffer, x, y, marker, {
+      color: this.palette.resolve("accent"),
+      bgColor: mixRgb(bg, this.getActorTint(actor), 0.24),
+    });
+  }
+
+  private formatWorkingMarker(width: number): string {
+    if (width >= 15) return ">>> WORKING <<<";
+    if (width >= 9) return "WORKING";
+    return "***";
   }
 
   private put(
@@ -716,6 +806,85 @@ function containsPoint(bounds: ActorBounds, x: number, y: number): boolean {
   return (
     x >= bounds.x && y >= bounds.y && x < bounds.x + bounds.width && y < bounds.y + bounds.height
   );
+}
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+const IDENTITY_TINTS: Rgb[] = [
+  { r: 126, g: 222, b: 255 },
+  { r: 255, g: 186, b: 117 },
+  { r: 176, g: 235, b: 127 },
+  { r: 255, g: 136, b: 184 },
+  { r: 164, g: 153, b: 255 },
+  { r: 100, g: 226, b: 190 },
+  { r: 255, g: 219, b: 109 },
+  { r: 118, g: 176, b: 255 },
+  { r: 255, g: 151, b: 122 },
+  { r: 119, g: 232, b: 133 },
+  { r: 231, g: 143, b: 255 },
+  { r: 128, g: 211, b: 216 },
+  { r: 244, g: 170, b: 211 },
+  { r: 204, g: 229, b: 110 },
+  { r: 148, g: 197, b: 255 },
+  { r: 255, g: 199, b: 154 },
+  { r: 151, g: 240, b: 208 },
+  { r: 222, g: 172, b: 255 },
+  { r: 165, g: 224, b: 147 },
+  { r: 255, g: 169, b: 169 },
+  { r: 117, g: 214, b: 255 },
+  { r: 236, g: 216, b: 130 },
+  { r: 191, g: 188, b: 255 },
+  { r: 137, g: 232, b: 172 },
+];
+
+function tintFromIdentity(value: string): Rgb {
+  const hash = hashString(value);
+  const mixedHash = Math.imul(hash ^ (hash >>> 16), 2_654_435_761) >>> 0;
+  return IDENTITY_TINTS[mixedHash % IDENTITY_TINTS.length] ?? hslToRgb(mixedHash % 360, 0.72, 0.68);
+}
+
+function hslToRgb(hue: number, saturation: number, lightness: number): Rgb {
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const huePrime = hue / 60;
+  const second = chroma * (1 - Math.abs((huePrime % 2) - 1));
+  const [r1, g1, b1] =
+    huePrime < 1
+      ? [chroma, second, 0]
+      : huePrime < 2
+        ? [second, chroma, 0]
+        : huePrime < 3
+          ? [0, chroma, second]
+          : huePrime < 4
+            ? [0, second, chroma]
+            : huePrime < 5
+              ? [second, 0, chroma]
+              : [chroma, 0, second];
+  const match = lightness - chroma / 2;
+
+  return {
+    r: Math.round((r1 + match) * 255),
+    g: Math.round((g1 + match) * 255),
+    b: Math.round((b1 + match) * 255),
+  };
+}
+
+function rgbEquals(a: Rgb, b: Rgb): boolean {
+  return a.r === b.r && a.g === b.g && a.b === b.b;
+}
+
+function mixRgb(a: Rgb, b: Rgb, bWeight: number): Rgb {
+  const aWeight = 1 - bWeight;
+  return {
+    r: Math.round(a.r * aWeight + b.r * bWeight),
+    g: Math.round(a.g * aWeight + b.g * bWeight),
+    b: Math.round(a.b * aWeight + b.b * bWeight),
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {

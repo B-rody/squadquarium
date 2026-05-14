@@ -18,7 +18,9 @@
     "fg": "#f4fbff",
     "accent": "#ffd166",
     "alert": "#ef476f",
-    "dim": "#6b8ca3"
+    "dim": "#6b8ca3",
+    "kelp": "#1f6f3f",
+    "kelpLight": "#3fa35b"
   },
   "glyphAllowlist": [
     " ",

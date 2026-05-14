@@ -14,9 +14,10 @@ const layout: Layout = {
   width: 80,
   height: 24,
   aquarium: { x: 1, y: 1, width: 78, height: 6 },
-  copilot: { x: 1, y: 8, width: 78, height: 14 },
-  log: { x: 1, y: 8, width: 78, height: 14 },
-  input: { x: 1, y: 21, width: 78, height: 1 },
+  copilot: { x: 1, y: 8, width: 53, height: 14 },
+  commandCenter: { x: 55, y: 8, width: 24, height: 14 },
+  log: { x: 1, y: 8, width: 53, height: 14 },
+  input: { x: 1, y: 21, width: 53, height: 1 },
   statusBar: { x: 0, y: 23, width: 80, height: 1 },
 };
 
@@ -50,6 +51,19 @@ describe("drawChrome", () => {
     expect(line.startsWith("├")).toBe(true);
     expect(line.endsWith("┤")).toBe(true);
     expect(line).toContain("COPILOT");
+    expect(line).toContain("COMMAND");
+  });
+
+  it("draws the command center vertical separator", () => {
+    const buffer = createMockBuffer(80, 24);
+
+    drawChrome(buffer as unknown as ScreenBufferHD, layout, {
+      teamName: "Squadquarium",
+      skinName: "aquarium",
+      agentCount: 4,
+    });
+
+    expect(buffer.charAt(layout.commandCenter.x - 1, layout.commandCenter.y)).toBe("│");
   });
 
   it("renders status bar content", () => {

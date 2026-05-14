@@ -100,6 +100,105 @@ describe("Aquarium", () => {
     expect(rendered).toContain("Dana");
   });
 
+  it("sets actor state by stable label id", () => {
+    const labeled = new Aquarium(40, 20, {
+      spriteSheet,
+      capabilities: { truecolor: true },
+      autoCycleStates: false,
+    });
+    const actor = labeled.addActor("lead", 5, 4);
+    labeled.setActorLabel(actor, { id: "dallas", name: "Dallas", role: "Lead" });
+
+    expect(labeled.setActorStateById("dallas", "working")).toBe(true);
+    labeled.tick();
+
+    expect(actor.state).toBe("working");
+  });
+
+  it("renders thinking markers above working actors", () => {
+    const labeled = new Aquarium(40, 20, {
+      spriteSheet,
+      capabilities: { truecolor: true },
+      autoCycleStates: false,
+    });
+    const actor = labeled.addActor("lead", 5, 4, "working");
+    labeled.setActorLabel(actor, { id: "dallas", name: "Dallas", role: "Lead" });
+    const buffer = createMockBuffer(40, 20);
+
+    labeled.render(buffer as unknown as ScreenBufferHD);
+
+    const rendered = Array.from({ length: 20 }, (_, y) => buffer.readLine(y)).join("\n");
+    expect(rendered).toContain("[Dallas BUSY]");
+    expect(rendered).toContain("WORKING");
+  });
+
+  it("removes working markers when the actor returns to idle", () => {
+    const labeled = new Aquarium(40, 20, {
+      spriteSheet,
+      capabilities: { truecolor: true },
+      autoCycleStates: false,
+    });
+    const actor = labeled.addActor("lead", 5, 4, "working");
+    labeled.setActorLabel(actor, { id: "dallas", name: "Dallas", role: "Lead" });
+    labeled.setActorStateById("dallas", "idle");
+    const buffer = createMockBuffer(40, 20);
+
+    labeled.render(buffer as unknown as ScreenBufferHD);
+
+    const rendered = Array.from({ length: 20 }, (_, y) => buffer.readLine(y)).join("\n");
+    expect(rendered).toContain("[Dallas]");
+    expect(rendered).not.toContain("[Dallas BUSY]");
+    expect(rendered).not.toContain("WORKING");
+  });
+
+  it("does not auto-cycle states when externally driven", () => {
+    const labeled = new Aquarium(40, 20, {
+      spriteSheet,
+      capabilities: { truecolor: true },
+      autoCycleStates: false,
+    });
+    const actor = labeled.addActor("lead", 5, 4, "idle");
+
+    for (let i = 0; i < 30; i += 1) {
+      labeled.tick();
+    }
+
+    expect(actor.state).toBe("idle");
+  });
+
+  it("renders full half-block labels centered under actors", () => {
+    const labeled = new Aquarium(40, 10, {
+      spriteSheet,
+      halfBlockSprites: halfBlockOnlySprites,
+      capabilities: { truecolor: true },
+    });
+    const actor = labeled.addActor("tester", 10, 2);
+    labeled.setActorLabel(actor, { name: "Dallas", role: "Lead" });
+    const buffer = createMockBuffer(40, 10);
+
+    labeled.render(buffer as unknown as ScreenBufferHD);
+
+    const rendered = Array.from({ length: 10 }, (_, y) => buffer.readLine(y)).join("\n");
+    expect(rendered).toContain("Dallas");
+  });
+
+  it("tints half-block actors by agent identity", () => {
+    const labeled = new Aquarium(40, 10, {
+      spriteSheet,
+      halfBlockSprites: halfBlockOnlySprites,
+      capabilities: { truecolor: true },
+    });
+    const first = labeled.addActor("tester", 4, 2);
+    const second = labeled.addActor("tester", 18, 2);
+    labeled.setActorLabel(first, { name: "Dallas", role: "Lead" });
+    labeled.setActorLabel(second, { name: "Lambert", role: "Frontend" });
+    const buffer = createMockBuffer(40, 10);
+
+    labeled.render(buffer as unknown as ScreenBufferHD);
+
+    expect(buffer.attrAt(4, 2)).not.toEqual(buffer.attrAt(18, 2));
+  });
+
   it("tick advances all actor frames", () => {
     const actorA = aquarium.addActor("lead", 5, 4, "working");
     const actorB = aquarium.addActor("backend", 15, 8, "working");

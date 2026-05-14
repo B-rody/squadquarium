@@ -1,18 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import termkit, { type ScreenBufferHD as TerminalScreenBufferHD } from "terminal-kit";
 import { ActivityLog } from "./activity-log.js";
 import { detectCapabilities } from "./adaptive.js";
 import { Aquarium, type ActorLabel } from "./aquarium.js";
 import { drawChrome } from "./chrome.js";
+import { CommandCenterPane, normalizeAgentId } from "./command-center-pane.js";
 import { CopilotPane } from "./copilot-pane.js";
+import { CopilotSdkManager, type CopilotModalPrompt } from "./copilot-sdk-manager.js";
 import { loadHalfBlockSpritesSync, type HalfBlockSpriteSheet } from "./halfblock-sprites.js";
 import { calculateLayout, type Layout } from "./layout.js";
 import { MouseHandler, type MouseEventData } from "./mouse.js";
 import { DEFAULT_PALETTE, Palette, type ColorValue } from "./palette.js";
-import { PtyManager } from "./pty-manager.js";
 import { loadSpritesSync, type SpriteSheet } from "./sprites.js";
 import { SquadWatcher, type AgentInfo, type SquadState } from "./squad-watcher.js";
 import type { AppConfig, Capabilities, Rect } from "./types.js";
@@ -20,6 +22,7 @@ import type { AppConfig, Capabilities, Rect } from "./types.js";
 const { terminal, ScreenBufferHD } = termkit;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 30;
+const AQUARIUM_ACTIVE_HOLD_SECONDS = 0.75;
 
 // --- Sprite role mapping ---
 // Maps squad agent roles (from charter.md) to sprite role keys in skins/
@@ -81,15 +84,21 @@ interface RuntimeState {
   root: ScreenBufferLike;
   aquariumBuffer: ScreenBufferLike;
   copilotBuffer: ScreenBufferLike;
+  commandCenterBuffer: ScreenBufferLike;
   aquariumScene: Aquarium;
   activityLog: ActivityLog;
   copilotPane: CopilotPane;
-  ptyManager: PtyManager | null;
+  commandCenterPane: CommandCenterPane;
+  copilotManager: CopilotSdkManager | null;
+  modalPrompt: CopilotModalPrompt | null;
+  modelAutocompleteIds: string[] | null;
+  loadingModelAutocomplete: boolean;
   mouseHandler: MouseHandler;
   uiColors: UiColors;
   capabilities: Capabilities;
   squadWatcher: SquadWatcher;
   squadState: SquadState;
+  aquariumActiveUntil: Map<string, number>;
   interval: NodeJS.Timeout | null;
   running: boolean;
   frame: number;
@@ -102,6 +111,34 @@ interface RuntimeState {
 }
 
 let runtime: RuntimeState | null = null;
+
+const LOCAL_SLASH_COMMANDS = [
+  { name: "help", usage: "/help or /commands", description: "Show this help." },
+  { name: "commands", usage: "/commands", description: "Show this help." },
+  { name: "status", usage: "/status", description: "Show SDK state, mode, model, and approvals." },
+  {
+    name: "models",
+    usage: "/models [filter]",
+    description: "List available Copilot models, optionally filtered.",
+  },
+  { name: "model", usage: "/model", description: "Show the active model." },
+  {
+    name: "model",
+    usage: "/model <id>",
+    description: "Switch the active model when Copilot is idle.",
+  },
+  { name: "clear", usage: "/clear", description: "Clear the transcript." },
+  {
+    name: "copy",
+    usage: "/copy",
+    description: "Copy the chat transcript to the system clipboard.",
+  },
+  { name: "//<text>", usage: "//<text>", description: "Send a prompt that starts with /." },
+] as const;
+
+const AUTOCOMPLETE_COMMAND_NAMES = [...new Set(LOCAL_SLASH_COMMANDS.map((command) => command.name))]
+  .filter((name) => !name.startsWith("//"))
+  .sort();
 
 // --- Public API ---
 
@@ -120,9 +157,9 @@ export async function startApp(config: AppConfig = {}): Promise<void> {
   initializeTerminal(runtime);
   bindEvents(runtime);
 
-  // Spawn the PTY child process (non-headless only)
-  if (!runtime.config.headless && runtime.config.ptyMode) {
-    await spawnPty(runtime);
+  // Start the SDK only for real TTY sessions; smoke tests stay auth/network independent.
+  if (!runtime.config.headless) {
+    await startCopilotSdk(runtime);
   }
 
   render(runtime);
@@ -160,10 +197,7 @@ export async function stopApp(): Promise<void> {
     current.interval = null;
   }
 
-  // Kill PTY child
-  if (current.ptyManager?.running) {
-    current.ptyManager.kill();
-  }
+  await current.copilotManager?.stop();
 
   current.squadWatcher.stop();
   unbindEvents(current);
@@ -179,32 +213,61 @@ export async function stopApp(): Promise<void> {
   current.resolve?.();
 }
 
-async function spawnPty(state: RuntimeState): Promise<void> {
-  const pty = new PtyManager();
-  state.ptyManager = pty;
+async function startCopilotSdk(state: RuntimeState): Promise<void> {
+  const manager = new CopilotSdkManager();
+  state.copilotManager = manager;
 
-  pty.on("data", (data: string) => {
+  manager.on("output", (data) => {
     state.copilotPane.write(data);
   });
-
-  pty.on("exit", (code: number) => {
-    state.copilotPane.write(`\n[Process exited with code ${code}]\n`);
+  manager.on("modal", (prompt) => {
+    state.modalPrompt = prompt;
+    state.copilotPane.clearInput();
+    state.copilotPane.setInputHint(prompt ? formatModalHint(prompt) : null);
+    updateCopilotInputStatus(state);
+  });
+  manager.on("status", () => {
+    updateCopilotInputStatus(state);
+  });
+  manager.on("agent", (name, status, detail) => {
+    state.commandCenterPane.applyUpdate({
+      name,
+      displayName: detail.displayName,
+      role: detail.role,
+      status,
+      task: detail.task,
+      model: detail.model,
+    });
+    updateAquariumActivityHold(state, normalizeAgentId(name));
+  });
+  manager.on("state", (sdkState) => {
+    if (sdkState === "idle" || sdkState === "closed") {
+      holdWorkingAquariumActors(state);
+      state.commandCenterPane.completeWorking();
+    } else if (sdkState === "error") {
+      holdWorkingAquariumActors(state);
+      state.commandCenterPane.completeWorking("session error");
+    }
+    updateCopilotInputStatus(state);
   });
 
   try {
-    await pty.spawn({
-      mode: state.config.ptyMode ?? "copilot",
+    await manager.start({
       cwd: state.config.cwd ?? process.cwd(),
-      cols: state.layout.copilot.width,
-      rows: state.layout.copilot.height,
-      extraArgs: state.config.ptyExtraArgs ?? [],
+      yolo: state.config.yolo,
+      mode: state.config.sdkMode ?? "chat",
+      extraArgs: state.config.sdkExtraArgs ?? [],
+      squadState: state.squadState,
+      debug: state.config.debug,
+      model: state.config.model,
     });
-    state.copilotPane.write("PTY connected. Waiting for output...\n\n");
+    updateCopilotInputStatus(state);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    state.copilotPane.write(`Failed to spawn PTY: ${msg}\n`);
-    state.copilotPane.write("Make sure 'copilot' or 'squad' is on your PATH.\n");
-    state.copilotPane.write("You can still use squad directly in another terminal.\n");
+    state.copilotPane.write(`[sqq] Failed to start Copilot SDK: ${msg}\n`);
+    state.copilotPane.write(
+      "[sqq] Check Copilot authentication with `copilot auth status` or `gh auth status`.\n",
+    );
   }
 }
 
@@ -216,7 +279,8 @@ export function createStartupMessages(config: AppConfig, agentCount: number): st
     "Welcome to Squadquarium.",
     `Watching: ${cwd}`,
     `${agentCount} agent${agentCount === 1 ? "" : "s"} detected.`,
-    "Copilot pane: real PTY output. Aquarium: ambient agent state.",
+    "Copilot pane: GitHub Copilot SDK stream. Aquarium: ambient agent state.",
+    `Model: ${config.model ?? "default"} (use --model <id> before launch or /model <id> in the TUI).`,
   ];
 }
 
@@ -226,10 +290,104 @@ export function createDebugMessages(): string[] {
 
 export function createHelpMessages(): string[] {
   return [
-    "Squadquarium wraps copilot --agent squad.",
-    "All input goes to the Copilot PTY. Use Squad slash commands:",
-    "  /status  /agents  /help  /history  /clear  /quit",
+    "Squadquarium uses the GitHub Copilot SDK.",
+    "Type a prompt and press Enter. Use --yolo to auto-approve SDK tool calls.",
+    "Without --yolo, permission prompts are modal: press y or n.",
+    "Local slash commands are available: type /help for the full list.",
+    "Press Tab to autocomplete local commands and model ids.",
+    "Use --model <id> before launch or /model <id> inside the TUI to select a model.",
   ];
+}
+
+export function createSlashCommandHelpMessages(): string[] {
+  const width = Math.max(...LOCAL_SLASH_COMMANDS.map((command) => command.usage.length)) + 2;
+  return [
+    "Local slash commands:",
+    ...LOCAL_SLASH_COMMANDS.map(
+      (command) => `${command.usage.padEnd(width)}${command.description}`,
+    ),
+    "Press Tab to autocomplete commands and model ids.",
+  ];
+}
+
+export type SlashAutocompleteResult =
+  | { kind: "none" }
+  | { kind: "complete"; value: string }
+  | { kind: "suggest"; message: string }
+  | { kind: "need-models" };
+
+export function completeSlashInput(
+  input: string,
+  commands: readonly string[] = AUTOCOMPLETE_COMMAND_NAMES,
+  modelIds: readonly string[] = [],
+): SlashAutocompleteResult {
+  if (!input.startsWith("/") || input.startsWith("//")) return { kind: "none" };
+
+  const commandMatch = input.match(/^\/([^\s/]*)$/);
+  if (commandMatch) {
+    const prefix = commandMatch[1]?.toLowerCase() ?? "";
+    const matches = commands.filter((command) => command.startsWith(prefix));
+    if (matches.length === 1) return { kind: "complete", value: `/${matches[0]} ` };
+    const common = commonPrefix(matches.map((command) => `/${command}`));
+    if (matches.length > 1 && common.length > input.length) {
+      return { kind: "complete", value: common };
+    }
+    if (matches.length > 1) {
+      return {
+        kind: "suggest",
+        message: `[sqq] Commands: ${matches.map((m) => `/${m}`).join(" ")}`,
+      };
+    }
+    return { kind: "suggest", message: `[sqq] No local command matches /${prefix}.` };
+  }
+
+  const modelMatch = input.match(/^\/models?\s+(.+)?$/);
+  if (!modelMatch) return { kind: "none" };
+  if (modelIds.length === 0) return { kind: "need-models" };
+
+  const prefix = (modelMatch[1] ?? "").trim().toLowerCase();
+  const baseCommand = input.startsWith("/models") ? "/models" : "/model";
+  const matches = modelIds.filter((id) => id.toLowerCase().startsWith(prefix));
+  if (matches.length === 1) return { kind: "complete", value: `${baseCommand} ${matches[0]}` };
+  const common = commonPrefix(matches.map((id) => `${baseCommand} ${id}`));
+  if (matches.length > 1 && common.length > input.length) {
+    return { kind: "complete", value: common };
+  }
+  if (matches.length > 1) {
+    return {
+      kind: "suggest",
+      message: `[sqq] Models: ${matches.slice(0, 8).join(" ")}${
+        matches.length > 8 ? ` (${matches.length - 8} more)` : ""
+      }`,
+    };
+  }
+  return { kind: "suggest", message: `[sqq] No model id matches "${prefix}".` };
+}
+
+export function getSlashCompletionHint(
+  input: string,
+  commands: readonly string[] = AUTOCOMPLETE_COMMAND_NAMES,
+  modelIds: readonly string[] = [],
+): string | null {
+  const result = completeSlashInput(input, commands, modelIds);
+  if (result.kind !== "complete" || !result.value.startsWith(input)) {
+    return null;
+  }
+
+  const suffix = result.value.slice(input.length);
+  return suffix.length > 0 ? suffix : null;
+}
+
+function commonPrefix(values: readonly string[]): string {
+  if (values.length === 0) return "";
+
+  let prefix = values[0] ?? "";
+  for (const value of values.slice(1)) {
+    while (!value.startsWith(prefix) && prefix.length > 0) {
+      prefix = prefix.slice(0, -1);
+    }
+  }
+  return prefix;
 }
 
 export function describeAquariumClick(role: string): string {
@@ -246,6 +404,45 @@ export function handleAquariumClick(
   if (!actor) return;
   actor.setState("celebrate");
   activityLog.add(describeAquariumClick(actor.role));
+}
+
+function syncAquariumActorStates(state: RuntimeState): void {
+  for (const row of state.commandCenterPane.getRows()) {
+    const activeUntil = state.aquariumActiveUntil.get(row.id) ?? 0;
+    const isHeldActive = activeUntil > state.frame;
+    if (!isHeldActive && activeUntil > 0) {
+      state.aquariumActiveUntil.delete(row.id);
+    }
+    const actorState =
+      row.status === "working" || isHeldActive
+        ? "working"
+        : row.status === "error"
+          ? "blocked"
+          : "idle";
+    state.aquariumScene.setActorStateById(row.id, actorState);
+  }
+}
+
+function updateAquariumActivityHold(state: RuntimeState, id: string): void {
+  const row = state.commandCenterPane.getRows().find((candidate) => candidate.id === id);
+  if (row?.status === "working") {
+    state.aquariumActiveUntil.set(id, Number.POSITIVE_INFINITY);
+    return;
+  }
+  state.aquariumActiveUntil.set(id, state.frame + getAquariumActiveHoldFrames(state));
+}
+
+function holdWorkingAquariumActors(state: RuntimeState): void {
+  const holdUntil = state.frame + getAquariumActiveHoldFrames(state);
+  for (const row of state.commandCenterPane.getRows()) {
+    if (row.status === "working") {
+      state.aquariumActiveUntil.set(row.id, holdUntil);
+    }
+  }
+}
+
+function getAquariumActiveHoldFrames(state: RuntimeState): number {
+  return Math.max(1, Math.round(state.config.fps * AQUARIUM_ACTIVE_HOLD_SECONDS));
 }
 
 // --- Runtime creation ---
@@ -284,6 +481,12 @@ function createRuntime(config: AppConfig): RuntimeState {
     { dst: root, x: layout.copilot.x, y: layout.copilot.y },
     effectiveConfig.headless,
   );
+  const commandCenterBuffer = createBuffer(
+    Math.max(1, layout.commandCenter.width),
+    Math.max(1, layout.commandCenter.height),
+    { dst: root, x: layout.commandCenter.x, y: layout.commandCenter.y },
+    effectiveConfig.headless,
+  );
 
   const squadWatcher = new SquadWatcher(effectiveConfig.cwd ?? process.cwd());
   const squadState = squadWatcher.readState();
@@ -291,6 +494,9 @@ function createRuntime(config: AppConfig): RuntimeState {
   const aquariumScene = createAquariumScene(layout.aquarium, capabilities, assets, squadState);
   const activityLog = new ActivityLog();
   const copilotPane = new CopilotPane();
+  const commandCenterPane = new CommandCenterPane(
+    squadState.agents.length > 0 ? squadState.agents : defaultAgents(),
+  );
 
   // Feed startup info into the copilot pane
   const startupLines = createStartupMessages(effectiveConfig, squadState.agents.length);
@@ -304,7 +510,7 @@ function createRuntime(config: AppConfig): RuntimeState {
   } else {
     copilotPane.write("No .squad/ found. Run squad init to create a team.\n");
   }
-  copilotPane.write("\nCopilot PTY output will appear here when connected.\n");
+  copilotPane.write("\nCopilot SDK stream will appear here when connected.\n");
 
   // Use late-binding through runtime reference so resize updates are reflected
   const mouseHandler = new MouseHandler({
@@ -322,6 +528,9 @@ function createRuntime(config: AppConfig): RuntimeState {
   squadWatcher.on("change", (newState) => {
     if (runtime) {
       runtime.squadState = newState;
+      runtime.commandCenterPane.updateRoster(
+        newState.agents.length > 0 ? newState.agents : defaultAgents(),
+      );
       // Rebuild aquarium actors on roster change
       runtime.aquariumScene = createAquariumScene(
         runtime.layout.aquarium,
@@ -339,15 +548,21 @@ function createRuntime(config: AppConfig): RuntimeState {
     root,
     aquariumBuffer,
     copilotBuffer,
+    commandCenterBuffer,
     aquariumScene,
     activityLog,
     copilotPane,
-    ptyManager: null,
+    commandCenterPane,
+    copilotManager: null,
+    modalPrompt: null,
+    modelAutocompleteIds: null,
+    loadingModelAutocomplete: false,
     mouseHandler,
     uiColors,
     capabilities,
     squadWatcher,
     squadState,
+    aquariumActiveUntil: new Map(),
     interval: null,
     running: true,
     frame: 0,
@@ -368,7 +583,7 @@ function initializeTerminal(state: RuntimeState): void {
   ensureTerminalColorEscapes();
   terminal.fullscreen?.(true);
   terminal.hideCursor?.();
-  terminal.grabInput?.({ mouse: "button" });
+  terminal.grabInput?.(state.config.enableMouse ? { mouse: "button" } : true);
 }
 
 function ensureTerminalColorEscapes(): void {
@@ -393,22 +608,7 @@ function clampByte(value: number): number {
 function bindEvents(state: RuntimeState): void {
   state.keyListener = (name: unknown) => {
     const key = name as string;
-
-    // Ctrl+C: if PTY is running, forward it; otherwise quit
-    if (key === "CTRL_C") {
-      if (state.ptyManager?.running) {
-        state.ptyManager.write("\x03");
-      } else {
-        void stopApp();
-      }
-      return;
-    }
-
-    // Forward all other keys to PTY
-    if (state.ptyManager?.running) {
-      const mapped = mapKeyToPty(key);
-      if (mapped) state.ptyManager.write(mapped);
-    }
+    handleKey(state, key);
   };
 
   state.mouseListener = (name: unknown, data: unknown) => {
@@ -418,16 +618,14 @@ function bindEvents(state: RuntimeState): void {
   state.resizeListener = () => {
     if (!runtime) return;
     rebuildBuffers(runtime);
-    // Forward resize to PTY
-    if (runtime.ptyManager?.running) {
-      runtime.ptyManager.resize(runtime.layout.copilot.width, runtime.layout.copilot.height);
-    }
     render(runtime);
   };
 
   if (!state.config.headless) {
     terminal.on("key", state.keyListener as EventListener);
-    terminal.on("mouse", state.mouseListener as EventListener);
+    if (state.config.enableMouse) {
+      terminal.on("mouse", state.mouseListener as EventListener);
+    }
     terminal.on("resize", state.resizeListener as EventListener);
   }
 
@@ -484,6 +682,12 @@ function rebuildBuffers(state: RuntimeState): void {
     { dst: state.root, x: state.layout.copilot.x, y: state.layout.copilot.y },
     state.config.headless,
   );
+  state.commandCenterBuffer = createBuffer(
+    Math.max(1, state.layout.commandCenter.width),
+    Math.max(1, state.layout.commandCenter.height),
+    { dst: state.root, x: state.layout.commandCenter.x, y: state.layout.commandCenter.y },
+    state.config.headless,
+  );
   state.aquariumScene = createAquariumScene(
     state.layout.aquarium,
     state.capabilities,
@@ -499,18 +703,44 @@ function render(state: RuntimeState): void {
   state.root.fill({ char: " ", attr: baseAttr(state.uiColors) });
 
   // Aquarium
+  syncAquariumActorStates(state);
   state.aquariumScene.tick();
   state.aquariumScene.render(state.aquariumBuffer as unknown as TerminalScreenBufferHD);
 
-  // Copilot pane — CopilotPane renders stripped PTY output
+  // Copilot pane — SDK transcript plus editable input line
+  state.copilotPane.setInputSuggestion(
+    getSlashCompletionHint(
+      state.copilotPane.getInput(),
+      AUTOCOMPLETE_COMMAND_NAMES,
+      state.modelAutocompleteIds ?? [],
+    ),
+  );
   state.copilotPane.render(state.copilotBuffer, state.layout.copilot, {
     fg: state.uiColors.fg,
     bg: state.uiColors.bg,
     dim: state.uiColors.dim,
+    accent: state.uiColors.accent,
   });
+
+  if (state.layout.commandCenter.width > 0) {
+    state.commandCenterPane.render(
+      state.commandCenterBuffer,
+      state.layout.commandCenter,
+      {
+        fg: state.uiColors.fg,
+        bg: state.uiColors.bg,
+        dim: state.uiColors.dim,
+        accent: state.uiColors.accent,
+      },
+      state.frame,
+    );
+  }
 
   state.aquariumBuffer.draw();
   state.copilotBuffer.draw();
+  if (state.layout.commandCenter.width > 0) {
+    state.commandCenterBuffer.draw();
+  }
 
   // Chrome
   drawChrome(state.root as unknown as TerminalScreenBufferHD, state.layout, {
@@ -527,6 +757,7 @@ function render(state: RuntimeState): void {
 
   if (!state.config.headless) {
     state.root.draw({ delta: true });
+    terminal.hideCursor?.();
   }
 }
 
@@ -551,6 +782,7 @@ function createAquariumScene(
     skinPalette: assets.manifest.palette,
     fallbacks: assets.manifest.fallbacks,
     roleLabels,
+    autoCycleStates: false,
   });
 
   const agents = squadState.agents.length > 0 ? squadState.agents : defaultAgents();
@@ -561,7 +793,11 @@ function createAquariumScene(
     const x = Math.min(spacing * (i + 1), Math.max(0, rect.width - 12));
     const y = Math.max(0, Math.floor(rect.height / 2) - 2 + (i % 2 === 0 ? -1 : 1));
     const actor = aquarium.addActor(sprite, x, y, "idle");
-    aquarium.setActorLabel(actor, { name: capitalize(agent.name), role: agent.role });
+    aquarium.setActorLabel(actor, {
+      id: normalizeAgentId(agent.name),
+      name: capitalize(agent.name),
+      role: agent.role,
+    });
   });
 
   return aquarium;
@@ -644,63 +880,323 @@ function capitalize(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-/** Map terminal-kit key names to PTY-compatible escape sequences. */
-function mapKeyToPty(key: string): string | null {
-  // Single printable character
-  if (key.length === 1) return key;
+function handleKey(state: RuntimeState, key: string): void {
+  if (key === "CTRL_C") {
+    if (state.copilotManager?.busy || state.copilotManager?.waitingForModal) {
+      void state.copilotManager.abort();
+    } else {
+      void stopApp();
+    }
+    return;
+  }
+
+  if (state.modalPrompt?.kind === "permission") {
+    if (/^[yYnN]$/.test(key)) {
+      state.copilotManager?.resolveModal(key);
+    } else if (key === "ESCAPE") {
+      state.copilotManager?.resolveModal("n");
+    }
+    return;
+  }
 
   switch (key) {
-    case "ENTER":
-      return "\r";
+    case "ENTER": {
+      const value = state.copilotPane.consumeInput();
+      if (state.modalPrompt?.kind === "user-input") {
+        state.copilotManager?.resolveModal(value);
+        return;
+      }
+      if (value.startsWith("//")) {
+        markPromptTargetAgentWorking(state, value.slice(1));
+        void state.copilotManager?.send(value.slice(1));
+        return;
+      }
+      if (value.startsWith("/") && handleLocalSlashCommand(state, value)) {
+        return;
+      }
+      markPromptTargetAgentWorking(state, value);
+      void state.copilotManager?.send(value);
+      return;
+    }
     case "BACKSPACE":
-      return "\x7f";
-    case "DELETE":
-      return "\x1B[3~";
-    case "TAB":
-      return "\t";
-    case "ESCAPE":
-      return "\x1B";
-    case "UP":
-      return "\x1B[A";
-    case "DOWN":
-      return "\x1B[B";
-    case "RIGHT":
-      return "\x1B[C";
-    case "LEFT":
-      return "\x1B[D";
-    case "HOME":
-      return "\x1B[H";
-    case "END":
-      return "\x1B[F";
-    case "PAGE_UP":
-      return "\x1B[5~";
-    case "PAGE_DOWN":
-      return "\x1B[6~";
-    case "CTRL_A":
-      return "\x01";
-    case "CTRL_B":
-      return "\x02";
-    case "CTRL_D":
-      return "\x04";
-    case "CTRL_E":
-      return "\x05";
-    case "CTRL_F":
-      return "\x06";
-    case "CTRL_K":
-      return "\x0B";
-    case "CTRL_L":
-      return "\x0C";
-    case "CTRL_N":
-      return "\x0E";
-    case "CTRL_P":
-      return "\x10";
-    case "CTRL_R":
-      return "\x12";
+      state.copilotPane.backspaceInput();
+      return;
     case "CTRL_U":
-      return "\x15";
-    case "CTRL_W":
-      return "\x17";
+      state.copilotPane.clearInput();
+      return;
+    case "TAB":
+      void autocompleteInput(state);
+      return;
+    case "UP":
+    case "PAGE_UP":
+      state.copilotPane.scroll(3);
+      return;
+    case "DOWN":
+    case "PAGE_DOWN":
+      state.copilotPane.scroll(-3);
+      return;
     default:
-      return null;
+      if (key.length === 1) {
+        state.copilotPane.appendInput(key);
+      }
   }
+}
+
+async function autocompleteInput(state: RuntimeState): Promise<void> {
+  if (state.modalPrompt) return;
+
+  const input = state.copilotPane.getInput();
+  const result = completeSlashInput(
+    input,
+    AUTOCOMPLETE_COMMAND_NAMES,
+    state.modelAutocompleteIds ?? [],
+  );
+  if (result.kind === "complete") {
+    state.copilotPane.setInput(result.value);
+    return;
+  }
+  if (result.kind === "suggest") {
+    state.copilotPane.write(`\n${result.message}\n`);
+    return;
+  }
+  if (result.kind !== "need-models" || state.loadingModelAutocomplete) return;
+
+  const manager = state.copilotManager;
+  if (!manager) {
+    state.copilotPane.write("\n[sqq] Copilot SDK is not connected yet.\n");
+    return;
+  }
+
+  state.loadingModelAutocomplete = true;
+  state.copilotPane.write("\n[sqq] Loading model completions...\n");
+  try {
+    const models = await manager.listModels();
+    state.modelAutocompleteIds = models.map((model) => model.id).sort();
+    if (state.copilotPane.getInput() === input) {
+      const retry = completeSlashInput(
+        input,
+        AUTOCOMPLETE_COMMAND_NAMES,
+        state.modelAutocompleteIds,
+      );
+      if (retry.kind === "complete") {
+        state.copilotPane.setInput(retry.value);
+      } else if (retry.kind === "suggest") {
+        state.copilotPane.write(`${retry.message}\n`);
+      }
+    }
+  } catch (error) {
+    state.copilotPane.write(`[sqq] Could not load model completions: ${formatError(error)}\n`);
+  } finally {
+    state.loadingModelAutocomplete = false;
+  }
+}
+
+function updateCopilotInputStatus(state: RuntimeState): void {
+  if (state.modalPrompt) {
+    state.copilotPane.setInputStatus(null);
+    return;
+  }
+  const manager = state.copilotManager;
+  if (!manager) {
+    state.copilotPane.setInputStatus("Copilot: disconnected");
+    return;
+  }
+  if (manager.currentState === "starting") {
+    state.copilotPane.setInputStatus("Copilot: connecting...");
+    return;
+  }
+  if (manager.currentState === "streaming") {
+    state.copilotPane.setInputStatus(manager.currentActivity ?? "Copilot is thinking...");
+    return;
+  }
+  const model = manager.currentModel ?? state.config.model;
+  state.copilotPane.setInputStatus(model ? `model: ${model}` : "Copilot: ready");
+}
+
+function handleLocalSlashCommand(state: RuntimeState, input: string): boolean {
+  const trimmed = input.trim();
+  const [rawName = "", ...rest] = trimmed.slice(1).split(/\s+/);
+  const name = rawName.toLowerCase();
+  const args = rest.join(" ").trim();
+
+  switch (name) {
+    case "help":
+    case "commands":
+      state.copilotPane.write(`\n${createSlashCommandHelpMessages().join("\n")}\n`);
+      return true;
+    case "clear":
+      state.copilotPane.clear();
+      state.copilotPane.write("[sqq] Transcript cleared.\n");
+      return true;
+    case "copy":
+      void copyTranscriptToClipboard(state);
+      return true;
+    case "status":
+      writeLocalStatus(state);
+      return true;
+    case "models":
+      void listAvailableModels(state, args);
+      return true;
+    case "model":
+      void showOrSwitchModel(state, args);
+      return true;
+    default:
+      state.copilotPane.write(
+        `\n[sqq] Unknown local command /${name}; sending it to Copilot. Type /help for local commands.\n`,
+      );
+      markPromptTargetAgentWorking(state, input);
+      void state.copilotManager?.send(input);
+      return true;
+  }
+}
+
+function markPromptTargetAgentWorking(state: RuntimeState, prompt: string): void {
+  if (!state.copilotManager || state.copilotManager.currentState === "closed") return;
+
+  const targetId = detectPromptTargetAgentId(prompt, state.commandCenterPane.getRows());
+  if (!targetId) return;
+
+  const row = state.commandCenterPane.getRows().find((candidate) => candidate.id === targetId);
+  state.commandCenterPane.applyUpdate({
+    name: targetId,
+    displayName: row?.name,
+    role: row?.role,
+    status: "working",
+    task: "responding to prompt",
+    model: state.copilotManager?.currentModel ?? state.config.model,
+  });
+  updateAquariumActivityHold(state, targetId);
+}
+
+export function detectPromptTargetAgentId(
+  prompt: string,
+  rows: readonly { id: string; name: string }[],
+): string | null {
+  const firstToken = prompt.trim().match(/^@?([A-Za-z][\w-]*)\b/)?.[1];
+  if (!firstToken) return null;
+
+  const normalized = normalizeAgentId(firstToken);
+  return rows.some((row) => row.id === normalized) ? normalized : null;
+}
+
+async function copyTranscriptToClipboard(state: RuntimeState): Promise<void> {
+  const transcript = state.copilotPane.getTranscriptText();
+  if (!transcript.trim()) {
+    state.copilotPane.write("\n[sqq] Nothing to copy yet.\n");
+    return;
+  }
+
+  try {
+    await copyTextToClipboard(transcript);
+    state.copilotPane.write("\n[sqq] Copied chat transcript to clipboard.\n");
+  } catch (error) {
+    state.copilotPane.write(`[sqq] Could not copy transcript: ${formatError(error)}\n`);
+  }
+}
+
+function copyTextToClipboard(text: string): Promise<void> {
+  if (process.platform !== "win32") {
+    return Promise.reject(new Error("clipboard copy is only implemented on Windows"));
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn(
+      "powershell.exe",
+      ["-NoProfile", "-Command", "Set-Clipboard -Value ([Console]::In.ReadToEnd())"],
+      { stdio: ["pipe", "ignore", "pipe"], windowsHide: true },
+    );
+    let stderr = "";
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(stderr.trim() || `clipboard command exited with code ${code ?? "unknown"}`));
+    });
+    child.stdin.end(text);
+  });
+}
+
+function writeLocalStatus(state: RuntimeState): void {
+  const manager = state.copilotManager;
+  const lines = [
+    "[sqq] Status",
+    `  SDK: ${manager?.currentState ?? "disconnected"}`,
+    `  mode: ${state.config.sdkMode ?? "chat"}`,
+    `  model: ${manager?.currentModel ?? state.config.model ?? "default"}`,
+    `  approvals: ${state.config.yolo ? "auto (--yolo)" : "prompt"}`,
+    `  squad: ${state.squadState.squadRoot ?? "not detected"}`,
+  ];
+  state.copilotPane.write(`\n${lines.join("\n")}\n`);
+}
+
+async function listAvailableModels(state: RuntimeState, filter: string): Promise<void> {
+  const manager = state.copilotManager;
+  if (!manager) {
+    state.copilotPane.write("\n[sqq] Copilot SDK is not connected yet.\n");
+    return;
+  }
+  try {
+    const models = await manager.listModels();
+    state.modelAutocompleteIds = models.map((model) => model.id).sort();
+    const normalizedFilter = filter.toLowerCase();
+    const filtered = normalizedFilter
+      ? models.filter(
+          (model) =>
+            model.id.toLowerCase().includes(normalizedFilter) ||
+            model.name.toLowerCase().includes(normalizedFilter),
+        )
+      : models;
+    const shown = filtered.slice(0, 15);
+    const lines = shown.map((model) =>
+      model.name === model.id ? `  ${model.id}` : `  ${model.id} — ${model.name}`,
+    );
+    const suffix =
+      filtered.length > shown.length ? `\n  Showing ${shown.length} of ${filtered.length}.` : "";
+    state.copilotPane.write(
+      `\n[sqq] Available models${filter ? ` matching "${filter}"` : ""}:\n${
+        lines.join("\n") || "  (none)"
+      }${suffix}\n`,
+    );
+  } catch (error) {
+    state.copilotPane.write(`[sqq] Could not list models: ${formatError(error)}\n`);
+  }
+}
+
+async function showOrSwitchModel(state: RuntimeState, modelId: string): Promise<void> {
+  const manager = state.copilotManager;
+  if (!manager) {
+    state.copilotPane.write("\n[sqq] Copilot SDK is not connected yet.\n");
+    return;
+  }
+  if (!modelId) {
+    state.copilotPane.write(
+      `\n[sqq] Current model: ${manager.currentModel ?? state.config.model ?? "default"}.\n`,
+    );
+    state.copilotPane.write("[sqq] Use /models to discover ids, then /model <id> to switch.\n");
+    return;
+  }
+  try {
+    await manager.switchModel(modelId);
+    updateCopilotInputStatus(state);
+  } catch (error) {
+    state.copilotPane.write(`[sqq] Could not switch model: ${formatError(error)}\n`);
+  }
+}
+
+function formatModalHint(prompt: CopilotModalPrompt): string {
+  if (prompt.kind === "permission") {
+    return `${prompt.message} [y/n]`;
+  }
+  const choices = prompt.choices?.length ? ` (${prompt.choices.join("/")})` : "";
+  return `${prompt.message}${choices}: `;
+}
+
+function formatError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

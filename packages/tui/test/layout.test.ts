@@ -13,7 +13,7 @@ function bottom(rect: { y: number; height: number }): number {
 
 describe("calculateLayout", () => {
   it.each(standardSizes)(
-    "splits %ix%i with aquarium ~30%% and copilot ~70%%",
+    "splits %ix%i with aquarium ~40%% and lower panes ~60%%",
     ({ width, height }) => {
       const layout = calculateLayout(width, height);
       const total = layout.aquarium.height + layout.copilot.height;
@@ -22,10 +22,10 @@ describe("calculateLayout", () => {
       expect(layout.width).toBe(width);
       expect(layout.height).toBe(height);
       expect(layout.aquarium.width).toBe(width - 2);
-      expect(layout.copilot.width).toBe(width - 2);
-      // Aquarium should be ~30% (between 25-35%)
-      expect(aquariumRatio).toBeGreaterThanOrEqual(0.25);
-      expect(aquariumRatio).toBeLessThanOrEqual(0.35);
+      expect(layout.copilot.width + layout.commandCenter.width).toBeLessThanOrEqual(width - 2);
+      // Aquarium should be ~40% (between 35-45%)
+      expect(aquariumRatio).toBeGreaterThanOrEqual(0.35);
+      expect(aquariumRatio).toBeLessThanOrEqual(0.45);
       // Copilot pane gets the majority
       expect(layout.copilot.height).toBeGreaterThan(layout.aquarium.height);
       // Aquarium minimum
@@ -38,6 +38,7 @@ describe("calculateLayout", () => {
       expect(layout.statusBar.y).toBe(height - 1);
       // Nothing overflows the terminal
       expect(bottom(layout.copilot)).toBeLessThanOrEqual(layout.statusBar.y);
+      expect(bottom(layout.commandCenter)).toBeLessThanOrEqual(layout.statusBar.y);
     },
   );
 
@@ -46,6 +47,7 @@ describe("calculateLayout", () => {
 
     expect(layout.aquarium.width).toBe(38);
     expect(layout.copilot.width).toBe(38);
+    expect(layout.commandCenter.width).toBe(0);
     // Both regions should have some height
     expect(layout.aquarium.height).toBeGreaterThan(0);
     expect(layout.copilot.height).toBeGreaterThan(0);
@@ -60,11 +62,12 @@ describe("calculateLayout", () => {
     const aquariumRatio = layout.aquarium.height / total;
 
     expect(layout.aquarium.width).toBe(298);
-    expect(layout.copilot.width).toBe(298);
+    expect(layout.copilot.width + layout.commandCenter.width).toBeLessThanOrEqual(298);
+    expect(layout.commandCenter.width).toBeGreaterThanOrEqual(24);
     // Copilot dominates
     expect(layout.copilot.height).toBeGreaterThan(layout.aquarium.height);
-    expect(aquariumRatio).toBeGreaterThanOrEqual(0.25);
-    expect(aquariumRatio).toBeLessThanOrEqual(0.35);
+    expect(aquariumRatio).toBeGreaterThanOrEqual(0.35);
+    expect(aquariumRatio).toBeLessThanOrEqual(0.45);
   });
 
   it("regions never overlap", () => {
@@ -74,6 +77,16 @@ describe("calculateLayout", () => {
       expect(bottom(layout.aquarium)).toBeLessThanOrEqual(layout.copilot.y);
       // copilot must end before or at status bar
       expect(bottom(layout.copilot)).toBeLessThanOrEqual(layout.statusBar.y);
+      expect(bottom(layout.commandCenter)).toBeLessThanOrEqual(layout.statusBar.y);
     }
+  });
+
+  it("adds a lower-right command center when width permits", () => {
+    const layout = calculateLayout(120, 40);
+
+    expect(layout.commandCenter.width).toBeGreaterThan(0);
+    expect(layout.commandCenter.y).toBe(layout.copilot.y);
+    expect(layout.commandCenter.height).toBe(layout.copilot.height);
+    expect(layout.commandCenter.x).toBeGreaterThan(layout.copilot.x + layout.copilot.width - 1);
   });
 });

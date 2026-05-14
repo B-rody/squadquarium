@@ -2,9 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startApp } from "@squadquarium/tui";
-import type { PtyMode } from "@squadquarium/tui";
 import { runAspire } from "./aspire.js";
-import { checkDirectSubcommand, parseArgs } from "./argv.js";
+import { checkDirectSubcommand, parseArgs, parseSdkWorkflowArgs } from "./argv.js";
+import { resolveContext } from "./context.js";
 import { runDiorama } from "./diorama.js";
 import { formatDoctor, runDoctor } from "./doctor.js";
 import { runInspect } from "./inspect.js";
@@ -39,15 +39,21 @@ async function main(): Promise<void> {
       await runAspire(process.argv.slice(3));
       return;
     }
-    // triage and loop: pass through to startApp with the right PTY mode
+    // triage and loop: start the SDK TUI with an initial workflow prompt.
     if (directSub === "triage" || directSub === "loop") {
       const cwd = process.cwd();
       const skinsDir = resolveSkinsDir();
+      const workflowArgs = parseSdkWorkflowArgs(process.argv.slice(3));
+      const context = await resolveContext({ cwd });
       await startApp({
-        cwd,
+        cwd: context.projectRoot,
+        personal: context.personal,
         skinsDir,
-        ptyMode: directSub as PtyMode,
-        ptyExtraArgs: process.argv.slice(3),
+        sdkMode: directSub,
+        sdkExtraArgs: workflowArgs.passthrough,
+        yolo: workflowArgs.yolo,
+        model: workflowArgs.model,
+        enableMouse: false,
       });
       return;
     }
@@ -68,18 +74,21 @@ async function main(): Promise<void> {
       return;
     }
 
+    const context = await resolveContext({ cwd, personal: args.personal });
     const startedAt = Date.now();
     await startApp({
-      cwd,
-      personal: args.personal,
+      cwd: context.projectRoot,
+      personal: context.personal,
       attachPaths: args.attachPaths,
       headless: args.headlessSmoke,
       smokeTest: args.headlessSmoke,
       skinsDir,
       debug: args.debug,
       debugLogPath: args.debugLogPath,
-      ptyMode: "copilot",
-      ptyExtraArgs: args.yolo ? ["--yolo"] : [],
+      sdkMode: "chat",
+      yolo: args.yolo,
+      model: args.model,
+      enableMouse: args.enableMouse,
     });
 
     if (args.headlessSmoke) {

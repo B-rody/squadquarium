@@ -48,6 +48,7 @@ interface ActorManagerOptions {
   workingDurationTicks?: number;
   celebrateDurationTicks?: number;
   blinkEveryTicks?: number;
+  autoCycleStates?: boolean;
 }
 
 const DEFAULTS = {
@@ -58,6 +59,7 @@ const DEFAULTS = {
   workingDurationTicks: 12,
   celebrateDurationTicks: 8,
   blinkEveryTicks: 12,
+  autoCycleStates: true,
 } satisfies Required<ActorManagerOptions>;
 
 function clamp(value: number, min: number, max: number): number {
@@ -102,18 +104,20 @@ export class ActorManager {
       actor.tickCounter += 1;
       actor.phaseTick += 1;
 
-      if (actor.state === "idle" && actor.phaseTick >= this.options.idleDurationTicks) {
-        actor.setState("working");
-      } else if (
-        actor.state === "working" &&
-        actor.phaseTick >= this.options.workingDurationTicks
-      ) {
-        actor.setState("celebrate");
-      } else if (
-        actor.state === "celebrate" &&
-        actor.phaseTick >= this.options.celebrateDurationTicks
-      ) {
-        actor.setState("idle");
+      if (this.options.autoCycleStates) {
+        if (actor.state === "idle" && actor.phaseTick >= this.options.idleDurationTicks) {
+          actor.setState("working");
+        } else if (
+          actor.state === "working" &&
+          actor.phaseTick >= this.options.workingDurationTicks
+        ) {
+          actor.setState("celebrate");
+        } else if (
+          actor.state === "celebrate" &&
+          actor.phaseTick >= this.options.celebrateDurationTicks
+        ) {
+          actor.setState("idle");
+        }
       }
 
       const frameDivisor = actor.state === "working" ? 1 : 4;

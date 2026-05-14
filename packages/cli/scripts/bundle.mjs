@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * bundle.mjs — builds dist/index.js via esbuild, inlining workspace code.
- * Runtime deps remain external (node-pty, ws, open, commander, terminal-kit,
- * @bradygaster/squad-sdk) so they install normally from npm.
+ * Runtime deps remain external so binary packages and large SDK dependencies
+ * install normally from npm.
  */
 import { build } from "esbuild";
 import { fileURLToPath } from "url";
@@ -32,6 +32,7 @@ await build({
     "commander",
     "terminal-kit",
     "@bradygaster/squad-sdk",
+    "@github/copilot-sdk",
   ],
   // suppress "use of eval" warnings from @xterm or other deps
   logLevel: "warning",

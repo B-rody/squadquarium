@@ -13,11 +13,19 @@ export interface ParsedArgs {
   headlessSmoke: boolean;
   debug: boolean;
   debugLogPath?: string;
+  model?: string;
   yolo: boolean;
+  enableMouse: boolean;
   subcommand: "doctor" | "status" | null;
   version: boolean;
   attachPaths: string[];
   /** Extra args to pass through to the child process (e.g. --execute, --interval 5) */
+  passthrough: string[];
+}
+
+export interface ParsedSdkWorkflowArgs {
+  model?: string;
+  yolo: boolean;
   passthrough: string[];
 }
 
@@ -61,6 +69,8 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
       false,
     )
     .option("--yolo", "pass --yolo to copilot (auto-approve tool calls)", false)
+    .option("--mouse", "enable TUI mouse capture for aquarium clicks and pane scrolling", false)
+    .option("--model <id>", "Copilot model id to use for the SDK session")
     .option("--debug-log <path>", "write TUI diagnostics to a file")
     .option(
       "--attach <path>",
@@ -86,7 +96,9 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     headlessSmoke: boolean;
     debug: boolean;
     yolo: boolean;
+    mouse: boolean;
     debugLog?: string;
+    model?: string;
     attach: string[];
   }>();
 
@@ -96,10 +108,46 @@ export function parseArgs(argv: string[] = process.argv): ParsedArgs {
     headlessSmoke: opts.headlessSmoke,
     debug: opts.debug,
     debugLogPath: opts.debugLog,
+    model: opts.model,
     yolo: opts.yolo,
+    enableMouse: opts.mouse,
     subcommand,
     version: false,
     attachPaths: opts.attach ?? [],
     passthrough: [],
   };
+}
+
+export function parseSdkWorkflowArgs(args: string[]): ParsedSdkWorkflowArgs {
+  const passthrough: string[] = [];
+  let model: string | undefined;
+  let yolo = false;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] ?? "";
+    if (arg === "--yolo") {
+      yolo = true;
+      continue;
+    }
+    if (arg === "--model") {
+      const value = args[i + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("--model requires a model id.");
+      }
+      model = value;
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--model=")) {
+      const value = arg.slice("--model=".length).trim();
+      if (!value) {
+        throw new Error("--model requires a model id.");
+      }
+      model = value;
+      continue;
+    }
+    passthrough.push(arg);
+  }
+
+  return { model, yolo, passthrough };
 }

@@ -22,10 +22,16 @@ export interface AppConfig {
   skinsDir?: string;
   debug?: boolean;
   debugLogPath?: string;
-  /** Which process to spawn in the PTY pane. Default: "copilot" */
-  ptyMode?: "copilot" | "triage" | "loop";
-  /** Extra args passed through to the child process */
-  ptyExtraArgs?: string[];
+  /** Which SDK workflow to start. Default: "chat" */
+  sdkMode?: "chat" | "triage" | "loop";
+  /** CLI-style args translated into the SDK workflow prompt. */
+  sdkExtraArgs?: string[];
+  /** Auto-approve Copilot SDK permission requests. */
+  yolo?: boolean;
+  /** Copilot model id to request for the SDK session. */
+  model?: string;
+  /** Enable terminal mouse capture for clicks/scrolling. Disabled by default so native text selection works. */
+  enableMouse?: boolean;
 }
 
 export type ColorSupportLevel = "truecolor" | "ansi256" | "ansi16" | "none";

@@ -142,5 +142,20 @@ export function drawChrome(buffer: ScreenBufferHD, layout: Layout, config: Chrom
     labelAttr,
   );
 
+  if (layout.commandCenter.width > 0) {
+    const dividerX = layout.commandCenter.x - 1;
+    for (
+      let y = layout.commandCenter.y;
+      y < layout.commandCenter.y + layout.commandCenter.height;
+      y += 1
+    ) {
+      put(buffer, dividerX, y, chars.v, chromeAttr);
+    }
+    put(buffer, Math.max(0, dividerX - 1), copilotY - 1, chars.h, chromeAttr);
+    put(buffer, dividerX, copilotY - 1, "┬", chromeAttr);
+    put(buffer, dividerX, layout.commandCenter.y + layout.commandCenter.height, "┴", chromeAttr);
+    put(buffer, layout.commandCenter.x + 1, copilotY - 1, " COMMAND ", labelAttr);
+  }
+
   drawStatusBar(buffer, layout, config);
 }
